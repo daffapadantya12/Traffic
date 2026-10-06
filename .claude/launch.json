@@ -1,0 +1,50 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "twin-webapp",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "traffic_twin.webapp",
+        "--port",
+        "8765"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "fatmawati-3d",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "traffic_twin.fatmawati.webapp3d",
+        "--port",
+        "8770",
+        "--start-hour",
+        "7",
+        "--hours",
+        "24",
+        "--speed",
+        "5"
+      ],
+      "port": 8770
+    },
+    {
+      "name": "fatmawati-3d-check",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "traffic_twin.fatmawati.webapp3d",
+        "--port",
+        "8771",
+        "--start-hour",
+        "7",
+        "--hours",
+        "2",
+        "--speed",
+        "5"
+      ],
+      "port": 8771
+    }
+  ]
+}

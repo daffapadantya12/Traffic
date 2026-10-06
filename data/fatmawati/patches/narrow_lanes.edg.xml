@@ -1,0 +1,18 @@
+<!-- Two-way streets tagged lanes=1 get one half-width lane per direction from the OSM import;
+     a car (1.8 m) does not fit in 1.6 m, so these are widened to one 3 m lane each way. -->
+<edges>
+    <edge id="-32201514#2"><lane index="0" width="3.00"/></edge>
+    <edge id="-511653536"><lane index="0" width="3.00"/></edge>
+    <edge id="-589168373#4"><lane index="0" width="3.00"/></edge>
+    <edge id="-758996163#5"><lane index="0" width="3.00"/></edge>
+    <edge id="-810441991"><lane index="0" width="3.00"/></edge>
+    <edge id="-816676787"><lane index="0" width="3.00"/></edge>
+    <edge id="-825639568"><lane index="0" width="3.00"/></edge>
+    <edge id="32201514#0"><lane index="0" width="3.00"/></edge>
+    <edge id="511653536"><lane index="0" width="3.00"/></edge>
+    <edge id="589168373#0"><lane index="0" width="3.00"/></edge>
+    <edge id="758996163#0"><lane index="0" width="3.00"/></edge>
+    <edge id="810441991"><lane index="0" width="3.00"/></edge>
+    <edge id="816676787"><lane index="0" width="3.00"/></edge>
+    <edge id="825639568"><lane index="0" width="3.00"/></edge>
+</edges>

@@ -1,0 +1,23 @@
+# Python and tooling
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+.claude/settings.local.json
+
+# Scratch dumps from debugging runs
+/cells0.pkl
+/rep_*.json
+
+# Course materials (Monash ITI5145 brief): kept locally, not redistributed
+docs/brief/
+
+# Over GitHub's 100 MB file limit, or superseded and regenerable:
+# the v1.2 grid release and dev data (python3 -m traffic_twin.generate), the random forest (learn.py)
+data/traffic_v1/
+data/dev10/
+reports/a3/learning/models/taskA_random_forest.joblib
+
+# Generated at run time: trip files for the viewer and generator, the TomTom request counter
+data/fatmawati/demand/*.rou.xml
+data/fatmawati/tomtom_usage.json

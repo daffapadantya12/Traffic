@@ -1,0 +1,55 @@
+{
+ "eval_dir": "data/fatmawati_eval",
+ "levels": [
+  "low"
+ ],
+ "methods": [
+  "fixed",
+  "longest_queue",
+  "max_pressure",
+  "preempt_naive",
+  "priority_mp",
+  "random",
+  "still"
+ ],
+ "passing": [],
+ "pareto_front": [],
+ "winner": null,
+ "point_estimate": {
+  "passing": [
+   "longest_queue",
+   "max_pressure",
+   "priority_mp"
+  ],
+  "pareto_front": [
+   "longest_queue",
+   "priority_mp"
+  ],
+  "winner": "longest_queue",
+  "nash": {
+   "longest_queue": 0.05901652308195635,
+   "priority_mp": 0.05257226183518587
+  }
+ },
+ "bootstrap": {
+  "resamples": 1000,
+  "seeds": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "win_share": {
+   "longest_queue": 0.483,
+   "max_pressure": 0.025,
+   "none": 0.081,
+   "priority_mp": 0.411
+  }
+ },
+ "implied_lambda": {
+  "towards_more_ambulance_priority": {
+   "neighbour": "priority_mp",
+   "lambda_veh_s_per_amb_s": 158.83894907740108
+  }
+ }
+}

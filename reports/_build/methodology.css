@@ -1,0 +1,4 @@
+/* methodology only: wide result tables must fit the A4 text column */
+table { font-size: 7.6pt; width: 100%; table-layout: auto; }
+th, td { padding: 2pt 3pt; overflow-wrap: anywhere; word-break: break-word; }
+td code, th code { font-size: 7pt; }

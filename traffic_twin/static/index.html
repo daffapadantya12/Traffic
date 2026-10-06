@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Traffic-light digital twin</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#ffffff; --ink:#1d1f24; --muted:#6b7280; --line:#d9dce3;
+          --road:#c9ccd3; --box:#b4b8c1; --lane:#ffffff; --car:#3b6fd6; --queued:#1f3f86; --alert:#d93c3c; --ev:#f2c200; --ev-edge:#5c4a00;
+          --green:#2e9e4f; --red:#d33; --accent:#2f6fed; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14161b; --panel:#1d2026; --ink:#e8eaf0; --muted:#9aa1ad; --line:#2d313a;
+            --road:#3a3e47; --box:#4a4f59; --lane:#8a8f99; --car:#7ea3ff; --queued:#c6d4ff; --alert:#ff6b6b; --ev:#ffd84d; --ev-edge:#1d1f24; }
+  }
+  * { box-sizing:border-box }
+  body { margin:0; background:var(--bg); color:var(--ink); font:14px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  header { display:flex; flex-wrap:wrap; gap:12px 20px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:17px; margin:0 12px 0 0; font-weight:600 }
+  .clock { font-variant-numeric:tabular-nums; font-size:22px; font-weight:600; min-width:110px }
+  .pill { padding:3px 10px; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:12px }
+  .pill b { color:var(--ink) }
+  header .ctl { margin-left:auto; display:flex; gap:8px; align-items:center }
+  button, select { font:inherit; padding:5px 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer }
+  button.active { border-color:var(--accent); color:var(--accent) }
+  main { display:grid; grid-template-columns: minmax(320px, 640px) minmax(260px, 1fr); gap:16px; padding:16px; max-width:1200px; margin:0 auto }
+  @media (max-width: 760px) { main { grid-template-columns: 1fr } }
+  canvas#arena { width:100%; aspect-ratio:1/1; background:var(--panel); border:1px solid var(--line); border-radius:12px; display:block }
+  .panel { background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:12px 14px; margin-bottom:14px }
+  .panel h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 10px; font-weight:600 }
+  .kpis { display:grid; grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); gap:10px }
+  .kpi { border:1px solid var(--line); border-radius:10px; padding:8px 10px }
+  .kpi .v { font-size:20px; font-weight:600; font-variant-numeric:tabular-nums }
+  .kpi .l { font-size:11px; color:var(--muted) }
+  .twin { display:grid; grid-template-columns: 1fr 1fr; gap:10px }
+  .jbox { border:1px solid var(--line); border-radius:10px; padding:8px }
+  .jbox .t { font-size:12px; color:var(--muted); display:flex; justify-content:space-between }
+  .bars { display:flex; gap:6px; align-items:flex-end; height:46px; margin-top:6px }
+  .bar { flex:1; display:flex; gap:2px; align-items:flex-end; height:100% }
+  .bar i { display:block; flex:1; background:var(--car); border-radius:2px 2px 0 0; min-height:1px }
+  .bar i.est { background:var(--alert); opacity:.75 }
+  .legend { font-size:11px; color:var(--muted); margin-top:6px }
+  .legend span { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; margin-right:4px }
+  canvas#profile { width:100%; height:70px; display:block }
+  ul.events { list-style:none; margin:0; padding:0; max-height:120px; overflow:auto; font-size:12px }
+  ul.events li { padding:3px 0; border-bottom:1px dashed var(--line); color:var(--muted) }
+  .status { font-size:12px; color:var(--muted) }
+  .status.err { color:var(--alert) }
+  .pill.mock { background:#f5a524; border-color:#f5a524; color:#1d1f24; font-weight:700 }
+  .note { font-size:11px; color:var(--muted); margin-top:4px }
+</style>
+</head>
+<body>
+<header>
+  <h1>Traffic-light digital twin</h1>
+  <div class="clock" id="clock">00:00:00</div>
+  <span class="pill">day <b id="day">1</b></span>
+  <span class="pill">demand <b id="demand">—</b></span>
+  <span class="pill">controller <b id="controller">—</b></span>
+  <span class="pill" id="mode">connecting…</span>
+  <div class="ctl">
+    <span class="status" id="status">connecting…</span>
+    <label>speed <select id="speed"><option value="1">1×</option><option value="10">10×</option><option value="60" selected>60×</option><option value="240">240×</option><option value="600">600×</option></select></label>
+    <button id="pause">Pause</button>
+  </div>
+</header>
+<main>
+  <section>
+    <canvas id="arena" width="900" height="900"></canvas>
+    <div class="legend" style="margin-top:8px">
+      <span style="background:var(--car)"></span>car &nbsp; <span style="background:var(--queued)"></span>queued &nbsp;
+      <span style="background:var(--ev)"></span>ambulance &nbsp; <span style="background:var(--green)"></span>green approach &nbsp;
+      <span style="background:var(--red)"></span>red approach
+    </div>
+  </section>
+  <aside>
+    <div class="panel"><h2>Live KPIs (rolling 10 min)</h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k_n">0</div><div class="l">vehicles in network</div></div>
+        <div class="kpi" title="Mean delay of the cars that finished their trip in the last 10 simulated minutes: entry-queue wait + travel time − free-flow travel time"><div class="v" id="k_delay">—</div><div class="l">car delay, s/veh ⓘ</div></div>
+        <div class="kpi"><div class="v" id="k_ev">—</div><div class="l">ambulance delay, s</div></div>
+        <div class="kpi"><div class="v" id="k_thr">—</div><div class="l">throughput, veh/h</div></div>
+        <div class="kpi"><div class="v" id="k_sw">—</div><div class="l">switches / min</div></div>
+        <div class="kpi"><div class="v" id="k_amb">0</div><div class="l">ambulances today</div></div>
+        <div class="kpi"><div class="v" id="k_lc">—</div><div class="l">lane changes / min</div></div>
+        <div class="kpi" title="Conflicts whose time to collision fell below 1.5 s while the braking needed to avoid the crash exceeded 3.4 m/s² (FHWA SSAM thresholds)"><div class="v" id="k_nm">—</div><div class="l">near misses ⓘ</div></div>
+        <div class="kpi" title="Bodies that overlapped since the start: a safety invariant that must stay 0"><div class="v" id="k_col">—</div><div class="l">collisions ⓘ</div></div>
+      </div>
+    </div>
+    <div class="panel"><h2>Twin: estimated vs true queues</h2>
+      <div class="twin" id="twin"></div>
+      <div class="legend"><span style="background:var(--car)"></span>true queue (N E S W) &nbsp; <span style="background:var(--alert)"></span>twin estimate &nbsp; · drift = mean |est − true|</div>
+    </div>
+    <div class="panel"><h2>24-hour demand profile</h2>
+      <canvas id="profile" width="600" height="140"></canvas>
+      <div class="note">Cars follow these hourly multipliers; ambulances arrive at a constant rate all day.</div>
+    </div>
+    <div class="panel"><h2>Recent events (ambulances, twin sensors)</h2>
+      <ul class="events" id="events"></ul>
+    </div>
+  </aside>
+</main>
+<script>
+(() => {
+  // ---------- geometry (metres): served by /geometry from the simulator; defaults = SimConfig ----------
+  const G = { L_block:200, L_stub:150, w_lane:3.5, lanes:2, box_half:13, corner_radius:6, stop_line_setback:2,
+              veh_length:4.5, veh_width:1.8, ev_length:6, ev_width:2.1, junction_paths:[] };
+  let road_w = 2 * G.lanes * G.w_lane, half = road_w / 2;
+  const lo = -G.L_stub - 20, hi = G.L_block + G.L_stub + 20;
+  const cv = document.getElementById('arena'), ctx = cv.getContext('2d');
+  const css = () => getComputedStyle(document.documentElement);
+  const scale = cv.width / (hi - lo);
+  const X = x => (x - lo) * scale, Y = y => cv.height - (y - lo) * scale;   // y north = up
+
+  function drawArena(signals) {
+    const c = css(), B = G.box_half, R = G.corner_radius, sb = G.stop_line_setback;
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    ctx.fillStyle = c.getPropertyValue('--road');
+    for (const x of [0, G.L_block]) ctx.fillRect(X(x - half), Y(hi - 20), road_w * scale, (hi - lo - 40) * scale);
+    for (const y of [0, G.L_block]) ctx.fillRect(X(lo + 20), Y(y + half), (hi - lo - 40) * scale, road_w * scale);
+    // junction boxes: road width plus a kerb return of radius R on every corner
+    const J = [[0, 0], [G.L_block, 0], [0, G.L_block], [G.L_block, G.L_block]];
+    for (const [x, y] of J) ctx.fillRect(X(x - B), Y(y + B), 2 * B * scale, 2 * B * scale);
+    ctx.fillStyle = c.getPropertyValue('--panel');
+    for (const [x, y] of J) for (const sx of [-1, 1]) for (const sy of [-1, 1]) {
+      ctx.beginPath(); ctx.arc(X(x + sx * B), Y(y + sy * B), R * scale, 0, Math.PI * 2); ctx.fill();
+    }
+    // centre lines and lane dashes, interrupted inside the boxes
+    ctx.strokeStyle = c.getPropertyValue('--lane'); ctx.lineWidth = 1;
+    const segs = (a0, a1) => { const out = []; let s = a0; for (const j of [0, G.L_block]) { if (j - B > s) out.push([s, j - B]); s = j + B; } out.push([s, a1]); return out; };
+    for (const x of [0, G.L_block]) for (const [y0, y1] of segs(lo + 20, hi - 20)) {
+      ctx.setLineDash([]); line(X(x), Y(y0), X(x), Y(y1));
+      ctx.setLineDash([4 * scale, 4 * scale]);
+      for (let k = 1; k < G.lanes; k++) for (const sgn of [-1, 1]) line(X(x + sgn * k * G.w_lane), Y(y0), X(x + sgn * k * G.w_lane), Y(y1));
+    }
+    for (const y of [0, G.L_block]) for (const [x0, x1] of segs(lo + 20, hi - 20)) {
+      ctx.setLineDash([]); line(X(x0), Y(y), X(x1), Y(y));
+      ctx.setLineDash([4 * scale, 4 * scale]);
+      for (let k = 1; k < G.lanes; k++) for (const sgn of [-1, 1]) line(X(x0), Y(y + sgn * k * G.w_lane), X(x1), Y(y + sgn * k * G.w_lane));
+    }
+    ctx.setLineDash([]);
+    // lane-level paths through every box (faint): through traffic keeps its lane, turns follow arcs
+    ctx.strokeStyle = c.getPropertyValue('--muted'); ctx.globalAlpha = 0.35; ctx.lineWidth = 1;
+    for (const [x, y] of J) for (const p of G.junction_paths) {
+      ctx.beginPath(); p.pts.forEach(([px, py], i) => (i ? ctx.lineTo : ctx.moveTo).call(ctx, X(x + px), Y(y + py))); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // stop lines + signal heads (left-hand traffic: approach lanes are left of the axis seen by the driver)
+    const s = B + sb;
+    ctx.strokeStyle = c.getPropertyValue('--ink'); ctx.lineWidth = 2;
+    const heads = [];
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const x = i * G.L_block, y = j * G.L_block, jid = j * 2 + i;
+      line(X(x - half), Y(y - s), X(x), Y(y - s)); heads.push([jid, 2, x - half - 4, y - s]);          // approach S (northbound)
+      line(X(x), Y(y + s), X(x + half), Y(y + s)); heads.push([jid, 0, x + half + 4, y + s]);          // approach N (southbound)
+      line(X(x - s), Y(y), X(x - s), Y(y + half)); heads.push([jid, 3, x - s, y + half + 4]);          // approach W (eastbound)
+      line(X(x + s), Y(y - half), X(x + s), Y(y)); heads.push([jid, 1, x + s, y - half - 4]);          // approach E (westbound)
+    }
+    for (const [jid, a, hx, hy] of heads) {
+      const sig = signals && signals[jid];
+      const green = sig && sig.state === 'GREEN' && sig.phase === a;
+      ctx.fillStyle = green ? c.getPropertyValue('--green') : c.getPropertyValue('--red');
+      ctx.beginPath(); ctx.arc(X(hx), Y(hy), 4, 0, Math.PI * 2); ctx.fill();
+    }
+    // node labels
+    ctx.fillStyle = c.getPropertyValue('--muted'); ctx.font = `${11}px sans-serif`; ctx.textAlign = 'center';
+    const names = { S0:[0, lo + 10], S1:[G.L_block, lo + 10], N0:[0, hi - 8], N1:[G.L_block, hi - 8], W0:[lo + 10, 12], W1:[lo + 10, G.L_block + 12], E0:[hi - 10, 12], E1:[hi - 10, G.L_block + 12] };
+    for (const k in names) ctx.fillText(k, X(names[k][0]), Y(names[k][1]));
+  }
+  function line(x0, y0, x1, y1) { ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x1, y1); ctx.stroke(); }
+
+  function drawVehicles(vs) {
+    const c = css(); const L = G.veh_length * scale, W = G.veh_width * scale;
+    for (const v of vs) {                       // [x, y, heading_deg, type(0 car / 1 ambulance), speed]
+      const [x, y, hd, type, sp] = v;
+      ctx.save(); ctx.translate(X(x), Y(y)); ctx.rotate(-hd * Math.PI / 180);
+      if (type === 1) {                         // ambulance: yellow body, dark outline, red stripe
+        const La = G.ev_length * scale, Wa = G.ev_width * scale;
+        ctx.fillStyle = c.getPropertyValue('--ev'); ctx.fillRect(-La, -Wa / 2, La, Wa);
+        ctx.strokeStyle = c.getPropertyValue('--ev-edge'); ctx.lineWidth = 1; ctx.strokeRect(-La, -Wa / 2, La, Wa);
+        ctx.fillStyle = '#d93c3c'; ctx.fillRect(-La * 0.7, -Wa / 6, La * 0.45, Wa / 3);
+      } else {
+        ctx.fillStyle = sp < 2 ? c.getPropertyValue('--queued') : c.getPropertyValue('--car');
+        ctx.fillRect(-L, -W / 2, L, W);
+      }
+      ctx.restore();
+    }
+  }
+
+  // ---------- panels ----------
+  const $ = id => document.getElementById(id);
+  const fmt = (v, d = 0) => (v == null || isNaN(v)) ? '—' : Number(v).toFixed(d);
+  const DIRS = 'NESW';
+  function renderPanels(f) {
+    $('clock').textContent = f.clock; $('day').textContent = f.day;
+    $('demand').textContent = `${f.demand_label} (×${fmt(f.demand_mult, 2)})`;
+    $('controller').textContent = f.controller;
+    $('k_n').textContent = f.kpi.n_vehicles; $('k_delay').textContent = fmt(f.kpi.car_delay_s, 0);
+    $('k_ev').textContent = fmt(f.kpi.ev_delay_s, 0); $('k_thr').textContent = fmt(f.kpi.throughput_vph, 0);
+    $('k_sw').textContent = fmt(f.kpi.switches_per_min, 1); $('k_amb').textContent = f.kpi.ambulances_today;
+    $('k_lc').textContent = fmt(f.kpi.lane_changes_per_min, 1); $('k_nm').textContent = fmt(f.kpi.near_misses_recent, 0);
+    $('k_col').textContent = fmt(f.kpi.collisions, 0);
+    const tw = $('twin'); tw.innerHTML = '';
+    for (const j of f.twin.junctions) {
+      const mx = Math.max(4, ...j.q_true, ...j.q_est);
+      const bars = j.q_true.map((q, k) => `<div class="bar" title="${DIRS[k]}: true ${q}, est ${fmt(j.q_est[k], 1)}"><i style="height:${q / mx * 100}%"></i><i class="est" style="height:${j.q_est[k] / mx * 100}%"></i></div>`).join('');
+      tw.insertAdjacentHTML('beforeend', `<div class="jbox"><div class="t"><span>J${j.id} · phase ${DIRS[j.phase]}${j.state === 'ALLRED' ? ' (all-red)' : ''}</span><span>drift ${fmt(j.drift, 1)}${j.sensor_stuck ? ' · stuck sensor' : ''}</span></div><div class="bars">${bars}</div></div>`);
+    }
+    drawProfile(f.profile, f.hour);
+    const ev = $('events');
+    if (f.events && f.events.length) { ev.innerHTML = f.events.slice(-8).reverse().map(e => `<li>${e}</li>`).join(''); }
+  }
+  function drawProfile(p, hour) {
+    const pc = $('profile'), g = pc.getContext('2d'), c = css();
+    g.clearRect(0, 0, pc.width, pc.height);
+    const mx = Math.max(...p) * 1.1, w = pc.width / 24, pad = 18;
+    g.fillStyle = c.getPropertyValue('--car'); g.globalAlpha = .45;
+    p.forEach((m, h) => g.fillRect(h * w + 1, pc.height - pad - m / mx * (pc.height - pad - 6), w - 2, m / mx * (pc.height - pad - 6)));
+    g.globalAlpha = 1; g.strokeStyle = c.getPropertyValue('--alert'); g.lineWidth = 2;
+    g.beginPath(); g.moveTo(hour * w, 4); g.lineTo(hour * w, pc.height - pad); g.stroke();
+    g.fillStyle = c.getPropertyValue('--muted'); g.font = '11px sans-serif'; g.textAlign = 'center';
+    for (const h of [0, 6, 12, 18, 24]) {
+      g.textAlign = h === 0 ? 'left' : h === 24 ? 'right' : 'center';
+      g.fillText(`${h}:00`, h * w, pc.height - 4);
+    }
+  }
+
+  // ---------- frame source: server-sent events, or a mock generator ----------
+  let paused = false, frame = null, mock = false, everConnected = false;
+  function render(f) { frame = f; drawArena(f.signals); drawVehicles(f.vehicles); renderPanels(f); }
+  function showPaused(p) { paused = p; $('pause').textContent = p ? 'Resume' : 'Pause'; $('pause').classList.toggle('active', p); }
+  function setStatus(text, err) { $('status').textContent = text; $('status').classList.toggle('err', !!err); }
+  function syncControls(ctl) {                     // the server is the source of truth for speed and pause
+    if (!ctl) return;
+    const sel = $('speed'), v = String(ctl.speed);
+    if (![...sel.options].some(o => o.value === v)) sel.add(new Option(`${v}×`, v));
+    if (document.activeElement !== sel) sel.value = v;
+    showPaused(!!ctl.paused);
+  }
+  const control = q => fetch(`/control?${q}`).then(r => r.ok ? r.json() : null).then(syncControls).catch(() => {});
+  $('pause').onclick = () => { if (mock) showPaused(!paused); else control(`pause=${paused ? 0 : 1}`); };
+  $('speed').onchange = e => { if (!mock) control(`speed=${encodeURIComponent(e.target.value)}`); };
+
+  // same hourly multipliers as config.DAILY_PROFILE (live frames send their own copy)
+  const PROFILE = [0.15,0.12,0.10,0.10,0.12,0.30,0.70,1.20,1.35,1.25,0.90,0.85,0.90,0.85,0.80,0.90,1.05,1.30,1.40,1.15,0.60,0.45,0.35,0.30];
+  function startMock() {
+    if (mock) return;
+    mock = true;
+    $('mode').textContent = 'MOCK DATA – not the twin'; $('mode').classList.add('mock');
+    setStatus('server not reachable: start python3 -m traffic_twin.webapp and reload', true);
+    const cars = []; let t = 6 * 3600, day = 1, amb = 0, events = [];
+    const stubs = [[0, lo + 30, 90, 0], [G.L_block, lo + 30, 90, 1], [0, hi - 30, -90, 2], [G.L_block, hi - 30, -90, 3], [lo + 30, 0, 0, 4], [lo + 30, G.L_block, 0, 5], [hi - 30, 0, 180, 6], [hi - 30, G.L_block, 180, 7]];
+    const sig = [0, 1, 2, 3].map(i => ({ phase: i % 4, state: 'GREEN', tip: 0 }));
+    setInterval(() => {
+      if (paused) return;
+      const speed = +$('speed').value; const dt = 0.5 * speed / 10;      // 10 ticks per second
+      t += dt; if (t >= 86400) { t -= 86400; day++; amb = 0; }
+      const hour = t / 3600, mult = PROFILE[Math.floor(hour)];
+      // spawn
+      for (const [sx, sy, hd, id] of stubs) if (Math.random() < 0.012 * mult * dt / 0.5 * 4) {
+        const isAmb = Math.random() < 0.01; if (isAmb) { amb++; events.push(`${clock(t)} ambulance entered at stub ${id}`); }
+        const off = 5.25 * (Math.random() < .5 ? 1 : 0.333);
+        const n = hd === 90 ? [-off, 0] : hd === -90 ? [off, 0] : hd === 0 ? [0, off] : [0, -off];
+        cars.push({ x: sx + n[0], y: sy + n[1], hd, type: isAmb ? 1 : 0, v: 8 + Math.random() * 6 });
+      }
+      // signals cycle
+      for (const s of sig) { s.tip += dt; if (s.tip > 20 + Math.random() * 10) { s.tip = 0; s.state = s.state === 'GREEN' ? 'ALLRED' : 'GREEN'; if (s.state === 'GREEN') s.phase = (s.phase + 1) % 4; } }
+      // move
+      for (const cI of cars) {
+        const near = cars.find(o => o !== cI && o.hd === cI.hd && Math.abs((cI.hd % 180 === 0 ? o.y - cI.y : o.x - cI.x)) < 1 &&
+          ((cI.hd === 90 && o.y > cI.y && o.y - cI.y < 9) || (cI.hd === -90 && o.y < cI.y && cI.y - o.y < 9) || (cI.hd === 0 && o.x > cI.x && o.x - cI.x < 9) || (cI.hd === 180 && o.x < cI.x && cI.x - o.x < 9)));
+        const atRed = redAhead(cI, sig);
+        cI.v = (near || atRed) ? Math.max(0, cI.v - 3 * dt) : Math.min(13.9 * mult < 6 ? 13.9 : 11, cI.v + 1.5 * dt);
+        if (cI.hd === 90) cI.y += cI.v * dt; else if (cI.hd === -90) cI.y -= cI.v * dt; else if (cI.hd === 0) cI.x += cI.v * dt; else cI.x -= cI.v * dt;
+      }
+      for (let i = cars.length - 1; i >= 0; i--) if (cars[i].x < lo + 22 || cars[i].x > hi - 22 || cars[i].y < lo + 22 || cars[i].y > hi - 22) cars.splice(i, 1);
+      const q = j => { const jx = (j % 2) * G.L_block, jy = Math.floor(j / 2) * G.L_block; return [0, 1, 2, 3].map(a => cars.filter(c0 => c0.v < 2 && Math.hypot(c0.x - jx, c0.y - jy) < 90 && approachOf(c0, jx, jy) === a).length); };
+      render({
+        t, clock: clock(t), day, hour, demand_mult: mult, demand_label: label(hour), controller: 'none (mock animation)',
+        kpi: { n_vehicles: cars.length, car_delay_s: 40 + 60 * mult + 10 * Math.sin(t / 900), ev_delay_s: 15 + 20 * mult, throughput_vph: 1800 * mult, switches_per_min: 2 + mult, ambulances_today: amb,
+               lane_changes_per_min: null, near_misses_recent: null, collisions: null },
+        signals: sig.map(s => ({ phase: s.phase, state: s.state })),
+        vehicles: cars.map(c0 => [c0.x, c0.y, c0.hd, c0.type, c0.v]),
+        twin: { junctions: [0, 1, 2, 3].map(j => { const qt = q(j); return { id: j, phase: sig[j].phase, state: sig[j].state, q_true: qt, q_est: qt.map(v => Math.max(0, v + (Math.random() - .5) * 2)), drift: Math.random() * 1.5, sensor_stuck: false }; }) },
+        profile: PROFILE, events,
+      });
+    }, 100);
+  }
+  function approachOf(c0, jx, jy) { return c0.hd === -90 ? 0 : c0.hd === 180 ? 1 : c0.hd === 90 ? 2 : 3; }
+  function redAhead(c0, sig) {
+    for (let i = 0; i < 2; i++) for (let j = 0; j < 2; j++) {
+      const jx = i * G.L_block, jy = j * G.L_block, s = sig[j * 2 + i], a = approachOf(c0, jx, jy);
+      const e = G.box_half + G.stop_line_setback;
+      const d = c0.hd === 90 ? jy - e - c0.y : c0.hd === -90 ? c0.y - (jy + e) : c0.hd === 0 ? jx - e - c0.x : c0.x - (jx + e);
+      const lateral = (c0.hd % 180 === 0) ? Math.abs(c0.y - jy) : Math.abs(c0.x - jx);
+      if (lateral < half && d > 0 && d < 12 && !(s.state === 'GREEN' && s.phase === a)) return true;
+    }
+    return false;
+  }
+  const clock = t => { const h = Math.floor(t / 3600), m = Math.floor(t % 3600 / 60), s = Math.floor(t % 60); return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`; };
+  const label = h => h < 5 ? 'night' : h < 7 ? 'early morning' : h < 10 ? 'morning peak' : h < 16 ? 'midday' : h < 20 ? 'evening peak' : 'evening';
+
+  // The mock animation is only a fallback when the very first connection fails; once a live stream
+  // was seen, errors only ever lead to reconnect attempts (EventSource retries by itself while the
+  // connection is merely lost; after an HTTP error it gives up, so we reopen it).
+  let failures = 0;
+  function connect() {
+    if (location.search.includes('mock=1') || location.protocol === 'file:') return startMock();
+    let es;
+    try { es = new EventSource('/stream'); } catch (err) { return startMock(); }
+    es.onmessage = e => {
+      everConnected = true; failures = 0;
+      $('mode').textContent = 'live twin'; setStatus('connected', false);
+      const f = JSON.parse(e.data); syncControls(f.ctl); render(f);
+    };
+    es.onerror = () => {
+      failures++;
+      if (!everConnected && (failures >= 2 || es.readyState === EventSource.CLOSED)) { es.close(); return startMock(); }
+      setStatus('stream lost, reconnecting…', true);
+      if (es.readyState === EventSource.CLOSED) setTimeout(connect, 2000);
+    };
+  }
+  function applyGeometry(g) {
+    Object.assign(G, g); road_w = 2 * G.lanes * G.w_lane; half = road_w / 2;
+    drawArena(frame ? frame.signals : null); if (frame) drawVehicles(frame.vehicles);
+  }
+  drawArena(null);
+  if (!(location.search.includes('mock=1') || location.protocol === 'file:'))
+    fetch('/geometry').then(r => r.ok ? r.json() : null).then(g => { if (g) applyGeometry(g); }).catch(() => {});
+  connect();
+})();
+</script>
+</body>
+</html>

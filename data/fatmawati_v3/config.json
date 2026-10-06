@@ -1,0 +1,69 @@
+{
+  "generator": "traffic_twin_fatmawati_v3.0",
+  "plan": "release",
+  "plan_spec": {
+    "windows": [
+      "am_peak",
+      "midday",
+      "pm_peak"
+    ],
+    "levels": [
+      "low",
+      "design",
+      "high"
+    ],
+    "controllers": [
+      "fixed",
+      "longest_queue",
+      "max_pressure",
+      "priority_mp"
+    ],
+    "seeds": [
+      1,
+      2,
+      3
+    ],
+    "warmup_min": 15,
+    "main_min": 60
+  },
+  "windows": {
+    "am_peak": 7.0,
+    "midday": 12.0,
+    "pm_peak": 17.0
+  },
+  "level_factor": {
+    "low": 0.75,
+    "design": 1.0,
+    "high": 1.15
+  },
+  "calibration_scale": {
+    "N": 0.242,
+    "E": 0.239,
+    "S": 0.22,
+    "W": 0.36
+  },
+  "vehicle_mix": {
+    "motorcycle": 0.8,
+    "car": 0.19,
+    "bus": 0.005,
+    "truck": 0.005
+  },
+  "pcu": {
+    "motorcycle": 0.15,
+    "car": 1.0,
+    "bus": 1.3,
+    "truck": 1.3,
+    "emergency": 1.0
+  },
+  "gate_radius_m": {
+    "N": 150.0,
+    "E": 150.0,
+    "S": 150.0,
+    "W": 185.0
+  },
+  "camera_m": 300.0,
+  "exit_camera_m": 150.0,
+  "label_horizon_s": 30.0,
+  "network_sha256": "d389d8d6ceea97b6b243957f2c742bc7e09f6bc05789e27ddaf6f195cb0d5eff",
+  "python": "3.13.2"
+}

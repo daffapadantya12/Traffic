@@ -1,0 +1,377 @@
+{
+  "generator_version": "traffic_twin_v1.2",
+  "config_hash": "ecd36a4b3cad",
+  "created_utc": "2026-10-02T23:51:31Z",
+  "discharge": {
+    "sat_flow_vphpl": 1631.3468943547668,
+    "h_sat_s": 2.20676547241896,
+    "startup_lost_time_s": 1.2854502026854426,
+    "in_expected_range": true
+  },
+  "calibration": {
+    "measured_sat_flow_vphpl": 1631.35,
+    "capacity_vph": 549.0,
+    "capacity_formula_vph": 611.76,
+    "capacity_realisation": 0.8974,
+    "probe": {
+      "capacity_vph": 549.0,
+      "capacity_formula_vph": 611.7550853830376,
+      "capacity_realisation": 0.8974179587837103,
+      "probe_x": 1.3,
+      "probe_lambda_base_vph": 795.2816109979483,
+      "probe_throughput_vph": 2196.0,
+      "probe_main_s": 1200.0,
+      "probe_gridlock": false,
+      "probe_n_invariant_violations": 0
+    },
+    "busiest_edge": "J00_J01",
+    "flow_per_unit_lambda": 1.1799999999999997,
+    "lambda_base_vph": {
+      "low": 186.102,
+      "design": 325.678,
+      "high": 441.992,
+      "stress": 535.042
+    }
+  },
+  "demand_sweep": [
+    {
+      "vc": 0.2,
+      "lambda_base_vph": 109.79999999999994,
+      "mean_delay_s": 35.303,
+      "p90_delay_s": 72.797,
+      "throughput_vph": 449.0,
+      "max_queue": 10,
+      "gridlock": false,
+      "runtime_s": 0.22,
+      "webster_d1_s": 32.92207792207792,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.4,
+      "lambda_base_vph": 219.59999999999988,
+      "mean_delay_s": 36.978,
+      "p90_delay_s": 72.128,
+      "throughput_vph": 902.0,
+      "max_queue": 16,
+      "gridlock": false,
+      "runtime_s": 0.35,
+      "webster_d1_s": 34.25675675675676,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.6,
+      "lambda_base_vph": 329.39999999999975,
+      "mean_delay_s": 41.253,
+      "p90_delay_s": 73.595,
+      "throughput_vph": 1337.0,
+      "max_queue": 25,
+      "gridlock": false,
+      "runtime_s": 0.5,
+      "webster_d1_s": 35.70422535211268,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.7,
+      "lambda_base_vph": 384.29999999999967,
+      "mean_delay_s": 43.84,
+      "p90_delay_s": 76.458,
+      "throughput_vph": 1553.0,
+      "max_queue": 33,
+      "gridlock": false,
+      "runtime_s": 0.53,
+      "webster_d1_s": 36.47482014388489,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.8,
+      "lambda_base_vph": 439.19999999999976,
+      "mean_delay_s": 50.578,
+      "p90_delay_s": 85.051,
+      "throughput_vph": 1769.0,
+      "max_queue": 45,
+      "gridlock": false,
+      "runtime_s": 0.67,
+      "webster_d1_s": NaN,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.9,
+      "lambda_base_vph": 494.0999999999997,
+      "mean_delay_s": 60.314,
+      "p90_delay_s": 100.917,
+      "throughput_vph": 1969.0,
+      "max_queue": 60,
+      "gridlock": false,
+      "runtime_s": 0.83,
+      "webster_d1_s": NaN,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 0.95,
+      "lambda_base_vph": 521.5499999999996,
+      "mean_delay_s": 71.882,
+      "p90_delay_s": 124.831,
+      "throughput_vph": 2055.0,
+      "max_queue": 67,
+      "gridlock": false,
+      "runtime_s": 0.99,
+      "webster_d1_s": NaN,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 1.0,
+      "lambda_base_vph": 548.9999999999997,
+      "mean_delay_s": 91.378,
+      "p90_delay_s": 165.776,
+      "throughput_vph": 2130.0,
+      "max_queue": 98,
+      "gridlock": false,
+      "runtime_s": 1.13,
+      "webster_d1_s": NaN,
+      "n_invariant_violations": 0
+    },
+    {
+      "vc": 1.1,
+      "lambda_base_vph": 603.8999999999996,
+      "mean_delay_s": 218.826,
+      "p90_delay_s": 396.922,
+      "throughput_vph": 2201.0,
+      "max_queue": 136,
+      "gridlock": false,
+      "runtime_s": 2.04,
+      "webster_d1_s": NaN,
+      "n_invariant_violations": 0
+    }
+  ],
+  "demand_sweep_capacity": {
+    "capacity_formula_vph_per_approach": 611.76,
+    "calibrated_capacity_vph_per_approach": 549.0,
+    "capacity_realisation": 0.8974,
+    "sweep_capacity_vph_per_approach": 550.25,
+    "sweep_vs_calibrated_ratio": 1.0022768670309654,
+    "sweep_vs_formula_ratio": 0.899454034261802,
+    "vc_levels_probe_vs_sweep": {
+      "low": 0.399,
+      "design": 0.698,
+      "high": 0.948,
+      "stress": 1.147
+    },
+    "probe_vs_sweep_within_5pct": true
+  },
+  "design_episode": {
+    "mean_delay_s": 69.531,
+    "p90_delay_s": 116.944,
+    "throughput_vph": 2657.0,
+    "n_spawned": 2877,
+    "switches_per_min": 4.175,
+    "n_red_commits": 745,
+    "n_hard_brakes": 699,
+    "n_box_blocked": 0,
+    "n_overlap_fixed": 0,
+    "vehicle_steps": 629847,
+    "overlap_rate_per_vehicle_step": 0.0,
+    "allred_extension_mean_s": 0.025,
+    "max_queue_veh": 25,
+    "gridlock": false,
+    "runtime_s": 1.83,
+    "invariants": {
+      "two_green_violations": 0,
+      "box_clear_violations": 0,
+      "committed_at_onset_violations": 0,
+      "red_violations": 0,
+      "min_green_violations": 0,
+      "allred_short_violations": 0,
+      "conservation_error": 0
+    },
+    "delay_plausible": true,
+    "overlap_rate_ok": true,
+    "switch_rate_ok": false,
+    "n_red_onsets": 1108,
+    "hard_brakes_per_red_onset": 0.631,
+    "emergency_brake_share": 0.391,
+    "max_approach_red_s": 140.0,
+    "n_forced_starvation": 0,
+    "n_merge_holds": 0,
+    "n_commit_revoked": 0,
+    "merge_hard_stops": 0,
+    "max_head_wait_s": 166.0,
+    "n_spillback_locks": 0,
+    "spillback_lock_junction": -1,
+    "n_emergency_brakes": 273
+  },
+  "ring": [
+    {
+      "n": 10,
+      "density_veh_per_km": 10.0,
+      "mean_speed_mps": 12.280048661286191,
+      "flow_vph": 442.08175180630286
+    },
+    {
+      "n": 20,
+      "density_veh_per_km": 20.0,
+      "mean_speed_mps": 12.144339600955908,
+      "flow_vph": 874.3924512688254
+    },
+    {
+      "n": 30,
+      "density_veh_per_km": 30.0,
+      "mean_speed_mps": 11.864421791777335,
+      "flow_vph": 1281.3575535119521
+    },
+    {
+      "n": 40,
+      "density_veh_per_km": 40.0,
+      "mean_speed_mps": 11.146939942705025,
+      "flow_vph": 1605.1593517495237
+    },
+    {
+      "n": 50,
+      "density_veh_per_km": 50.0,
+      "mean_speed_mps": 9.678910321133062,
+      "flow_vph": 1742.2038578039512
+    },
+    {
+      "n": 60,
+      "density_veh_per_km": 60.0,
+      "mean_speed_mps": 7.9003252738792185,
+      "flow_vph": 1706.4702591579112
+    },
+    {
+      "n": 70,
+      "density_veh_per_km": 70.0,
+      "mean_speed_mps": 6.281510410709999,
+      "flow_vph": 1582.9406234989199
+    },
+    {
+      "n": 80,
+      "density_veh_per_km": 80.0,
+      "mean_speed_mps": 4.896666067770513,
+      "flow_vph": 1410.239827517908
+    },
+    {
+      "n": 90,
+      "density_veh_per_km": 90.0,
+      "mean_speed_mps": 3.8280200980220425,
+      "flow_vph": 1240.2785117591418
+    },
+    {
+      "n": 100,
+      "density_veh_per_km": 100.0,
+      "mean_speed_mps": 2.8511524132322985,
+      "flow_vph": 1026.4148687636275
+    },
+    {
+      "n": 110,
+      "density_veh_per_km": 110.0,
+      "mean_speed_mps": 2.1330847447963133,
+      "flow_vph": 844.7015589393401
+    },
+    {
+      "n": 120,
+      "density_veh_per_km": 120.0,
+      "mean_speed_mps": 1.5274024105836086,
+      "flow_vph": 659.837841372119
+    },
+    {
+      "n": 130,
+      "density_veh_per_km": 130.0,
+      "mean_speed_mps": 0.9759224942442615,
+      "flow_vph": 456.7317273063144
+    },
+    {
+      "n": 140,
+      "density_veh_per_km": 140.0,
+      "mean_speed_mps": 0.5317408512936665,
+      "flow_vph": 267.997389052008
+    },
+    {
+      "n": 150,
+      "density_veh_per_km": 150.0,
+      "mean_speed_mps": 0.13799857591614392,
+      "flow_vph": 74.51923099471773
+    }
+  ],
+  "paired_mp_vs_ft": {
+    "design": {
+      "n_seeds": 3,
+      "mp_mean_delay_s": 69.38733333333333,
+      "ft_mean_delay_s": 100.28066666666666,
+      "mp_throughput_vph": 2555.6666666666665,
+      "ft_throughput_vph": 2567.6666666666665,
+      "mp_switches_per_min": 4.1986,
+      "paired_delay_diff_mp_minus_ft_s": -30.89333333333333,
+      "paired_delay_diff_ci95_halfwidth": 0.6896190539281575,
+      "paired_throughput_diff_vph": -12.0,
+      "mp_beats_ft": true
+    },
+    "high": {
+      "n_seeds": 3,
+      "mp_mean_delay_s": 317.3116666666667,
+      "ft_mean_delay_s": 152.718,
+      "mp_throughput_vph": 3116.0,
+      "ft_throughput_vph": 3461.0,
+      "mp_switches_per_min": 4.4264,
+      "paired_delay_diff_mp_minus_ft_s": 164.59366666666668,
+      "paired_delay_diff_ci95_halfwidth": 70.49027900781283,
+      "paired_throughput_diff_vph": -345.0,
+      "mp_beats_ft": false
+    }
+  },
+  "grid_levels_2x2": {
+    "design/fixed_time": {
+      "n_seeds": 1,
+      "mean_delay_s": 99.199,
+      "throughput_vph": 2606.0,
+      "vehicles_in_network_t900": 67.0,
+      "vehicles_in_network_end": 76.0,
+      "queues_grow": false,
+      "gridlock": false
+    },
+    "design/max_pressure": {
+      "n_seeds": 1,
+      "mean_delay_s": 73.479,
+      "throughput_vph": 2589.0,
+      "vehicles_in_network_t900": 44.0,
+      "vehicles_in_network_end": 62.0,
+      "queues_grow": false,
+      "gridlock": false
+    },
+    "high/fixed_time": {
+      "n_seeds": 1,
+      "mean_delay_s": 149.64,
+      "throughput_vph": 3473.0,
+      "vehicles_in_network_t900": 142.0,
+      "vehicles_in_network_end": 141.0,
+      "queues_grow": false,
+      "gridlock": false
+    },
+    "high/max_pressure": {
+      "n_seeds": 1,
+      "mean_delay_s": 305.867,
+      "throughput_vph": 3106.0,
+      "vehicles_in_network_t900": 144.0,
+      "vehicles_in_network_end": 434.0,
+      "queues_grow": true,
+      "gridlock": false
+    },
+    "stress/fixed_time": {
+      "n_seeds": 1,
+      "mean_delay_s": 375.093,
+      "throughput_vph": 3668.0,
+      "vehicles_in_network_t900": 227.0,
+      "vehicles_in_network_end": 581.0,
+      "queues_grow": true,
+      "gridlock": false
+    },
+    "stress/max_pressure": {
+      "n_seeds": 1,
+      "mean_delay_s": 640.765,
+      "throughput_vph": 3143.0,
+      "vehicles_in_network_t900": 336.0,
+      "vehicles_in_network_end": 536.0,
+      "queues_grow": true,
+      "gridlock": false
+    }
+  },
+  "total_runtime_s": 68.30394874999183
+}

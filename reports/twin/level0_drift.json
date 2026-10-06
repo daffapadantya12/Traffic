@@ -1,0 +1,114 @@
+{
+  "file": "data/traffic_v1/vehicle_states_0.csv",
+  "n_seconds": 4123,
+  "mean_queue_mae": 0.601,
+  "per_edge": {
+    "W0_J00": {
+      "mae": 0.635,
+      "mae_last_half": 0.558,
+      "max_q": 13
+    },
+    "J00_J10": {
+      "mae": 0.634,
+      "mae_last_half": 0.641,
+      "max_q": 14
+    },
+    "J10_J00": {
+      "mae": 0.634,
+      "mae_last_half": 0.623,
+      "max_q": 12
+    },
+    "E0_J10": {
+      "mae": 0.585,
+      "mae_last_half": 0.558,
+      "max_q": 12
+    },
+    "W1_J01": {
+      "mae": 0.574,
+      "mae_last_half": 0.531,
+      "max_q": 12
+    },
+    "J01_J11": {
+      "mae": 0.634,
+      "mae_last_half": 0.627,
+      "max_q": 17
+    },
+    "J11_J01": {
+      "mae": 0.581,
+      "mae_last_half": 0.58,
+      "max_q": 10
+    },
+    "E1_J11": {
+      "mae": 0.558,
+      "mae_last_half": 0.545,
+      "max_q": 13
+    },
+    "S0_J00": {
+      "mae": 0.597,
+      "mae_last_half": 0.615,
+      "max_q": 13
+    },
+    "J00_J01": {
+      "mae": 0.617,
+      "mae_last_half": 0.617,
+      "max_q": 12
+    },
+    "J01_J00": {
+      "mae": 0.623,
+      "mae_last_half": 0.641,
+      "max_q": 13
+    },
+    "N0_J01": {
+      "mae": 0.563,
+      "mae_last_half": 0.58,
+      "max_q": 12
+    },
+    "S1_J10": {
+      "mae": 0.585,
+      "mae_last_half": 0.561,
+      "max_q": 12
+    },
+    "J10_J11": {
+      "mae": 0.582,
+      "mae_last_half": 0.575,
+      "max_q": 12
+    },
+    "J11_J10": {
+      "mae": 0.635,
+      "mae_last_half": 0.634,
+      "max_q": 14
+    },
+    "N1_J11": {
+      "mae": 0.574,
+      "mae_last_half": 0.6,
+      "max_q": 12
+    }
+  },
+  "stuck_events": [
+    {
+      "t": 1815.0,
+      "edge_id": "W0_J00",
+      "event": "camera_stuck",
+      "detail": "frozen value"
+    },
+    {
+      "t": 1865.0,
+      "edge_id": "W0_J00",
+      "event": "camera_recovered",
+      "detail": ""
+    },
+    {
+      "t": 1948.0,
+      "edge_id": "J01_J00",
+      "event": "camera_stuck",
+      "detail": "frozen value"
+    },
+    {
+      "t": 1953.0,
+      "edge_id": "J01_J00",
+      "event": "camera_recovered",
+      "detail": ""
+    }
+  ],
+  "figure": "reports/twin/level0_drift.png"
+}

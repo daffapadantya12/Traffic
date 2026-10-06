@@ -1,0 +1,6 @@
+<!-- Perempatan Fatmawati: both at-grade crossings either side of the JORR toll viaduct are run by one
+     signal controller; OSM tags its signals on the approach ways, which netconvert does not attach. -->
+<nodes>
+    <node id="cluster_353175558_356234398" x="3197.75" y="3977.44" type="traffic_light" tl="fatmawati"/>
+    <node id="cluster_356228989_356228993" x="3198.58" y="4028.22" type="traffic_light" tl="fatmawati"/>
+</nodes>

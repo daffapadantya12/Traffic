@@ -1,0 +1,144 @@
+---
+title: "Green for the Ambulance at Perempatan Fatmawati: data demonstration in R"
+subtitle: "ITI5145 Assignment 3, Characterising and Analysing Data (d)"
+author: "Group members: [Name, Student ID]; [Name, Student ID]; [Name, Student ID]"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+params:
+  data_dir: "../../data/fatmawati_v3"
+  data_url: "[download link to be added by the group]"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 3.6)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(rpart)
+theme_set(theme_minimal(base_size = 11))
+dd_path <- function(f) file.path(params$data_dir, f)
+```
+
+# The dataset
+
+The dataset is the open sensor release of the Perempatan Fatmawati digital twin: what roadside sensors at the junction would record, generated in SUMO. It can be downloaded from `r params$data_url`. Every table below is read as published; nothing is cleaned by hand.
+
+```{r load}
+dd   <- read.csv(dd_path("data_dictionary.csv"))
+ep   <- read.csv(dd_path("episodes.csv"))
+lp   <- read.csv(dd_path("loops_1min.csv"))
+cam  <- read.csv(dd_path("cameras_1min.csv"))
+tk   <- read.csv(dd_path("ticks_5s.csv"))
+amb  <- read.csv(dd_path("ambulance_trips.csv"))
+tables <- list(episodes = ep, loops_1min = lp, cameras_1min = cam, ticks_5s = tk, ambulance_trips = amb)
+data.frame(table = names(tables), rows = sapply(tables, nrow), columns = sapply(tables, ncol), row.names = NULL)
+```
+
+## Columns against the data dictionary
+
+Every column the dictionary lists must exist in its table, and each column has a role: key, feature, label, outcome, scenario, reading, metadata or quality control.
+
+```{r dictionary}
+missing <- dd %>% filter(table %in% names(tables)) %>%
+  rowwise() %>% filter(!(column %in% names(tables[[table]]))) %>% ungroup()
+cat("Columns listed in the dictionary but missing from the tables:", nrow(missing), "\n")
+dd %>% filter(table == "ticks_5s") %>% count(role, name = "columns")
+```
+
+## Scenarios and missing values
+
+```{r scenarios}
+ep %>% count(window, level, controller, name = "episodes") %>% pivot_wider(names_from = controller, values_from = episodes)
+na_share <- sapply(tables, function(d) round(100 * mean(is.na(d)), 2))
+data.frame(table = names(na_share), percent_missing = na_share, row.names = NULL)
+```
+
+Missing values are structural: the ambulance columns are empty when no ambulance is on an approach, and a camera's speed is empty when its zone holds no vehicle.
+
+# What the junction looks like
+
+## Vehicle mix at the stop lines
+
+```{r mix, fig.height = 2.6}
+mix <- lp %>% filter(kind == "stopline_loop") %>%
+  summarise(across(c(n_motorcycle, n_car, n_bus, n_truck), sum)) %>%
+  pivot_longer(everything(), names_to = "class", values_to = "vehicles") %>%
+  mutate(class = sub("n_", "", class), share = vehicles / sum(vehicles))
+ggplot(mix, aes(reorder(class, share), share)) + geom_col(fill = "#2a78d6", width = 0.6) + coord_flip() +
+  scale_y_continuous(labels = scales::percent) + labs(x = NULL, y = "share of vehicles crossing the stop lines")
+```
+
+## Queues over one recorded hour
+
+```{r queues}
+one <- tk %>% filter(episode_id == min(episode_id)) %>%
+  select(t, starts_with("q_veh_")) %>% select(-matches("_S1S2|_S2$")) %>%
+  pivot_longer(-t, names_to = "approach", values_to = "standing") %>%
+  mutate(approach = sub("q_veh_", "", approach), minute = (t - min(t)) / 60)
+ggplot(one, aes(minute, standing, colour = approach)) + geom_line(linewidth = 0.4) +
+  labs(x = "minute of the recorded hour", y = "standing vehicles in the camera zone", colour = "approach")
+```
+
+## Stopped delay by controller
+
+```{r delay}
+ep %>% select(controller, starts_with("stopped_delay_s_")) %>%
+  pivot_longer(-controller, names_to = "approach", values_to = "delay") %>%
+  mutate(approach = sub("stopped_delay_s_", "", approach)) %>%
+  ggplot(aes(approach, delay, fill = controller)) + geom_boxplot(outlier.size = 0.6) +
+  labs(x = "approach", y = "stopped delay per vehicle (s)", fill = "controller")
+```
+
+## Ambulance passages
+
+```{r ambulance}
+amb %>% left_join(select(ep, episode_id, controller), by = "episode_id") %>%
+  filter(!is.na(cordon_time_s)) %>%
+  ggplot(aes(controller, cordon_time_s)) + geom_boxplot(fill = "#eef3fb") +
+  labs(x = "controller", y = "time between the gates (s)")
+```
+
+# A feasibility model
+
+The controller in the project imitates a priority-aware rule. Its label, `y_teacher_stage`, is the stage the rule requests at each 5 s tick. A small decision tree is trained on the first two seeds and tested on the third, and compared with two baselines: keeping the current stage, and always guessing the most common stage.
+
+```{r label}
+tk <- tk %>% left_join(select(ep, episode_id, seed), by = "episode_id") %>%
+  filter(!is.na(y_teacher_stage)) %>% mutate(stage = factor(stage))
+tk %>% count(y_teacher_stage) %>% mutate(share = round(n / sum(n), 3))
+```
+
+```{r tree}
+if (length(unique(tk$seed)) >= 2) {            # the release: hold out the last seed
+  is_test <- tk$seed == max(tk$seed)
+} else {                                         # a one-seed pilot: hold out the last episode
+  is_test <- tk$episode_id == max(tk$episode_id)
+}
+train <- tk[!is_test, ]
+test  <- tk[is_test, ]
+fit <- rpart(factor(y_teacher_stage) ~ stage_pressure_S1 + stage_pressure_S2 + stage_pressure_S3 +
+               stage_pressure_S4 + stage + t_since_green_s + ev_N + ev_E + ev_S + ev_W,
+             data = train, control = rpart.control(maxdepth = 5, minbucket = 20))
+pred <- predict(fit, test, type = "class")
+majority <- names(which.max(table(train$y_teacher_stage)))
+acc <- data.frame(model = c("decision tree", "stillness", "majority"),
+                  accuracy = c(mean(as.character(pred) == test$y_teacher_stage),
+                               mean(as.character(test$stage) == test$y_teacher_stage),
+                               mean(test$y_teacher_stage == majority)))
+write.csv(acc, "demo_results.csv", row.names = FALSE)      # read by the report build
+acc %>% mutate(model = c("decision tree", "stillness: keep the current stage", "majority stage"), accuracy = round(accuracy, 3))
+table(predicted = pred, true = test$y_teacher_stage)
+```
+
+The tree's first splits show what the rule relies on: the stage pressures and whether an ambulance is on an approach.
+
+```{r tree-rules}
+fit$frame %>% filter(var != "<leaf>") %>% head(6) %>% select(var, n)
+```
+
+# What the demonstration shows
+
+The tables load as documented, every column the dictionary lists is present, and the junction's traffic, queues and ambulance passages behave as the methodology describes. A shallow tree already learns much of the teacher's rule from sensor columns alone, which makes the full model comparison in the report feasible.

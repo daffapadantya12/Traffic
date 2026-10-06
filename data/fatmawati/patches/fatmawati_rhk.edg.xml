@@ -1,0 +1,16 @@
+<!-- Motorcycle boxes (Ruang Henti Khusus, SE PUPR 52/SE/M/2015): on approaches with >= 2 lanes cars stop
+     8 m behind the stop line; motorcycles may use the box in front of them. -->
+<edges>
+    <edge id="953628421#0">
+        <stopOffset value="8" exceptions="motorcycle"/>
+    </edge>
+    <edge id="1069005557#0">
+        <stopOffset value="8" exceptions="motorcycle"/>
+    </edge>
+    <edge id="1069005556#0">
+        <stopOffset value="8" exceptions="motorcycle"/>
+    </edge>
+    <edge id="1069005554#0">
+        <stopOffset value="8" exceptions="motorcycle"/>
+    </edge>
+</edges>

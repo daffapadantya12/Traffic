@@ -1,0 +1,12 @@
+training on 77760 ticks from 108 episodes, 75 features
+  task A logistic_regression: macro-F1 0.909, ambulance acc 0.819 (11.2 s)
+  task A decision_tree: macro-F1 0.702, ambulance acc 0.567 (5.8 s)
+  task A random_forest: macro-F1 0.888, ambulance acc 0.821 (37.4 s)
+  task A gradient_boosting: macro-F1 0.962, ambulance acc 0.956 (355.3 s)
+  task A neural_network: macro-F1 0.953, ambulance acc 0.875 (85.5 s)
+  task B N: persistence 7.87, mean 16.88, ridge 6.40, decision_tree 6.32, random_forest 5.48, gradient_boosting 5.44, neural_network 6.07
+  task B E: persistence 6.88, mean 16.22, ridge 5.99, decision_tree 5.53, random_forest 4.63, gradient_boosting 4.60, neural_network 5.03
+  task B S: persistence 6.91, mean 15.41, ridge 5.72, decision_tree 5.07, random_forest 4.32, gradient_boosting 4.28, neural_network 4.71
+  task B W: persistence 6.42, mean 11.66, ridge 5.30, decision_tree 4.82, random_forest 4.19, gradient_boosting 4.20, neural_network 4.70
+  task C: teacher ETA MAE 114.40 s, quantile model MAE 58.21 s, late 0.34
+python3 -m traffic_twin.fatmawati.learn train --data data/fatmawati_v3 --out   1407.36s user 91.88s system 98% cpu 25:18.96 total

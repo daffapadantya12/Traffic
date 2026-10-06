@@ -1,0 +1,579 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fatmawati 3D Twin</title>
+<style>
+  :root { --bg:#eef1f5; --panel:rgba(255,255,255,.92); --ink:#1b1e24; --muted:#5d6470; --line:#d6dae1; --accent:#2f6fed;
+          --green:#2e9e4f; --amber:#f2a900; --red:#d33; --ev:#ffd400; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg:#0e1116; --panel:rgba(22,25,31,.9); --ink:#e8eaf0; --muted:#9aa1ad; --line:#2d313a; }
+  }
+  :root[data-theme="dark"] { --bg:#0e1116; --panel:rgba(22,25,31,.9); --ink:#e8eaf0; --muted:#9aa1ad; --line:#2d313a; }
+  * { box-sizing:border-box }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:13px/1.45 -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; overflow:hidden }
+  #app { position:fixed; inset:0 }
+  .bar { position:fixed; top:12px; left:12px; right:12px; display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center;
+         background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px 12px; backdrop-filter:blur(6px); z-index:2 }
+  .bar h1 { font-size:15px; margin:0 6px 0 0; font-weight:650 }
+  .clock { font-variant-numeric:tabular-nums; font-size:18px; font-weight:650; min-width:84px }
+  .pill { padding:2px 9px; border-radius:999px; border:1px solid var(--line); color:var(--muted); font-size:12px; white-space:nowrap }
+  .pill b { color:var(--ink) }
+  .ctl { margin-left:auto; display:flex; flex-wrap:wrap; gap:6px; align-items:center }
+  button, select { font:inherit; padding:4px 9px; border-radius:8px; border:1px solid var(--line); background:var(--panel); color:var(--ink); cursor:pointer }
+  button.on { border-color:var(--accent); color:var(--accent) }
+  .panel { position:fixed; right:12px; top:76px; width:300px; max-height:calc(100% - 100px); overflow:auto; background:var(--panel);
+           border:1px solid var(--line); border-radius:12px; padding:10px 12px; z-index:2; backdrop-filter:blur(6px) }
+  .panel h2 { font-size:11px; letter-spacing:.05em; text-transform:uppercase; color:var(--muted); margin:10px 0 6px; font-weight:650 }
+  .panel h2:first-child { margin-top:2px }
+  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:6px }
+  .kpi { border:1px solid var(--line); border-radius:8px; padding:5px 8px }
+  .kpi .v { font-size:17px; font-weight:650; font-variant-numeric:tabular-nums }
+  .kpi .l { font-size:11px; color:var(--muted) }
+  .ok { color:var(--green) } .warn { color:var(--amber) } .bad { color:var(--red) }
+  table.sens { width:100%; border-collapse:collapse; font-size:12px; font-variant-numeric:tabular-nums }
+  table.sens th { text-align:right; color:var(--muted); font-weight:500; padding:1px 3px } table.sens th:first-child { text-align:left }
+  table.sens td { text-align:right; padding:1px 3px; border-top:1px dashed var(--line) } table.sens td:first-child { text-align:left; font-weight:650 }
+  .tt { font-size:12px } .tt .st { color:var(--muted) } .tt .cap { color:var(--muted); font-size:11px; margin-top:3px }
+  .q { display:grid; grid-template-columns:18px 1fr 34px; gap:6px; align-items:center; margin:3px 0; font-size:12px }
+  .q i { display:block; height:8px; border-radius:4px; background:var(--accent); min-width:2px }
+  .legend span { display:inline-flex; align-items:center; gap:5px; margin:2px 10px 2px 0; font-size:12px }
+  .legend b { display:inline-block; width:12px; height:8px; border-radius:2px }
+  ul.ev { list-style:none; margin:0; padding:0; font-size:12px; color:var(--muted) }
+  ul.ev li { padding:2px 0; border-bottom:1px dashed var(--line) }
+  .attr { position:fixed; left:12px; bottom:8px; font-size:11px; color:var(--muted); z-index:2; background:var(--panel); padding:2px 8px; border-radius:6px }
+  .hint { position:fixed; left:12px; bottom:32px; font-size:11px; color:var(--muted); z-index:2; background:var(--panel); padding:2px 8px; border-radius:6px }
+  #loading { position:fixed; inset:0; display:grid; place-items:center; z-index:3; font-size:15px; color:var(--muted); pointer-events:none }
+  body.nopanel .panel { display:none }
+  .camsel { display:none }
+  @media (max-width: 600px) {                        /* phone-sized windows: one compact bar, camera picker as a menu */
+    .bar { top:6px; left:6px; right:6px; padding:6px 8px; gap:4px 8px; border-radius:10px }
+    .bar h1 { font-size:12px; margin:0 } .bar h1 .long, .lbl, #conn, .hint { display:none }
+    .clock { font-size:14px; min-width:0 }
+    .ctl { margin-left:0; gap:4px } .ctl [data-cam] { display:none } .camsel { display:inline-block }
+    button, select { padding:3px 6px; font-size:12px }
+    .attr { font-size:10px; left:6px; right:6px; bottom:6px }
+  }
+  @media (max-width: 760px) { .panel { top:auto; bottom:52px; right:8px; left:8px; width:auto; max-height:40% } .bar { left:8px; right:8px } }
+</style>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+               "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="loading">Loading the Fatmawati road network…</div>
+<div class="bar">
+  <h1>Perempatan Fatmawati<span class="long"> · 3D digital twin</span></h1>
+  <div class="clock" id="clock">--:--:--</div>
+  <span class="pill">signal <b id="phase">—</b></span>
+  <span class="pill" id="conn">connecting…</span>
+  <div class="ctl">
+    <button data-cam="overview">Overview</button>
+    <button data-cam="junction" class="on">Junction</button>
+    <button data-cam="closeup">Motorcycle box</button>
+    <button data-cam="flyover">Toll flyover</button>
+    <button data-cam="hospital">RSUP Fatmawati</button>
+    <button data-cam="follow">Follow</button>
+    <select id="followType" title="Vehicle type to follow"><option value="1">ambulance</option><option value="3">bus</option><option value="4">truck</option><option value="0">car</option><option value="2">motorcycle</option></select>
+    <select class="camsel" id="camsel" title="Camera">
+      <option value="overview">Overview</option><option value="junction">Junction</option><option value="closeup">Motorcycle box</option>
+      <option value="flyover">Toll flyover</option><option value="hospital">RSUP Fatmawati</option><option value="follow">Follow vehicle</option>
+    </select>
+    <label><span class="lbl">speed </span><select id="speed"><option>1</option><option selected>5</option><option>20</option><option>60</option></select>×</label>
+    <select id="ctrl" title="Signal controller"><option value="fixed">Dishub fixed plan</option><option value="longest_queue">longest queue</option><option value="max_pressure">max pressure</option><option value="priority_mp">ambulance priority</option><option value="preempt_naive">naive pre-emption</option><option value="learned_gb">learned (gradient boosting)</option></select>
+    <button id="xray" title="Make the toll flyover see-through to watch the junction underneath">See-through<span class="lbl"> flyover</span></button>
+    <button id="pause">Pause</button>
+    <button id="stats" title="Show or hide the live-state panel">Stats</button>
+  </div>
+</div>
+<aside class="panel">
+  <h2>Live state</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="v" id="k_n">0</div><div class="l">vehicles on the network</div></div>
+    <div class="kpi"><div class="v" id="k_moto">—</div><div class="l">motorcycles</div></div>
+    <div class="kpi"><div class="v" id="k_halt">—</div><div class="l">standing still</div></div>
+    <div class="kpi"><div class="v" id="k_arr">0</div><div class="l">trips completed</div></div>
+    <div class="kpi" title="Ambulances that reached RSUP Fatmawati / mean travel time"><div class="v" id="k_ev">—</div><div class="l">ambulances arrived · mean s</div></div>
+    <div class="kpi" title="Cars that moved toward the kerb for an ambulance (only where there was room)"><div class="v" id="k_yield">0</div><div class="l">moved aside for ambulance</div></div>
+    <div class="kpi" title="Vehicles overlapping on a lane: a safety invariant, must stay 0"><div class="v" id="k_col">0</div><div class="l">lane collisions</div></div>
+    <div class="kpi" title="Overlaps inside junction areas: a known limitation of SUMO's sublane model with filtering motorcycles; teleports = vehicles removed after waiting 300 s"><div class="v" id="k_jov">0</div><div class="l">junction overlaps · teleports</div></div>
+  </div>
+  <h2>Queue cameras at Fatmawati (standing vehicles, 300 m)</h2>
+  <div id="queues"></div>
+  <h2>Approach sensors</h2>
+  <table class="sens" id="sens"></table>
+  <h2>Live traffic (TomTom)</h2>
+  <div class="tt" id="tt">waiting for the server…</div>
+  <h2>Legend</h2>
+  <div class="legend">
+    <span><b style="background:#d7dbe2"></b>car</span><span><b style="background:linear-gradient(90deg,#3fb950,#2f6fed,#e8833a,#9a59d1)"></b>motorcycle + rider</span>
+    <span><b style="background:var(--ev)"></b>ambulance</span><span><b style="background:#2a6fd6"></b>bus</span><span><b style="background:#8b8f96"></b>truck</span>
+    <span><b style="background:rgba(217,60,60,.6)"></b>motorcycle box (RHK)</span>
+    <span><b style="background:#c9ccd0;border:1px solid #8f9399"></b>JORR toll flyover, deck 6 m up</span>
+  </div>
+  <h2>Events</h2>
+  <ul class="ev" id="events"></ul>
+</aside>
+<div class="hint">drag: pan · right-drag: rotate · wheel/pinch: zoom</div>
+<div class="attr">Roads &amp; buildings © OpenStreetMap contributors (ODbL) · simulation: Eclipse SUMO</div>
+<script type="module">
+import * as THREE from 'three';
+import { MapControls } from 'three/addons/controls/MapControls.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+const $ = id => document.getElementById(id);
+const dark = () => false;                         // the city is always drawn in daylight; only the panels follow the theme
+
+// ---------------------------------------------------------------- scene
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+$('app').appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+const skyCol = dark() ? 0x10151f : 0xbfd6ec;
+scene.background = new THREE.Color(skyCol);
+scene.fog = new THREE.Fog(skyCol, 1400, 4200);
+const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.5, 12000);
+camera.position.set(-140, 120, 150);
+const controls = new MapControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.08;
+controls.maxPolarAngle = Math.PI * 0.47; controls.minDistance = 6; controls.maxDistance = 5000;
+controls.target.set(0, 0, 0);
+scene.add(new THREE.HemisphereLight(0xeef4ff, 0x4a5340, dark() ? 0.55 : 0.95));
+const sun = new THREE.DirectionalLight(0xffffff, dark() ? 0.6 : 1.25); sun.position.set(400, 700, 250); scene.add(sun);
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(12000, 12000), new THREE.MeshLambertMaterial({ color: dark() ? 0x1d241b : 0x8d9a78 }));
+ground.rotation.x = -Math.PI / 2; ground.position.y = -0.25; scene.add(ground);   // well below the roads: no z-fighting on 16-bit depth
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+});
+const V = (x, y, z = 0) => new THREE.Vector3(x, z, -y);          // simulation (x east, y north, z up) -> three (y up)
+
+// ---------------------------------------------------------------- static geometry from the simulator's network
+let G = null;
+const heads = [];
+function laneStrips(lanes, lift) {
+  const pos = [], col = [], idx = [];
+  const cA = new THREE.Color(dark() ? 0x34373e : 0x41454d), cT = new THREE.Color(dark() ? 0x3d4049 : 0x50545d);
+  for (const ln of lanes) {
+    const p = ln.p; if (p.length < 2) continue;
+    const hw = ln.w / 2, base = pos.length / 3, c = ln.k.startsWith('motorway') ? cT : cA;
+    for (let i = 0; i < p.length; i++) {
+      const a = p[Math.max(i - 1, 0)], b = p[Math.min(i + 1, p.length - 1)];
+      let tx = b[0] - a[0], ty = b[1] - a[1]; const L = Math.hypot(tx, ty) || 1; tx /= L; ty /= L;
+      const nx = -ty, ny = tx, z = p[i][2] + lift;
+      pos.push(p[i][0] + nx * hw, z, -(p[i][1] + ny * hw), p[i][0] - nx * hw, z, -(p[i][1] - ny * hw));
+      col.push(c.r, c.g, c.b, c.r, c.g, c.b);
+    }
+    for (let i = 0; i < p.length - 1; i++) { const k = base + 2 * i; idx.push(k, k + 1, k + 2, k + 1, k + 3, k + 2); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.setIndex(idx); g.computeVertexNormals();
+  return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+}
+function laneLines(lanes) {
+  const byEdge = new Map();
+  for (const ln of lanes) { const e = ln.id.slice(0, ln.id.lastIndexOf('_')); if (!byEdge.has(e)) byEdge.set(e, []); byEdge.get(e).push(ln); }
+  const pos = [];
+  for (const group of byEdge.values()) {
+    group.sort((a, b) => a.idx - b.idx);
+    for (let k = 1; k < group.length; k++) {
+      const A = group[k - 1].p, B = group[k].p;
+      if (A.length !== B.length) continue;
+      for (let i = 0; i < A.length - 1; i++) {
+        const m0 = [(A[i][0] + B[i][0]) / 2, (A[i][1] + B[i][1]) / 2, (A[i][2] + B[i][2]) / 2 + 0.06];
+        const m1 = [(A[i + 1][0] + B[i + 1][0]) / 2, (A[i + 1][1] + B[i + 1][1]) / 2, (A[i + 1][2] + B[i + 1][2]) / 2 + 0.06];
+        pos.push(m0[0], m0[2], -m0[1], m1[0], m1[2], -m1[1]);
+      }
+    }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  const lines = new THREE.LineSegments(g, new THREE.LineDashedMaterial({ color: 0xf2f2f2, dashSize: 3, gapSize: 5, transparent: true, opacity: 0.8 }));
+  lines.computeLineDistances();
+  return lines;
+}
+function junctionMeshes(js) {
+  const geos = [];
+  for (const j of js) {
+    if (j.p.length < 3) continue;
+    const shape = new THREE.Shape(j.p.map(p => new THREE.Vector2(p[0], p[1])));
+    const g = new THREE.ShapeGeometry(shape); g.rotateX(-Math.PI / 2); g.translate(0, j.z + 0.015, 0);
+    geos.push(g);
+  }
+  return new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color: dark() ? 0x34373e : 0x41454d, side: THREE.DoubleSide }));
+}
+// the JORR toll flyover: deck (road surface, parapets, girder sides, underside), hammerhead piers, lamp posts.
+// Heights come from the simulator's network; geometry3d.py places the piers clear of the streets below.
+const flyMats = [];
+const isRaised = ln => ln.k.startsWith('motorway') && ln.p.some(q => q[2] > 0.3);
+function flyover(F) {
+  const grp = new THREE.Group();
+  if (!F || !F.decks.length) return grp;
+  const pos = [], col = [];
+  const cTop = new THREE.Color(dark() ? 0x3a3d45 : 0x5a5e66), cWall = new THREE.Color(dark() ? 0x7d8289 : 0xc9ccd0),
+    cPar = new THREE.Color(dark() ? 0x8c9198 : 0xdfe1e4), cUnder = new THREE.Color(dark() ? 0x55595f : 0x8f9399);
+  const P = (x, y, z) => [x, z, -y];
+  const tri = (a, b, c, k) => { pos.push(...a, ...b, ...c); for (let j = 0; j < 3; j++) col.push(k.r, k.g, k.b); };
+  const quad = (a, b, c, d, k) => { tri(a, b, c, k); tri(a, c, d, k); };
+  for (const d of F.decks) {
+    const c = d.p, n = c.length; if (n < 2) continue;
+    const nrm = c.map((p, i) => {
+      const a = c[Math.max(i - 1, 0)], b = c[Math.min(i + 1, n - 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], L = Math.hypot(tx, ty) || 1; return [-ty / L, tx / L];
+    });
+    const at = (i, o, z) => P(c[i][0] + nrm[i][0] * o, c[i][1] + nrm[i][1] * o, z);
+    const hw = d.hw, t = F.parapet_w, H = F.parapet, bot = z => Math.max(-0.25, z - F.depth);
+    for (let i = 0; i < n - 1; i++) {
+      const z0 = c[i][2], z1 = c[i + 1][2], j = i + 1;
+      quad(at(i, -hw, z0 - 0.02), at(j, -hw, z1 - 0.02), at(j, hw, z1 - 0.02), at(i, hw, z0 - 0.02), cTop);         // shoulders under the lanes
+      quad(at(i, -hw, bot(z0)), at(i, hw, bot(z0)), at(j, hw, bot(z1)), at(j, -hw, bot(z1)), cUnder);               // underside
+      for (const s of [-1, 1]) {
+        quad(at(i, s * hw, bot(z0)), at(j, s * hw, bot(z1)), at(j, s * hw, z1 + H), at(i, s * hw, z0 + H), cWall);     // girder side + parapet back
+        const o = s * (hw - t);
+        quad(at(i, o, z0), at(j, o, z1), at(j, o, z1 + H), at(i, o, z0 + H), cPar);                                   // parapet face
+        quad(at(i, o, z0 + H), at(j, o, z1 + H), at(j, s * hw, z1 + H), at(i, s * hw, z0 + H), cPar);                 // parapet top
+      }
+    }
+    for (const i of [0, n - 1]) { const z = c[i][2]; quad(at(i, -hw, bot(z)), at(i, hw, bot(z)), at(i, hw, z + H), at(i, -hw, z + H), cWall); }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  const deckMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  grp.add(new THREE.Mesh(g, deckMat));
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const colGeo = new THREE.CylinderGeometry(1, 1, 1, 16).translate(0, 0.5, 0);    // unit column standing on the ground
+  const capGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0);           // unit cap beam hanging under the deck
+  const pierMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x8a8f96 : 0xc3c6ca });
+  const cols = new THREE.InstancedMesh(colGeo, pierMat, F.piers.length), caps = new THREE.InstancedMesh(capGeo, pierMat, F.piers.length);
+  F.piers.forEach(([x, y, under, ux, uy, half], i) => {
+    q.setFromAxisAngle(Y, Math.atan2(ux, -uy));                                  // local z along the road, local x across it
+    const capH = Math.min(1.2, Math.max(0.01, under - 0.6));
+    m.compose(new THREE.Vector3(x, under, -y), q, new THREE.Vector3(2 * half, capH, 1.8)); caps.setMatrixAt(i, m);
+    m.compose(new THREE.Vector3(x, -0.25, -y), q, new THREE.Vector3(1.2, under - capH + 0.25, 0.8)); cols.setMatrixAt(i, m);
+  });
+  grp.add(cols, caps);
+  const lampGeo = mergeGeometries([new THREE.CylinderGeometry(0.09, 0.14, 9, 6).translate(0, 4.5, 0),
+    new THREE.BoxGeometry(2.4, 0.12, 0.12).translate(1.2, 9, 0), new THREE.BoxGeometry(0.8, 0.2, 0.35).translate(2.3, 8.9, 0)]);
+  const lampMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x6f747b : 0x9a9fa6 });
+  const lamps = new THREE.InstancedMesh(lampGeo, lampMat, F.lamps.length);
+  F.lamps.forEach(([x, y, z, dx, dy], i) => {                                   // arm reaches over the carriageway
+    q.setFromAxisAngle(Y, Math.atan2(dy, dx)); m.compose(new THREE.Vector3(x, z, -y), q, new THREE.Vector3(1, 1, 1)); lamps.setMatrixAt(i, m);
+  });
+  grp.add(lamps);
+  flyMats.push(deckMat, pierMat, lampMat);
+  return grp;
+}
+let seeThrough = false;
+function setSeeThrough(on) {                             // look through the flyover at the junction underneath
+  seeThrough = on;
+  for (const mt of flyMats) { mt.transparent = on; mt.opacity = on ? 0.16 : 1; mt.depthWrite = !on; mt.needsUpdate = true; }
+  $('xray').classList.toggle('on', on);
+}
+function buildingMesh(blds) {
+  const pos = [], col = [];
+  const tone = new THREE.Color();
+  for (const b of blds) {
+    const pts = b.p, n = pts.length; if (n < 3) continue;
+    const h = b.h;
+    const shade = b.hosp ? [0.96, 0.95, 0.95] : (() => { const s = 0.72 + ((Math.abs(pts[0][0] * 7.1 + pts[0][1] * 3.3) % 1) * 0.16); tone.setHSL(0.08, 0.10, s); return [tone.r, tone.g, tone.b]; })();
+    const push = (x, y, z) => { pos.push(x, z, -y); col.push(shade[0], shade[1], shade[2]); };
+    for (let i = 0; i < n; i++) {
+      const a = pts[i], d = pts[(i + 1) % n];
+      push(a[0], a[1], -0.25); push(d[0], d[1], -0.25); push(d[0], d[1], h);
+      push(a[0], a[1], -0.25); push(d[0], d[1], h); push(a[0], a[1], h);
+    }
+    const tris = THREE.ShapeUtils.triangulateShape(pts.map(p => new THREE.Vector2(p[0], p[1])), []);
+    for (const t of tris) for (const k of t) push(pts[k][0], pts[k][1], h);
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return new THREE.Mesh(g, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }));
+}
+function junctionFurniture(stoplines, hs) {
+  const grp = new THREE.Group();
+  const white = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  const box = new THREE.MeshBasicMaterial({ color: 0xd93c3c, transparent: true, opacity: 0.45, side: THREE.DoubleSide, depthWrite: false });
+  for (const s of stoplines) {
+    const ax = s.a[0], ay = s.a[1], bx = s.b[0], by = s.b[1];
+    const len = Math.hypot(bx - ax, by - ay);
+    const stop = new THREE.Mesh(new THREE.BoxGeometry(len, 0.05, 0.45), white);
+    stop.position.copy(V((ax + bx) / 2, (ay + by) / 2, 0.08));
+    stop.rotation.y = Math.atan2(by - ay, bx - ax);
+    grp.add(stop);
+    if (s.rhk && s.depth > 0) {                       // cars stop s.depth metres back; the box in front is for motorcycles
+      const ux = s.ux, uy = s.uy, d = s.depth;
+      const quad = new THREE.Shape([new THREE.Vector2(ax, ay), new THREE.Vector2(bx, by), new THREE.Vector2(bx - ux * d, by - uy * d), new THREE.Vector2(ax - ux * d, ay - uy * d)]);
+      const g = new THREE.ShapeGeometry(quad); g.rotateX(-Math.PI / 2); g.translate(0, 0.07, 0);
+      grp.add(new THREE.Mesh(g, box));
+      const carStop = new THREE.Mesh(new THREE.BoxGeometry(len, 0.05, 0.3), white);
+      carStop.position.copy(V((ax + bx) / 2 - ux * d, (ay + by) / 2 - uy * d, 0.08));
+      carStop.rotation.y = Math.atan2(by - ay, bx - ax);
+      grp.add(carStop);
+    }
+  }
+  const poleMat = new THREE.MeshLambertMaterial({ color: 0x2d3036 });
+  for (const h of hs) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 5.2, 8), poleMat); pole.position.copy(V(h.x, h.y, 2.6)); grp.add(pole);
+    const housing = new THREE.Mesh(new THREE.BoxGeometry(0.5, 1.5, 0.5), poleMat); housing.position.copy(V(h.x, h.y, 5.6)); grp.add(housing);
+    const lamps = {};
+    [['r', 0xff3b30, 6.05], ['y', 0xffb300, 5.6], ['g', 0x34c759, 5.15]].forEach(([k, c, z]) => {
+      const m = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      const s = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 8), m); s.position.copy(V(h.x, h.y, z)); grp.add(s); lamps[k] = { m, c };
+    });
+    heads.push({ links: h.links, lamps });
+  }
+  return grp;
+}
+
+// ---------------------------------------------------------------- vehicles (instanced, several parts per type)
+const TYPES = {
+  0: { name: 'car', L: 4.5, max: 6000 }, 1: { name: 'ambulance', L: 6.0, max: 64 }, 2: { name: 'moto', L: 2.0, max: 12000 },
+  3: { name: 'bus', L: 10.0, max: 600 }, 4: { name: 'truck', L: 8.0, max: 600 } };
+const box = (lx, ly, lz, x, y, z = 0) => { const g = new THREE.BoxGeometry(lx, ly, lz); g.translate(x, y, z); return g; };
+function wheels(xs, half, r, w) {                       // axles at xs; half = lateral offset of the wheels (0: single track)
+  const gs = [];
+  for (const x of xs) for (const z of (half ? [-half, half] : [0])) {
+    const g = new THREE.CylinderGeometry(r, r, w, 14); g.rotateX(Math.PI / 2); g.translate(x, r, z); gs.push(g);
+  }
+  return mergeGeometries(gs);
+}
+const ball = (r, x, y) => { const g = new THREE.SphereGeometry(r, 12, 9); g.translate(x, y, 0); return g; };
+const DARK = new THREE.MeshLambertMaterial({ color: 0x1c1e22 });
+const GLASS = new THREE.MeshLambertMaterial({ color: 0x2c3846 });
+const LIGHTS = new THREE.MeshBasicMaterial({ color: 0xff2020 });
+// local frame: +x forward, y up, z lateral; the front bumper is at x = +L/2
+const PARTS = {
+  0: [ { geo: mergeGeometries([box(4.3, 0.66, 1.76, 0, 0.6), box(1.95, 0.08, 1.44, -0.3, 1.5)]), paint: true },     // body, roof
+       { geo: box(2.15, 0.56, 1.58, -0.3, 1.2), mat: GLASS },                                                         // glasshouse
+       { geo: wheels([1.38, -1.38], 0.79, 0.31, 0.22), mat: DARK } ],
+  1: [ { geo: box(5.8, 2.05, 2.05, 0, 1.4), mat: new THREE.MeshLambertMaterial({ color: 0xffd400, emissive: 0x332a00 }) },
+       { geo: box(5.84, 0.3, 2.08, 0, 1.2), mat: new THREE.MeshBasicMaterial({ color: 0xd93c3c }) },                 // red stripe
+       { geo: box(0.06, 0.75, 1.85, 2.9, 1.9), mat: GLASS },                                                         // windscreen
+       { geo: box(0.45, 0.22, 1.7, 1.6, 2.53), mat: LIGHTS },                                                        // light bar (flashes)
+       { geo: wheels([1.95, -1.95], 0.9, 0.37, 0.26), mat: DARK } ],
+  2: [ { geo: mergeGeometries([box(1.2, 0.34, 0.3, 0.02, 0.55), box(0.3, 0.6, 0.4, -0.22, 1.12)]), paint: true },   // bike body, rider
+       { geo: mergeGeometries([wheels([0.68, -0.68], 0, 0.29, 0.11), box(0.06, 0.06, 0.72, 0.42, 1.0),
+                               box(0.55, 0.1, 0.28, -0.3, 0.77), ball(0.17, -0.16, 1.58)]), mat: DARK } ],              // wheels, bars, seat, helmet
+  3: [ { geo: box(9.8, 2.55, 2.5, 0, 1.78), paint: true },
+       { geo: box(9.84, 0.85, 2.54, 0, 2.25), mat: GLASS },                                                          // window band
+       { geo: wheels([3.3, -3.0], 1.1, 0.48, 0.3), mat: DARK } ],
+  4: [ { geo: mergeGeometries([box(2.0, 2.15, 2.3, 2.9, 1.45), box(5.6, 2.6, 2.4, -1.0, 1.65)]), paint: true },
+       { geo: box(0.06, 0.8, 2.0, 3.91, 1.95), mat: GLASS },
+       { geo: wheels([2.9, -0.7, -2.7], 1.05, 0.45, 0.3), mat: DARK } ],
+};
+const meshes = {};                                       // code -> [InstancedMesh per part]
+for (const code in PARTS) {
+  meshes[code] = PARTS[code].map(pt => {
+    const m = new THREE.InstancedMesh(pt.geo, pt.paint ? new THREE.MeshLambertMaterial() : pt.mat, TYPES[code].max);
+    m.count = 0; m.frustumCulled = false; m.userData.paint = !!pt.paint; scene.add(m); return m;
+  });
+}
+const carPalette = [0xf4f4f4, 0xf4f4f4, 0xd0d3d8, 0x2b2d31, 0x8a8f97, 0xb23a3a, 0x3a5fb2, 0xe8e4d8].map(c => new THREE.Color(c));
+const jackets = [0x3fb950, 0x2f6fed, 0xe8833a, 0x9a59d1, 0xd13f6b, 0x1f8f8f, 0x444a55].map(c => new THREE.Color(c));
+const busCols = [0x2a6fd6, 0xe0782b, 0x2f9e75].map(c => new THREE.Color(c));
+function colorFor(code, id) {
+  const h = (id * 2654435761) >>> 0;
+  if (code === 0) return carPalette[h % carPalette.length];
+  if (code === 2) return jackets[h % jackets.length];
+  if (code === 3) return busCols[h % busCols.length];
+  return new THREE.Color(0x8b8f96);
+}
+
+// ---------------------------------------------------------------- live stream with interpolation
+const veh = new Map();          // id -> { code, from:{x,y,z,a}, to:{x,y,z,a} }
+let frameWall = performance.now(), frameDur = 100, lastT = -1, latest = null, follow = false, followJump = false, paused = false;
+let followCode = 1, followId = null;                 // follow camera: vehicle type (TYPES code) and the vehicle it holds
+const FOLLOW_CODE = { ambulance: 1, bus: 3, truck: 4, car: 0, motorcycle: 2 };
+window.__twin = { meshes, veh, camera, controls, scene };
+const lerpAng = (a, b, f) => { let d = ((b - a + 540) % 360) - 180; return a + d * f; };
+function onFrame(f) {
+  latest = f;
+  if (f.t === lastT) return;
+  const now = performance.now();
+  if (lastT >= 0) frameDur = 0.7 * frameDur + 0.3 * Math.min(Math.max(now - frameWall, 30), 1500);
+  frameWall = now; lastT = f.t;
+  const alive = new Set();
+  for (const [id, x, y, z, a, code, sp] of f.vehicles) {
+    alive.add(id);
+    const o = veh.get(id);
+    if (!o) veh.set(id, { code, sp, from: { x, y, z, a }, to: { x, y, z, a }, cur: { x, y, z, a } });
+    else { o.from = { ...o.cur }; o.to = { x, y, z, a }; o.sp = sp; }
+  }
+  for (const id of veh.keys()) if (!alive.has(id)) veh.delete(id);
+  renderPanel(f);
+}
+const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
+function updateVehicles() {
+  const f = Math.min(1, (performance.now() - frameWall) / frameDur);
+  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+  let followTarget = null;
+  if (follow && (followId === null || !veh.has(followId))) {    // hold on to one vehicle: the nearest of the chosen type
+    let best = null, bd = Infinity;
+    for (const [id, o] of veh) if (o.code === followCode) {
+      const d = (o.cur.x - controls.target.x) ** 2 + (-o.cur.y - controls.target.z) ** 2;
+      if (d < bd) { bd = d; best = id; }
+    }
+    if (best !== followId) { followId = best; followJump = best !== null; }
+  }
+  for (const [id, o] of veh) {
+    const c = o.cur;
+    c.x = o.from.x + (o.to.x - o.from.x) * f; c.y = o.from.y + (o.to.y - o.from.y) * f; c.z = o.from.z + (o.to.z - o.from.z) * f;
+    c.a = lerpAng(o.from.a, o.to.a, f);
+    const L = TYPES[o.code].L, rad = c.a * Math.PI / 180;
+    const dx = Math.sin(rad), dy = Math.cos(rad);                       // SUMO angle: clockwise from north
+    tmpP.set(c.x - dx * L / 2, c.z, -(c.y - dy * L / 2));               // the SUMO position is the front bumper
+    tmpQ.setFromAxisAngle(up, Math.PI / 2 - rad);
+    tmpM.compose(tmpP, tmpQ, one);
+    const k = counts[o.code]++;
+    if (k >= TYPES[o.code].max) continue;
+    for (const m of meshes[o.code]) { m.setMatrixAt(k, tmpM); if (m.userData.paint) m.setColorAt(k, colorFor(o.code, id)); }
+    if (id === followId) followTarget = tmpP.clone();
+  }
+  for (const code in counts) for (const m of meshes[code]) {
+    m.count = Math.min(counts[code], TYPES[code].max); m.instanceMatrix.needsUpdate = true; if (m.instanceColor) m.instanceColor.needsUpdate = true;
+  }
+  LIGHTS.color.setHex(Math.floor(performance.now() / 350) % 2 ? 0xff2020 : 0x2060ff);
+  if (follow && followTarget && followJump) {               // first frame on a vehicle: go straight to it
+    const k = followCode === 0 || followCode === 2 ? 16 : 30;  // closer for cars and motorcycles
+    controls.target.copy(followTarget); camera.position.copy(followTarget).add(new THREE.Vector3(-k, 0.75 * k, k)); followJump = false;
+  } else if (follow && followTarget) {                       // catch up by elapsed time, so fast vehicles stay in view at any frame rate
+    const now = performance.now(), dt = Math.min(1, (now - (updateVehicles.last || now)) / 1000);
+    const d = followTarget.clone().sub(controls.target).multiplyScalar(1 - Math.exp(-dt / 0.15));
+    controls.target.add(d); camera.position.add(d);
+  }
+  updateVehicles.last = performance.now();
+  if (follow) $('conn').title = followTarget ? '' : `no ${$('followType').selectedOptions[0].text} on the road right now`;
+}
+function updateSignals() {
+  if (!latest || !latest.tls) return;
+  for (const h of heads) {
+    const ch = latest.tls[h.links[0]] || 'r';
+    const on = ch === 'G' || ch === 'g' ? 'g' : ch === 'y' || ch === 'Y' ? 'y' : 'r';
+    for (const k of ['r', 'y', 'g']) h.lamps[k].m.color.setHex(k === on ? h.lamps[k].c : 0x222222);
+  }
+}
+let tomtom = null;
+const fmt = v => (v === null || v === undefined) ? '—' : Math.round(v);
+function renderSensors(f) {                         // what the twin's own cameras read (simulated sensors)
+  const c = f.cams || {};
+  if (!Object.keys(c).length) { $('sens').innerHTML = ''; return; }
+  $('sens').innerHTML = '<tr><th></th><th>queue</th><th>m</th><th>box</th><th>in km/h</th><th>out km/h</th></tr>' +
+    ['N', 'E', 'S', 'W'].map(a => { const x = c[a] || {};
+      return `<tr><td>${a}</td><td>${fmt(x.q_veh)}</td><td>${fmt(x.q_m)}</td><td>${fmt(x.moto_box)}</td><td>${fmt(x.speed_in_kmh)}</td><td>${fmt(x.speed_out_kmh)}</td></tr>`; }).join('');
+}
+function renderTomTom(t) {                          // TomTom readings are shown as received, never stored
+  tomtom = t;
+  const r = t.readings || {}, c = (latest && latest.cams) || {};
+  const rows = ['N', 'E', 'S', 'W'].map(a => {
+    const i = r[`${a}_in`], o = r[`${a}_out`], x = c[a] || {};
+    const tt = v => v ? `${fmt(v.current_kmh)} <span class="st">/ ${fmt(v.free_flow_kmh)}</span>` : '—';
+    return `<tr><td>${a}</td><td>${tt(i)}</td><td>${fmt(x.speed_in_kmh)}</td><td>${tt(o)}</td><td>${fmt(x.speed_out_kmh)}</td></tr>`;
+  }).join('');
+  $('tt').innerHTML = (Object.keys(r).length
+      ? '<table class="sens"><tr><th></th><th>TomTom in</th><th>twin in</th><th>TomTom out</th><th>twin out</th></tr>' + rows + '</table>' +
+        '<div class="st">km/h; TomTom: current / free flow on the nearest segment; twin: simulated camera speed</div>'
+      : '') + `<div class="st">${t.status || ''}</div>` + (Object.keys(r).length ? `<div class="cap">Live traffic flow ${t.caption || '©TomTom'}</div>` : '');
+}
+
+function renderPanel(f) {
+  renderSensors(f);
+  $('clock').textContent = f.clock;
+  const pn = f.phase_name || '';                         // "S1 green" or "S1>S2 amber"
+  $('phase').textContent = pn.endsWith('green') ? pn.replace(' green', '') + ' green' : pn.replace('>', '→');
+  const k = f.kpi || {};
+  $('k_n').textContent = k.n_vehicles ?? 0;
+  $('k_moto').textContent = k.n_vehicles ? `${Math.round(100 * k.n_motorcycles / k.n_vehicles)}%` : '—';
+  $('k_halt').textContent = k.n_halting ?? '—'; $('k_arr').textContent = k.n_arrived ?? 0;
+  $('k_ev').textContent = `${k.ev_arrived ?? 0} · ${k.ev_mean_travel_s ?? '—'}`;
+  $('k_yield').textContent = k.n_yields ?? 0;
+  $('k_col').textContent = k.n_lane_collisions ?? 0; $('k_col').className = 'v ' + ((k.n_lane_collisions || 0) === 0 ? 'ok' : 'bad');
+  $('k_jov').textContent = `${k.n_junction_overlaps ?? 0} · ${k.n_teleports ?? 0}`;
+  const q = k.queues || {}; const mx = Math.max(10, ...Object.values(q));
+  $('queues').innerHTML = ['N', 'E', 'S', 'W'].map(a => `<div class="q"><b>${a}</b><i style="width:${(100 * (q[a] || 0) / mx).toFixed(0)}%"></i><span>${q[a] ?? 0}</span></div>`).join('')
+    + `<div class="q" style="grid-template-columns:1fr"><span style="color:var(--muted)">stage ${f.green || '—'}: ${f.stage_label || ''} · N/S Jl. RS Fatmawati, E TB Simatupang, W RA Kartini</span></div>`;
+  $('events').innerHTML = (f.events || []).slice().reverse().map(e => `<li>${e}</li>`).join('');
+  if (f.ctl) { paused = f.ctl.paused; $('pause').textContent = paused ? 'Resume' : 'Pause'; if (document.activeElement !== $('speed')) $('speed').value = String(f.ctl.speed); if (document.activeElement !== $('ctrl')) $('ctrl').value = f.ctl.controller; }
+  layoutPanel();                                     // the bar can wrap when a longer controller name shows
+}
+
+// ---------------------------------------------------------------- cameras and controls
+const CAMS = {
+  overview: () => ({ pos: V(-1500, -1100, 1500), tgt: V(0, 0, 0) }),
+  junction: () => ({ pos: V(-95, -110, 85), tgt: V(0, 15, 0) }),
+  closeup: () => ({ pos: V(50, -18, 13), tgt: V(18, 4, 0) }),              // street level at the TB Simatupang (E) stop line
+  flyover: () => ({ pos: V(95, -75, 38), tgt: V(-15, 30, 3) }),            // the JORR deck over the junction, from the south-east
+  hospital: () => ({ pos: V((G?.hospital.x ?? 100) - 120, (G?.hospital.y ?? -300) - 140, 110), tgt: V(G?.hospital.x ?? 100, G?.hospital.y ?? -300, 0) }),
+};
+function setCam(name) {
+  document.querySelectorAll('[data-cam]').forEach(x => x.classList.toggle('on', x.dataset.cam === name));
+  if (CAMS[name] || name === 'follow') $('camsel').value = name;
+  follow = name === 'follow'; followJump = follow;
+  if (!follow) { const c = CAMS[name](); camera.position.copy(c.pos); controls.target.copy(c.tgt); }
+}
+document.querySelectorAll('[data-cam]').forEach(b => b.onclick = () => setCam(b.dataset.cam));
+$('followType').onchange = e => { followCode = +e.target.value; followId = null; setCam('follow'); };
+$('camsel').onchange = e => setCam(e.target.value);
+function initialCam() {                                   // ?cam=closeup, ?cam=follow&follow=bus, ?cam=x,y,z,tx,ty,tz (metres), &xray=1
+  const params = new URLSearchParams(location.search), c = params.get('cam');
+  const fl = params.get('follow');
+  if (fl && fl in FOLLOW_CODE) { followCode = FOLLOW_CODE[fl]; $('followType').value = String(followCode); }
+  if (params.get('xray') === '1') setSeeThrough(true);
+  if (c && (CAMS[c] || c === 'follow')) return setCam(c);
+  const n = (c || '').split(',').map(Number);
+  if (n.length === 6 && n.every(Number.isFinite)) {
+    setCam('junction'); document.querySelectorAll('[data-cam]').forEach(x => x.classList.remove('on'));
+    camera.position.copy(V(n[0], n[1], n[2])); controls.target.copy(V(n[3], n[4], n[5])); return;
+  }
+  setCam('junction');
+}
+const control = q => fetch(`/control?${q}`).catch(() => {});
+$('speed').onchange = e => control(`speed=${e.target.value}`);
+$('ctrl').onchange = e => control(`controller=${e.target.value}`);
+$('pause').onclick = () => control(`pause=${paused ? 0 : 1}`);
+$('xray').onclick = () => setSeeThrough(!seeThrough);
+function layoutPanel() {                                  // keep the panel below the bar, which wraps on narrow windows
+  const b = document.querySelector('.bar').getBoundingClientRect();
+  if (window.innerWidth > 760) document.querySelector('.panel').style.top = `${Math.round(b.bottom + 10)}px`;
+  $('stats').classList.toggle('on', !document.body.classList.contains('nopanel'));
+}
+$('stats').onclick = () => { document.body.classList.toggle('nopanel'); layoutPanel(); };
+if (window.innerWidth < 1000 || new URLSearchParams(location.search).get('panel') === '0') document.body.classList.add('nopanel');
+window.addEventListener('resize', layoutPanel); layoutPanel();
+
+// ---------------------------------------------------------------- boot
+fetch('/geometry', { cache: 'no-cache' }).then(r => r.json()).then(g => {
+  G = g;
+  scene.add(laneStrips(g.lanes.filter(l => !isRaised(l)), 0.03));
+  const toll = laneStrips(g.lanes.filter(isRaised), 0.03); flyMats.push(toll.material); scene.add(toll);
+  scene.add(laneLines(g.lanes));
+  scene.add(junctionMeshes(g.junctions));
+  scene.add(flyover(g.flyover));
+  scene.add(buildingMesh(g.buildings));
+  scene.add(junctionFurniture(g.stoplines, g.heads));
+  const cross = new THREE.Group();                      // a red cross over RSUP Fatmawati
+  const red = new THREE.MeshBasicMaterial({ color: 0xe02020 });
+  const h = new THREE.Mesh(new THREE.BoxGeometry(14, 2.5, 3.5), red), v = new THREE.Mesh(new THREE.BoxGeometry(3.5, 2.5, 14), red);
+  cross.add(h, v); cross.position.copy(V(g.hospital.x, g.hospital.y, 34)); scene.add(cross);
+  $('loading').remove();
+  initialCam();
+}).catch(e => { $('loading').textContent = 'Could not load the network geometry: ' + e; });
+let es = null;
+function connect() {
+  es = new EventSource('/stream');
+  es.onmessage = e => { $('conn').textContent = 'live SUMO'; $('conn').className = 'pill ok'; onFrame(JSON.parse(e.data)); };
+  es.addEventListener('tomtom', e => renderTomTom(JSON.parse(e.data)));
+  es.onerror = () => { $('conn').textContent = 'reconnecting…'; $('conn').className = 'pill warn'; };
+}
+connect();
+renderer.setAnimationLoop(() => { controls.update(); updateVehicles(); updateSignals(); renderer.render(scene, camera); });
+</script>
+</body>
+</html>

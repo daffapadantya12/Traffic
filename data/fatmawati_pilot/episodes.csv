@@ -1,0 +1,3 @@
+episode_id,window,start_hour,level,seed,controller,warmup_s,main_s,stopline_veh_N,queue_veh_mean_N,stopped_delay_s_N,stopline_veh_E,queue_veh_mean_E,stopped_delay_s_E,stopline_veh_S,queue_veh_mean_S,stopped_delay_s_S,stopline_veh_W,queue_veh_mean_W,stopped_delay_s_W,stopped_delay_s,fairness_ratio,entry_veh_h,motorcycle_share_entry,cordon_tt_mean_s,cordon_tt_p85_s,ambulance_trips,ambulance_tt_mean_s,ambulance_recovery_mean_s
+0,am_peak,7.0,design,1,fixed,900.0,1800.0,427,14.39,60.6,597,16.44,49.5,305,14.63,86.3,447,9.54,38.4,55.7,2.25,5558.0,0.78,93.8,159.0,9,449.4,27.9
+1,am_peak,7.0,design,1,priority_mp,900.0,1800.0,416,7.41,32.0,565,7.46,23.8,331,7.14,38.8,440,5.47,22.4,28.2,1.73,5510.0,0.788,74.0,112.0,9,313.6,5.1

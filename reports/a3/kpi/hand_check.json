@@ -1,0 +1,38 @@
+{
+ "cycle_s": 231.0,
+ "arrival_phases": 48,
+ "tolerance_s": 5.0,
+ "by_movement": {
+  "E": {
+   "measured_mean_wait_s": 0.0,
+   "expected_s": 0.0,
+   "expected_after_braking_s": 0.0,
+   "n": 48,
+   "stops": 0,
+   "go_lag_mean_s": null,
+   "go_lag_max_s": null,
+   "passes": true
+  },
+  "N": {
+   "measured_mean_wait_s": 45.2,
+   "expected_s": 49.4,
+   "expected_after_braking_s": 47.5,
+   "n": 48,
+   "stops": 30,
+   "go_lag_mean_s": 0.5,
+   "go_lag_max_s": 0.5,
+   "passes": true
+  },
+  "W": {
+   "measured_mean_wait_s": 44.3,
+   "expected_s": 48.1,
+   "expected_after_braking_s": 46.2,
+   "n": 48,
+   "stops": 30,
+   "go_lag_mean_s": 0.5,
+   "go_lag_max_s": 0.5,
+   "passes": true
+  }
+ },
+ "passes": true
+}

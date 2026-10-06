@@ -1,0 +1,207 @@
+table,column,unit,role,description
+sensors,sensor_id,,key,"SL_<leg><lane> stop-line loop, EN_/EX_<leg><lane> entry/exit gate loop, QC_<leg> queue camera, XC_<leg> exit camera"
+sensors,kind,,metadata,"stopline_loop, entry_gate, exit_gate, queue_camera or exit_camera"
+sensors,leg,,metadata,"N/S = Jl. RS Fatmawati, E = Jl. TB Simatupang, W = Jl. RA Kartini"
+sensors,lane,,metadata,lane index from the kerb (0) outwards; -1 for cameras (all lanes)
+sensors,street,,metadata,street name (OpenStreetMap)
+sensors,lat,deg,metadata,"WGS84 latitude of the loop, or of the camera's stop line / exit"
+sensors,lon,deg,metadata,WGS84 longitude
+sensors,dist_centre_m,m,metadata,"straight-line distance from the junction centre (-6.29250, 106.79522)"
+sensors,zone_length_m,m,metadata,"camera zone length along the road (300 m approach, 150 m exit); 0 for loops"
+sensors,n_lane_segments,,metadata,number of lane segments the camera zone covers
+episodes,episode_id,,key,episode number
+episodes,window,,scenario,"am_peak (07:00), midday (12:00) or pm_peak (17:00): start of the recorded hour"
+episodes,start_hour,h,scenario,clock time at which recording starts
+episodes,level,,scenario,"demand level: low / design / high = 0.75 / 1 / 1.15 x the calibrated peak-hour volumes (calibration.json), times the hour's share of the daily-profile peak"
+episodes,seed,,scenario,random seed of the demand and the simulation; the same seed gives the same trips for every controller
+episodes,controller,,scenario,"fixed (Dishub greens S1 80 / S2 12 / S3 78 / S4 45 s in order), longest_queue (stage with the most standing vehicles), max_pressure (stage with the largest pressure) or priority_mp (max_pressure that serves an ambulance in time: the teacher)"
+episodes,warmup_s,s,scenario,simulated time before recording starts (network filling); nothing is recorded in it
+episodes,main_s,s,scenario,recorded duration
+episodes,stopline_veh_N,veh,outcome,vehicles counted by the N stop-line loops in the recorded period
+episodes,queue_veh_mean_N,veh,outcome,mean standing vehicles seen by camera QC_N (1 Hz)
+episodes,stopped_delay_s_N,s/veh,outcome,stopped delay on N: sum over seconds of standing vehicles in QC_N divided by stop-line count
+episodes,stopline_veh_E,veh,outcome,vehicles counted by the E stop-line loops in the recorded period
+episodes,queue_veh_mean_E,veh,outcome,mean standing vehicles seen by camera QC_E (1 Hz)
+episodes,stopped_delay_s_E,s/veh,outcome,stopped delay on E: sum over seconds of standing vehicles in QC_E divided by stop-line count
+episodes,stopline_veh_S,veh,outcome,vehicles counted by the S stop-line loops in the recorded period
+episodes,queue_veh_mean_S,veh,outcome,mean standing vehicles seen by camera QC_S (1 Hz)
+episodes,stopped_delay_s_S,s/veh,outcome,stopped delay on S: sum over seconds of standing vehicles in QC_S divided by stop-line count
+episodes,stopline_veh_W,veh,outcome,vehicles counted by the W stop-line loops in the recorded period
+episodes,queue_veh_mean_W,veh,outcome,mean standing vehicles seen by camera QC_W (1 Hz)
+episodes,stopped_delay_s_W,s/veh,outcome,stopped delay on W: sum over seconds of standing vehicles in QC_W divided by stop-line count
+episodes,stopped_delay_s,s/veh,outcome,junction stopped delay: all approaches' standing vehicle-seconds / all stop-line counts
+episodes,fairness_ratio,,outcome,largest / smallest approach stopped delay (empty if an approach served nobody)
+episodes,entry_veh_h,veh/h,outcome,vehicles entering through the four entry gates per hour
+episodes,motorcycle_share_entry,,outcome,motorcycle share of the entry-gate counts
+episodes,cordon_tt_mean_s,s,outcome,mean entry-gate to exit-gate travel time (re-identified vehicles)
+episodes,cordon_tt_p85_s,s,outcome,85th percentile of the cordon travel time
+episodes,ambulance_trips,,outcome,ambulance trips that departed in the recorded period
+episodes,ambulance_tt_mean_s,s,outcome,mean ambulance travel time from departure to RSUP Fatmawati (AVL)
+episodes,ambulance_recovery_mean_s,s,outcome,mean queue recovery time after an ambulance crossed the stop line (see ambulance_trips)
+loops_1min,episode_id,,key,episode number
+loops_1min,t_start,s,key,"start of the minute, simulated seconds since the episode started (including warm-up)"
+loops_1min,clock,hh:mm:ss,key,clock time of t_start
+loops_1min,sensor_id,,key,sensor (see sensors.csv)
+loops_1min,kind,,metadata,sensor kind
+loops_1min,leg,,metadata,leg of the sensor
+cameras_1min,episode_id,,key,episode number
+cameras_1min,t_start,s,key,"start of the minute, simulated seconds since the episode started (including warm-up)"
+cameras_1min,clock,hh:mm:ss,key,clock time of t_start
+cameras_1min,sensor_id,,key,sensor (see sensors.csv)
+cameras_1min,kind,,metadata,sensor kind
+cameras_1min,leg,,metadata,leg of the sensor
+loops_1min,lane,,metadata,lane index of the loop
+loops_1min,n_motorcycle,veh,reading,motorcycles that entered the loop in the minute
+loops_1min,n_car,veh,reading,cars that entered the loop in the minute
+loops_1min,n_bus,veh,reading,buss that entered the loop in the minute
+loops_1min,n_truck,veh,reading,trucks that entered the loop in the minute
+loops_1min,n_emergency,veh,reading,emergencys that entered the loop in the minute
+loops_1min,n_total,veh,reading,all vehicles that entered the loop in the minute
+loops_1min,pcu,pcu,reading,"count in passenger-car units, PKJI 2023 (Bina Marga 09/P/BM/2023) emp for protected phases: motorcycle 0.15, car 1.0, bus 1.3, truck 1.3, emergency 1.0"
+loops_1min,occupancy_pct,%,reading,share of the minute the loop was occupied
+loops_1min,speed_kmh,km/h,reading,mean speed of the vehicles as they entered the loop (empty if none)
+cameras_1min,queue_veh_mean,veh,reading,mean standing vehicles (speed < 0.1 m/s) in the zone (1 Hz samples)
+cameras_1min,queue_veh_max,veh,reading,maximum standing vehicles in the minute
+cameras_1min,queue_pcu_mean,pcu,reading,mean standing vehicles in PCU
+cameras_1min,queue_m_mean,m,reading,mean distance from the stop line (exit cameras: from the junction exit) to the back of the farthest standing vehicle
+cameras_1min,queue_m_max,m,reading,maximum of that distance in the minute
+cameras_1min,vehicles_mean,veh,reading,"mean vehicles in the zone, moving or not"
+cameras_1min,speed_kmh_mean,km/h,reading,space-mean speed of the vehicles in the zone
+cameras_1min,moto_in_box_mean,veh,reading,mean motorcycles within 8 m of the stop line (the motorcycle box); approach cameras only
+cameras_1min,ambulance_present_s,s,reading,seconds in the minute with an ambulance in the zone
+ticks_5s,episode_id,,key,episode number
+ticks_5s,t,s,key,simulated seconds since the episode started (multiple of 5)
+ticks_5s,clock,hh:mm:ss,key,clock time
+ticks_5s,q_veh_N,veh,feature,standing vehicles in camera QC_N now
+ticks_5s,q_pcu_N,pcu,feature,standing vehicles in QC_N in PCU
+ticks_5s,q_m_N,m,feature,queue length on N (stop line to back of the farthest standing vehicle)
+ticks_5s,moto_box_N,veh,feature,motorcycles in the N motorcycle box
+ticks_5s,cam_speed_kmh_N,km/h,feature,space-mean speed in QC_N (empty if the zone is empty)
+ticks_5s,dis_5s_N,veh,feature,vehicles over the N stop-line loops in the last 5 s
+ticks_5s,dis_60s_N,veh,feature,vehicles over the N stop-line loops in the last 60 s
+ticks_5s,arr_60s_N,veh,feature,vehicles through the N entry gate in the last 60 s
+ticks_5s,exit_q_pcu_N,pcu,feature,"standing vehicles on the N exit (camera XC_N), PCU"
+ticks_5s,ev_N,,feature,1 if the priority-request detector sees an ambulance on N (inside QC_N)
+ticks_5s,ev_dist_m_N,m,feature,distance of the nearest ambulance on N to the stop line (empty if none)
+ticks_5s,ev_eta_s_N,s,feature,"its arrival time at the stop line: ev_dist_m_N / max(its speed, 5 m/s)"
+ticks_5s,ev_q_ahead_pcu_N,pcu,feature,"standing vehicles ahead of it in QC_N, PCU"
+ticks_5s,ev_needs_signal_N,,feature,1 if its priority request says its route crosses the N stop line (0: free-left slip or U-turn loop)
+ticks_5s,pressure_N,pcu,feature,max-pressure of N: q_pcu_N minus the exit queues weighted by the turning shares counted so far
+ticks_5s,q_veh_E,veh,feature,standing vehicles in camera QC_E now
+ticks_5s,q_pcu_E,pcu,feature,standing vehicles in QC_E in PCU
+ticks_5s,q_m_E,m,feature,queue length on E (stop line to back of the farthest standing vehicle)
+ticks_5s,moto_box_E,veh,feature,motorcycles in the E motorcycle box
+ticks_5s,cam_speed_kmh_E,km/h,feature,space-mean speed in QC_E (empty if the zone is empty)
+ticks_5s,dis_5s_E,veh,feature,vehicles over the E stop-line loops in the last 5 s
+ticks_5s,dis_60s_E,veh,feature,vehicles over the E stop-line loops in the last 60 s
+ticks_5s,arr_60s_E,veh,feature,vehicles through the E entry gate in the last 60 s
+ticks_5s,exit_q_pcu_E,pcu,feature,"standing vehicles on the E exit (camera XC_E), PCU"
+ticks_5s,ev_E,,feature,1 if the priority-request detector sees an ambulance on E (inside QC_E)
+ticks_5s,ev_dist_m_E,m,feature,distance of the nearest ambulance on E to the stop line (empty if none)
+ticks_5s,ev_eta_s_E,s,feature,"its arrival time at the stop line: ev_dist_m_E / max(its speed, 5 m/s)"
+ticks_5s,ev_q_ahead_pcu_E,pcu,feature,"standing vehicles ahead of it in QC_E, PCU"
+ticks_5s,ev_needs_signal_E,,feature,1 if its priority request says its route crosses the E stop line (0: free-left slip or U-turn loop)
+ticks_5s,pressure_E,pcu,feature,max-pressure of E: q_pcu_E minus the exit queues weighted by the turning shares counted so far
+ticks_5s,q_veh_S,veh,feature,standing vehicles in camera QC_S now
+ticks_5s,q_pcu_S,pcu,feature,standing vehicles in QC_S in PCU
+ticks_5s,q_m_S,m,feature,queue length on S (stop line to back of the farthest standing vehicle)
+ticks_5s,moto_box_S,veh,feature,motorcycles in the S motorcycle box
+ticks_5s,cam_speed_kmh_S,km/h,feature,space-mean speed in QC_S (empty if the zone is empty)
+ticks_5s,dis_5s_S,veh,feature,vehicles over the S stop-line loops in the last 5 s
+ticks_5s,dis_60s_S,veh,feature,vehicles over the S stop-line loops in the last 60 s
+ticks_5s,arr_60s_S,veh,feature,vehicles through the S entry gate in the last 60 s
+ticks_5s,exit_q_pcu_S,pcu,feature,"standing vehicles on the S exit (camera XC_S), PCU"
+ticks_5s,ev_S,,feature,1 if the priority-request detector sees an ambulance on S (inside QC_S)
+ticks_5s,ev_dist_m_S,m,feature,distance of the nearest ambulance on S to the stop line (empty if none)
+ticks_5s,ev_eta_s_S,s,feature,"its arrival time at the stop line: ev_dist_m_S / max(its speed, 5 m/s)"
+ticks_5s,ev_q_ahead_pcu_S,pcu,feature,"standing vehicles ahead of it in QC_S, PCU"
+ticks_5s,ev_needs_signal_S,,feature,1 if its priority request says its route crosses the S stop line (0: free-left slip or U-turn loop)
+ticks_5s,pressure_S,pcu,feature,max-pressure of S: q_pcu_S minus the exit queues weighted by the turning shares counted so far
+ticks_5s,q_veh_W,veh,feature,standing vehicles in camera QC_W now
+ticks_5s,q_pcu_W,pcu,feature,standing vehicles in QC_W in PCU
+ticks_5s,q_m_W,m,feature,queue length on W (stop line to back of the farthest standing vehicle)
+ticks_5s,moto_box_W,veh,feature,motorcycles in the W motorcycle box
+ticks_5s,cam_speed_kmh_W,km/h,feature,space-mean speed in QC_W (empty if the zone is empty)
+ticks_5s,dis_5s_W,veh,feature,vehicles over the W stop-line loops in the last 5 s
+ticks_5s,dis_60s_W,veh,feature,vehicles over the W stop-line loops in the last 60 s
+ticks_5s,arr_60s_W,veh,feature,vehicles through the W entry gate in the last 60 s
+ticks_5s,exit_q_pcu_W,pcu,feature,"standing vehicles on the W exit (camera XC_W), PCU"
+ticks_5s,ev_W,,feature,1 if the priority-request detector sees an ambulance on W (inside QC_W)
+ticks_5s,ev_dist_m_W,m,feature,distance of the nearest ambulance on W to the stop line (empty if none)
+ticks_5s,ev_eta_s_W,s,feature,"its arrival time at the stop line: ev_dist_m_W / max(its speed, 5 m/s)"
+ticks_5s,ev_q_ahead_pcu_W,pcu,feature,"standing vehicles ahead of it in QC_W, PCU"
+ticks_5s,ev_needs_signal_W,,feature,1 if its priority request says its route crosses the W stop line (0: free-left slip or U-turn loop)
+ticks_5s,pressure_W,pcu,feature,max-pressure of W: q_pcu_W minus the exit queues weighted by the turning shares counted so far
+ticks_5s,q_veh_E_S1S2,veh,feature,standing vehicles in QC_E on the lanes that lead to the through lanes (green in S1 and S2)
+ticks_5s,q_veh_E_S2,veh,feature,standing vehicles in QC_E on the lanes that lead to the right-turn lanes (green in S2 only)
+ticks_5s,stage_q_S1,veh,feature,standing vehicles stage S1 would serve (camera lane groups it gives green)
+ticks_5s,stage_pressure_S1,pcu,feature,max-pressure of stage S1: approach pressures shared over lane groups by standing PCU
+ticks_5s,stage_q_S2,veh,feature,standing vehicles stage S2 would serve (camera lane groups it gives green)
+ticks_5s,stage_pressure_S2,pcu,feature,max-pressure of stage S2: approach pressures shared over lane groups by standing PCU
+ticks_5s,stage_q_S3,veh,feature,standing vehicles stage S3 would serve (camera lane groups it gives green)
+ticks_5s,stage_pressure_S3,pcu,feature,max-pressure of stage S3: approach pressures shared over lane groups by standing PCU
+ticks_5s,stage_q_S4,veh,feature,standing vehicles stage S4 would serve (camera lane groups it gives green)
+ticks_5s,stage_pressure_S4,pcu,feature,max-pressure of stage S4: approach pressures shared over lane groups by standing PCU
+ticks_5s,controller,,metadata,controller running the signal in this episode
+ticks_5s,stage,,feature,"stage that has (or, during a transition, last had) green: S1 RA Kartini + TB Simatupang through, S2 TB Simatupang through + right, S3 north, S4 south"
+ticks_5s,phase_state,,feature,"green, amber or all-red"
+ticks_5s,transition_to,,feature,stage the signal is changing to (empty when green)
+ticks_5s,t_in_phase_s,s,feature,time since the current phase started
+ticks_5s,t_since_green_s,s,feature,time since the stage got green
+ticks_5s,controller_request,,metadata,"stage the running controller requested at its last decision instant; equals the label under priority_mp, so exclude it from features"
+ticks_5s,y_teacher_stage,,label,"stage the priority-aware teacher requests now: the stage of an ambulance whose route crosses the signal when its ETA <= intergreen 4 s + start-up loss 2 s + (3600/S) x PCU queue ahead of it + the 5 s decision interval (S = PKJI 2023 base 600 x approach width, PCU/h), else the largest stage pressure with a 1 PCU switching margin"
+ticks_5s,y_q_veh_30s_N,veh,label,q_veh_N 30 s later (forecast target)
+ticks_5s,y_q_veh_30s_E,veh,label,q_veh_E 30 s later (forecast target)
+ticks_5s,y_q_veh_30s_S,veh,label,q_veh_S 30 s later (forecast target)
+ticks_5s,y_q_veh_30s_W,veh,label,q_veh_W 30 s later (forecast target)
+signal_log,episode_id,,key,episode number
+signal_log,t,s,key,simulated seconds when the phase started
+signal_log,clock,hh:mm:ss,key,clock time
+signal_log,phase,,reading,phase index of program dishub
+signal_log,stage,,reading,"stage (S1-S4) when green, or the change 'S1>S2' during amber and all-red"
+signal_log,state,,reading,"green, amber or all-red"
+signal_log,controller,,metadata,controller running the signal
+turning_counts_15min,episode_id,,key,episode number
+turning_counts_15min,t_start,s,key,start of the 15-minute period (by exit time)
+turning_counts_15min,clock,hh:mm:ss,key,clock time of t_start
+turning_counts_15min,entry_leg,,key,leg whose entry gate the vehicle passed
+turning_counts_15min,exit_leg,,key,leg whose exit gate it passed (same leg = U-turn)
+turning_counts_15min,vclass,,key,"motorcycle, car, bus, truck or emergency"
+turning_counts_15min,n,veh,reading,vehicles of the movement and class that exited in the period
+turning_counts_15min,tt_mean_s,s,reading,mean entry-to-exit travel time
+turning_counts_15min,tt_p50_s,s,reading,median entry-to-exit travel time
+turning_counts_15min,tt_p85_s,s,reading,85th percentile entry-to-exit travel time
+ambulance_trips,episode_id,,key,episode number
+ambulance_trips,trip,,key,"ambulance trip in the episode (A01, A02, ...)"
+ambulance_trips,t_depart,s,reading,departure from the network edge (AVL)
+ambulance_trips,clock_depart,hh:mm:ss,reading,clock time of departure
+ambulance_trips,detect_leg,,reading,approach where the priority-request detector first saw it
+ambulance_trips,t_detect,s,reading,first detection inside an approach camera zone (300 m)
+ambulance_trips,detect_dist_m,m,reading,distance to the stop line at detection
+ambulance_trips,queue_at_detect,veh,reading,standing vehicles on all four approach cameras at detection
+ambulance_trips,entry_leg,,reading,leg of the entry gate passed
+ambulance_trips,t_entry_gate,s,reading,entry gate time
+ambulance_trips,stopline_leg,,reading,approach whose stop-line loop it crossed
+ambulance_trips,t_stopline,s,reading,stop-line crossing time
+ambulance_trips,exit_leg,,reading,leg of the exit gate passed
+ambulance_trips,t_exit_gate,s,reading,exit gate time
+ambulance_trips,t_recovered,s,reading,first time after the stop-line crossing that the four approach queues are back within 10% (or 1 vehicle) of queue_at_detect
+ambulance_trips,t_arrive,s,reading,arrival at RSUP Fatmawati (AVL); empty if still travelling at the end
+ambulance_trips,arrived,,reading,reached the hospital within the episode
+ambulance_trips,travel_time_s,s,reading,t_arrive - t_depart
+ambulance_trips,cordon_time_s,s,reading,t_exit_gate - t_entry_gate
+ambulance_trips,recovery_s,s,reading,t_recovered - t_stopline
+simulation_qc,episode_id,,qc,"episode number (simulation diagnostic, not a sensor reading)"
+simulation_qc,lane_collisions,,qc,"overlapping vehicles on a lane anywhere in the 2.5 km network in the recorded period (rare, between motorcycles at walking pace: a limitation of SUMO's sublane model) (simulation diagnostic, not a sensor reading)"
+simulation_qc,junction_overlaps,,qc,"overlapping vehicle shapes inside junction areas anywhere in the network (SUMO sublane limitation) (simulation diagnostic, not a sensor reading)"
+simulation_qc,lane_collisions_study,,qc,"lane collisions within 300 m of the Fatmawati junction centre, where the sensors are (simulation diagnostic, not a sensor reading)"
+simulation_qc,junction_overlaps_study,,qc,"junction overlaps within 300 m of the Fatmawati junction centre (simulation diagnostic, not a sensor reading)"
+simulation_qc,veh_km,,qc,"vehicle-km travelled in the whole network in the recorded period (sampled every 10 s) (simulation diagnostic, not a sensor reading)"
+simulation_qc,veh_km_study,,qc,"vehicle-km travelled on roads within 300 m of the junction centre (simulation diagnostic, not a sensor reading)"
+simulation_qc,teleports,,qc,"vehicles removed after being stuck for 300 s (simulation diagnostic, not a sensor reading)"
+simulation_qc,departed,,qc,"vehicles inserted at the network edge (simulation diagnostic, not a sensor reading)"
+simulation_qc,arrived,,qc,"vehicles that reached their destination (simulation diagnostic, not a sensor reading)"
+simulation_qc,waiting_to_enter,,qc,"vehicles waiting at the network edge at the end (inflow blocked) (simulation diagnostic, not a sensor reading)"
+simulation_qc,unmatched_exits,,qc,"exit-gate detections without an entry (should be 0) (simulation diagnostic, not a sensor reading)"
+simulation_qc,wall_s,,qc,"computing time (simulation diagnostic, not a sensor reading)"
+simulation_qc,sumo_version,,qc,"SUMO version (simulation diagnostic, not a sensor reading)"

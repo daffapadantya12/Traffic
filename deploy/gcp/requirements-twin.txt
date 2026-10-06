@@ -1,0 +1,6 @@
+# Runtime of the Fatmawati twin (live viewer and sensor-release generator).
+eclipse-sumo==1.27.1
+libsumo==1.27.1
+sumolib==1.27.1
+numpy>=1.26
+pandas>=2.0

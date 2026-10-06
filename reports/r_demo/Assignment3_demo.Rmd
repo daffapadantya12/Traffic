@@ -1,0 +1,904 @@
+---
+title: "Assignment 3 demonstration: a simulated signalised-grid traffic dataset"
+subtitle: "ITI5145 Foundations of Data Science, Monash University"
+author: "[STUDENT_NAME] ([STUDENT_ID])"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+params:
+  data_dir: "../../data/traffic_v1"
+  ml_results: "../ml/results.json"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    number_sections: true
+    theme: flatly
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+# ---- global chunk options -------------------------------------------------
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE,
+                      fig.width = 8, fig.height = 4.5, dpi = 96)
+# ---- packages (base R + dplyr / tidyr / ggplot2 / rpart / jsonlite) --------
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(scales)
+library(rpart)
+library(jsonlite)
+library(knitr)
+theme_set(theme_minimal(base_size = 12) +
+          theme(plot.title = element_text(size = 12, face = "bold"),
+                plot.subtitle = element_text(size = 10, colour = "grey30")))
+set.seed(42)                           # one fixed seed for every random step
+t_start <- Sys.time()
+
+# Every number quoted in the text of this report is computed from the files
+# in `data_dir` at render time: nothing is typed in by hand.
+data_dir <- params$data_dir
+```
+
+# Dataset description
+
+**What the project is.** The proposed project is a *digital twin* of a small
+road network: a 2 x 2 grid of signalised junctions (left-hand traffic, two
+lanes per direction, 200 m blocks) in which cars follow the Intelligent Driver
+Model and each junction's traffic light is driven by a controller. The aim is
+to learn a signal controller from data (imitation of a *max-pressure* rule
+that is also aware of ambulances) and to evaluate it in closed loop.
+
+**Where the data comes from.** No public dataset logs the internal state of a
+traffic signal together with the queues on every approach at every decision
+instant, so the dataset was *generated* with the project's own simulator
+(`traffic_twin`, Python). Everything about the generating process (physics,
+signals, calibration of demand levels, random seeds, scenario mixture) is
+recorded in the data card `DATACARD.md` that ships with the data, and every
+column of every table is described in `data_dictionary.csv`. The simulator is
+deterministic: episode `i` uses seed `100000 + i`, so any row can be
+regenerated.
+
+## Release front matter
+
+The identity of a release is the pair (generator version, configuration
+hash) written to `config.json`; the head line of the data card repeats the
+row counts. Both are read here, not typed.
+
+```{r front-matter}
+cfg  <- fromJSON(file.path(data_dir, "config.json"))
+card <- readLines(file.path(data_dir, "DATACARD.md"))
+head_line <- card[grep("generator_version", card)[1]]
+grab <- function(pattern) as.integer(sub(paste0(".*?([0-9]+) ", pattern, ".*"), "\\1", head_line, perl = TRUE))
+card_counts <- c(episodes = grab("episodes"), signal_ticks = grab("signal_ticks rows"), vehicles = grab("vehicles"))
+
+front <- data.frame(
+  item  = c("dataset", "generator_version", "config_hash", "episodes (data card)",
+            "signal_ticks rows (data card)", "vehicles (data card)", "licence",
+            "download link", "data card / dictionary"),
+  value = c(basename(normalizePath(data_dir)), cfg$generator_version,
+            sub(".*config_hash `([0-9a-f]+)`.*", "\\1", head_line),
+            format(card_counts["episodes"], big.mark = ","),
+            format(card_counts["signal_ticks"], big.mark = ","),
+            format(card_counts["vehicles"], big.mark = ","),
+            "CC BY 4.0 for the data, MIT for the generator code (proposed; synthetic data, no personal information)",
+            "[DATASET_DOWNLOAD_LINK]",
+            "DATACARD.md, data_dictionary.csv (shipped with the CSV files)"),
+  row.names = NULL)
+kable(front, caption = "Release front matter (read from config.json and DATACARD.md)")
+```
+
+**Download link:** [DATASET_DOWNLOAD_LINK]
+
+The release contains five tables (CSV):
+
+| file | one row per | what it holds |
+|---|---|---|
+| `episodes.csv` | episode | the scenario settings (demand level, controller, sensor noise, ambulance rate, split) and the KPIs of the episode |
+| `vehicles.csv` | vehicle | route, travel time, delay, stops, and the vehicle's *hidden* driver parameters |
+| `signal_ticks.csv` | junction x decision instant | **the machine-learning table**: what the controller could see, what it did, and two labels (`y_mp_action`, `y_q_total_t30`) |
+| `junction_1hz.csv` | junction x second | queue and vehicle totals at 1 Hz, used to build the 30 s-ahead label |
+| `network_edges.csv` | directed road edge | geometry and storage of each link |
+
+Each episode is `r cfg$warmup_s` s warm-up + `r cfg$main_s` s main period +
+`r cfg$cooldown_s` s cool-down. Rows inside the warm-up, the cool-down and the
+last `r cfg$tail_s` s of the main period (the "tail") are flagged and excluded
+from training.
+
+## File integrity (checksums)
+
+If the release ships a `SHA256SUMS.txt`, every file is hashed again here and
+compared with it, so a reader can tell that the download is the file that was
+analysed.
+
+```{r checksums, results="asis"}
+# results="asis": cat() writes Markdown and the tables inside the if-blocks render as tables
+sums_path <- file.path(data_dir, "SHA256SUMS.txt")
+if (!file.exists(sums_path)) {
+  cat("No `SHA256SUMS.txt` in `", data_dir, "`: checksum comparison skipped.\n\n", sep = "")
+} else if (!requireNamespace("digest", quietly = TRUE)) {
+  # fallback: list the md5 of each file (cannot be compared with a sha256 list)
+  files <- read.table(sums_path, col.names = c("sha256_expected", "file"))$file
+  cat(kable(data.frame(file = files, md5 = unname(tools::md5sum(file.path(data_dir, files)))),
+            caption = "digest not installed: md5 of each file (not comparable with SHA256SUMS.txt)"), sep = "\n")
+} else {
+  sums <- read.table(sums_path, col.names = c("sha256_expected", "file"), stringsAsFactors = FALSE)
+  sums$size_MB <- round(file.size(file.path(data_dir, sums$file)) / 1e6, 1)
+  sums$sha256_computed <- sapply(sums$file, function(f) digest::digest(file = file.path(data_dir, f), algo = "sha256"))
+  sums$match <- sums$sha256_expected == sums$sha256_computed
+  short <- function(h) paste0(substr(h, 1, 12), "...")
+  cat(kable(data.frame(file = sums$file, size_MB = sums$size_MB, expected = short(sums$sha256_expected),
+                       computed = short(sums$sha256_computed), match = sums$match),
+            caption = "SHA-256 of each released file vs SHA256SUMS.txt (first 12 hex digits shown)"), sep = "\n")
+  cat("\n**All checksums match:**", all(sums$match), "\n\n")
+}
+```
+
+# Loading and structure
+
+## Reading the tables
+
+The CSV files were written by Python, so boolean columns contain the strings
+`True` / `False`. A small helper turns those into R logicals.
+
+```{r load}
+fix_bool <- function(df) {
+  # convert character columns that only contain "True"/"False" to logical
+  for (col in names(df)) {
+    x <- df[[col]]
+    if (is.character(x) && all(x %in% c("True", "False"))) df[[col]] <- (x == "True")
+  }
+  df
+}
+
+t0 <- Sys.time()
+ep  <- fix_bool(read.csv(file.path(data_dir, "episodes.csv")))
+vh  <- fix_bool(read.csv(file.path(data_dir, "vehicles.csv")))
+st  <- fix_bool(read.csv(file.path(data_dir, "signal_ticks.csv")))
+jz  <- read.csv(file.path(data_dir, "junction_1hz.csv"))
+net <- fix_bool(read.csv(file.path(data_dir, "network_edges.csv")))
+dd  <- fix_bool(read.csv(file.path(data_dir, "data_dictionary.csv")))
+ep$ev_rate <- as.character(ep$ev_rate)       # "0" / "default", keep as text
+cat("Loaded in", round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), "seconds\n")
+```
+
+## Dimensions and column types
+
+```{r dims}
+tables <- list(episodes = ep, vehicles = vh, signal_ticks = st, junction_1hz = jz, network_edges = net)
+dims <- data.frame(table = names(tables),
+                   rows = sapply(tables, nrow),
+                   columns = sapply(tables, ncol),
+                   size_MB = round(sapply(tables, function(d) as.numeric(object.size(d))) / 1e6, 1),
+                   row.names = NULL)
+kable(dims, caption = "Rows and columns of each table as loaded in R")
+```
+
+So the release holds `r nrow(ep)` episodes, `r format(nrow(vh), big.mark = ",")`
+vehicles, `r format(nrow(st), big.mark = ",")` decision rows and
+`r format(nrow(jz), big.mark = ",")` one-second junction rows.
+
+`str()` of the key columns of the two tables used most, the episode table and
+the ML table (the ML table has `r ncol(st)` columns, so only a few are shown):
+
+```{r str}
+str(ep[, c("episode_id", "seed", "demand_level", "controller", "sensor_noise_level",
+           "ev_rate", "split", "mean_total_delay_s", "throughput_vph", "n_invariant_violations")])
+str(st[, c("episode_id", "junction_id", "t", "is_warmup", "phase", "time_in_phase_s",
+           "q_N", "n_N", "down_n_N", "ev_present_N", "action_applied", "y_mp_action", "y_q_total_t30")])
+```
+
+```{r summary}
+summary(ep[, c("mean_total_delay_s", "p90_total_delay_s", "throughput_vph",
+               "max_queue_veh", "switches_per_min", "n_red_commits")])
+summary(vh[, c("travel_time_s", "total_delay_s", "n_stops", "alpha", "v0_mps")])
+```
+
+## Cross-check against the data card and the data dictionary
+
+The row counts are compared with the head line of the data card (a printed
+check, because a re-generated release changes them), and the data dictionary
+is compared with the files: if they agree, the number of dictionary rows per
+table equals the number of columns and every column name is documented. The
+`stopifnot()` calls only guard *structural* facts (unique keys, every column
+documented), which must hold for any release.
+
+```{r dict-check}
+count_check <- data.frame(table = names(card_counts),
+                          rows_in_file = c(nrow(ep), nrow(st), nrow(vh)),
+                          rows_in_data_card = unname(card_counts))
+count_check$match <- count_check$rows_in_file == count_check$rows_in_data_card
+kable(count_check, caption = "Row counts: files vs the head line of DATACARD.md")
+
+dict_counts <- dd %>% count(table, name = "columns_in_dictionary")
+file_counts <- data.frame(table = names(tables), columns_in_file = sapply(tables, ncol), row.names = NULL)
+check <- full_join(file_counts, dict_counts, by = "table") %>%
+  rowwise() %>%
+  mutate(undocumented = {
+    cols <- names(tables[[table]])
+    if (is.na(columns_in_dictionary)) NA_integer_ else sum(!cols %in% dd$column[dd$table == table])
+  }) %>% ungroup()
+kable(check, caption = "Columns per table: file vs data dictionary")
+
+# structural facts: primary keys unique, every column of every table documented
+stopifnot(!any(duplicated(ep$episode_id)),
+          !any(duplicated(st[, c("episode_id", "junction_id", "t")])),
+          !any(duplicated(vh[, c("episode_id", "veh_id")])),
+          all(check$undocumented == 0, na.rm = TRUE))
+cat("Primary keys are unique and every column is documented.\n")
+```
+
+## The features of the ML table
+
+`signal_ticks.csv` is the table a controller model learns from. The data
+dictionary tags every column with a *namespace* and with
+`twin_observable`, which says whether the digital twin could present that
+column to a controller at run time. Keys, time stamps, the controller's own
+actions and the labels are not observable; everything else is a legitimate
+feature.
+
+```{r namespaces}
+ns <- dd %>% filter(table == "signal_ticks") %>%
+  group_by(namespace, twin_observable) %>%
+  summarise(columns = n(),
+            examples = paste(head(column, 4), collapse = ", "),
+            .groups = "drop") %>%
+  arrange(desc(twin_observable), desc(columns))
+kable(ns, caption = "signal_ticks columns by namespace (full dictionary in the appendix)")
+cat("Observable feature columns:", sum(ns$columns[ns$twin_observable]),
+    " non-feature columns:", sum(ns$columns[!ns$twin_observable]), "\n")
+```
+
+In words: the `signal` namespace is the state of the light (which approach is
+green and for how long), `state` holds the queue and vehicle counts per
+approach and lane plus the arrivals of the last 30 s, `downstream` says how
+full and whether blocked each exit link is, `neighbour` is the phase of the
+adjacent junction, `ev` is the GPS-style ambulance channel and `sensor` is a
+noisy copy of the four queue lengths (`obs_q_*`). The full table with data
+types, units and null policy is in the appendix.
+
+## Missingness
+
+```{r missing}
+na_table <- function(d, name) {
+  n <- colSums(is.na(d))
+  n <- n[n > 0]
+  if (length(n) == 0) return(data.frame(table = name, column = "(none)", n_missing = 0, share = 0))
+  data.frame(table = name, column = names(n), n_missing = as.integer(n), share = round(n / nrow(d), 4), row.names = NULL)
+}
+bind_rows(na_table(ep, "episodes"), na_table(vh, "vehicles"),
+          na_table(st, "signal_ticks"), na_table(jz, "junction_1hz")) %>%
+  kable(caption = "Columns with missing values (all others are complete)")
+```
+
+The missing values are all *by design*: the ambulance KPIs are `NA` in
+episodes without ambulances, `gridlock_t` is `NA` when no gridlock happened,
+`enter_t` is `NA` for vehicles that were still waiting in an entry queue when
+the episode ended (they never entered the network), `exit_t` is `NA` for
+those and for vehicles still on the network at the end, and the regression
+label `y_q_total_t30` looks 30 s ahead, so it cannot exist on the last 30 s of
+the main period or in the cool-down. We verify the last claim directly:
+
+```{r missing-label}
+st %>%
+  mutate(period = case_when(is_warmup ~ "warm-up", is_cooldown ~ "cool-down",
+                            is_tail ~ "tail (last 30 s)", TRUE ~ "main")) %>%
+  group_by(period) %>%
+  summarise(rows = n(), label_missing = sum(is.na(y_q_total_t30)),
+            share_missing = round(mean(is.na(y_q_total_t30)), 4)) %>%
+  kable(caption = "y_q_total_t30 missingness by period")
+```
+
+```{r missing-main, results="asis"}
+missing_main <- st %>% filter(!is_warmup, !is_cooldown, !is_tail, is.na(y_q_total_t30)) %>% count(episode_id)
+gridlock_eps <- ep$episode_id[ep$gridlock]
+if (nrow(missing_main) == 0) {
+  cat("No main-period row is missing the regression label.\n\n")
+} else {
+  cat("Main-period rows without `y_q_total_t30`, by episode (episodes that ended early by the gridlock rule: ",
+      if (length(gridlock_eps)) paste(gridlock_eps, collapse = ", ") else "none", "):\n\n", sep = "")
+  cat(kable(missing_main, caption = "Main-period rows without the regression label"), sep = "\n")
+}
+```
+
+A main-period row can only lack the label when the episode ended early by
+the gridlock rule, so the last 30 s before the stop have no future to look
+at; `r if (nrow(missing_main) == 0) "that did not happen in this release" else sprintf("that is the case for episode(s) %s", paste(missing_main$episode_id, collapse = ", "))`.
+
+```{r main-rows}
+# the training population: main-period rows with none of the three flags set
+main <- st %>% filter(!is_warmup, !is_cooldown, !is_tail) %>%
+  left_join(ep %>% select(episode_id, demand_level, controller, split, sensor_noise_level, ev_rate),
+            by = "episode_id")
+cat("Main-period rows:", nrow(main), "of", nrow(st), "\n")
+```
+
+# Basic characteristics
+
+## Episode mix and splits
+
+```{r mix}
+lvl <- c("low", "design", "high", "stress")
+ep %>% count(demand_level, controller) %>%
+  pivot_wider(names_from = controller, values_from = n, values_fill = 0) %>%
+  arrange(factor(demand_level, levels = lvl)) %>%
+  kable(caption = "Episodes by demand level and controller")
+ep %>% count(split) %>% kable(caption = "Episodes per split (stress demand is held out as test_ood)")
+ep %>% count(ev_rate, sensor_noise_level) %>% kable(caption = "Episodes by ambulance rate and sensor noise level")
+```
+
+## Delay distribution by demand level
+
+Per-vehicle total delay = entry-queue wait + travel time - free-flow time,
+for cars spawned in the main period. **Rule for the delay figures.** Delay is
+right-skewed and spans two orders of magnitude, so every delay plot uses a
+log axis, and a log axis cannot show values at or below zero. The plots
+therefore keep only delays of at least 1 s; the vehicles dropped by that rule
+are counted below and are included in every *table* (which uses all cars).
+A delay below 1 s means the vehicle met no queue and no red light; a negative
+delay would mean that it drove faster than the free-flow reference (the
+reference uses the per-vehicle desired speed and a fixed turn penalty, so
+small negative values are possible in principle).
+
+```{r delay-rule}
+cars <- vh %>% filter(!is_warmup, vehicle_type == "car") %>%
+  left_join(ep %>% select(episode_id, demand_level, controller, ev_rate, demand_asym), by = "episode_id") %>%
+  mutate(demand_level = factor(demand_level, levels = lvl))
+delay_min <- 1                                   # plotting threshold [s]
+rule <- data.frame(
+  cars_main_period = nrow(cars),
+  delay_negative = sum(cars$total_delay_s < 0, na.rm = TRUE),
+  delay_below_1s = sum(cars$total_delay_s < delay_min, na.rm = TRUE),
+  delay_missing = sum(is.na(cars$total_delay_s)),
+  kept_for_plots = sum(cars$total_delay_s >= delay_min, na.rm = TRUE))
+kable(rule, caption = "Cars affected by the plotting rule (delay >= 1 s); tables use all cars")
+share_dropped <- 1 - rule$kept_for_plots / rule$cars_main_period
+```
+
+The plotting rule drops `r rule$delay_below_1s` cars
+(`r sprintf("%.2f%%", 100 * share_dropped)` of the main-period cars), of which
+`r rule$delay_negative` have a negative delay.
+
+```{r delay-hist, fig.height=5}
+n_sample <- min(60000, rule$kept_for_plots)
+cars_plot <- cars %>% filter(total_delay_s >= delay_min) %>% slice_sample(n = n_sample)   # cap for plotting
+ggplot(cars_plot, aes(total_delay_s, fill = demand_level)) +
+  geom_histogram(bins = 60, colour = "white", linewidth = 0.1) +
+  scale_x_log10(labels = label_comma()) +
+  facet_wrap(~ demand_level, ncol = 2, scales = "free_y") +
+  labs(title = "Per-vehicle total delay by demand level",
+       subtitle = sprintf("%s-car sample, cars with delay >= %d s, log x-axis", format(n_sample, big.mark = ","), delay_min),
+       x = "total delay [s]", y = "vehicles") +
+  theme(legend.position = "none")
+```
+
+The table separates *finished* trips (`completed == TRUE`, the vehicle left
+the network before the episode ended) from *unfinished* ones (still on the
+network or still in an entry queue at the end), whose delay is censored and
+would otherwise be mixed with the finished trips.
+
+```{r delay-table}
+cars %>%
+  mutate(trip = ifelse(completed, "finished", "unfinished")) %>%
+  group_by(demand_level, trip) %>%
+  summarise(vehicles = n(), mean_delay_s = round(mean(total_delay_s, na.rm = TRUE), 1),
+            median_delay_s = round(median(total_delay_s, na.rm = TRUE), 1),
+            p90_delay_s = round(quantile(total_delay_s, 0.9, na.rm = TRUE), 1), .groups = "drop") %>%
+  kable(caption = "Delay statistics by demand level, finished vs unfinished trips (all cars, main period)")
+```
+
+## Mean delay by controller
+
+One point per episode; the box shows the spread over episodes of the same
+controller. Because demand is the dominant factor, the plot is split by
+demand level; combinations without episodes are simply absent (free x-axis
+per panel), and the number of episodes behind each box is printed above it.
+The table gives the mean and a 95% t-interval over episodes (`NA` when a box
+holds a single episode).
+
+```{r delay-controller, fig.height=5}
+ep_plot <- ep %>% mutate(demand_level = factor(demand_level, levels = lvl))
+box_n <- ep_plot %>% group_by(demand_level, controller) %>%
+  summarise(n = n(), y = max(mean_total_delay_s), .groups = "drop")
+ggplot(ep_plot, aes(controller, mean_total_delay_s, fill = controller)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = NA) +
+  geom_jitter(width = 0.15, size = 1.2, alpha = 0.7) +
+  geom_text(data = box_n, aes(controller, y, label = paste0("n=", n)), vjust = -0.6, size = 3) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.18))) +
+  facet_wrap(~ demand_level, scales = "free", ncol = 4, drop = TRUE) +
+  labs(title = "Mean car delay per episode, by controller and demand level",
+       subtitle = "one point per episode; n = episodes in the box",
+       x = NULL, y = "mean total delay [s/veh]") +
+  theme(legend.position = "none", axis.text.x = element_text(angle = 30, hjust = 1))
+
+ep %>% group_by(demand_level, controller) %>%
+  summarise(episodes = n(), mean_delay_s = mean(mean_total_delay_s),
+            ci_half = ifelse(n() > 1, qt(0.975, n() - 1) * sd(mean_total_delay_s) / sqrt(n()), NA),
+            .groups = "drop") %>%
+  mutate(across(c(mean_delay_s, ci_half), ~ round(.x, 1))) %>%
+  arrange(factor(demand_level, levels = lvl), controller) %>%
+  kable(caption = "Mean delay by (demand level, controller) with a 95% t-interval half-width over episodes")
+```
+
+## Fairness: delay by entry node
+
+A signal controller can be efficient on average and still starve one arm of
+the grid. The entry node (`origin` in `vehicles.csv`: N0, N1, E0, ... are the
+boundary nodes of the four sides) is a natural *protected group* for this
+check. The bar is the mean over episodes of the per-episode mean car delay
+from that origin; the whisker is the 95% t-interval over episodes.
+
+```{r fairness, fig.height=5}
+fair_ep <- cars %>%
+  group_by(episode_id, demand_level, demand_asym, origin) %>%
+  summarise(mean_delay = mean(total_delay_s, na.rm = TRUE), cars = n(), .groups = "drop") %>%
+  mutate(side = substr(origin, 1, 1))
+fair <- fair_ep %>%
+  group_by(demand_level, origin, side) %>%
+  summarise(episodes = n(), mean_delay_s = mean(mean_delay),
+            ci_half = ifelse(n() > 1, qt(0.975, n() - 1) * sd(mean_delay) / sqrt(n()), 0), .groups = "drop")
+ggplot(fair, aes(origin, mean_delay_s, fill = side)) +
+  geom_col() +
+  geom_errorbar(aes(ymin = mean_delay_s - ci_half, ymax = mean_delay_s + ci_half), width = 0.3) +
+  facet_wrap(~ demand_level, scales = "free_y", ncol = 4) +
+  labs(title = "Mean car delay by entry node (origin)",
+       subtitle = "mean over episodes of the per-episode mean; whiskers = 95% t-interval over episodes",
+       x = "entry node", y = "mean total delay [s/veh]", fill = "side") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+fair_ratio <- fair %>% group_by(demand_level) %>%
+  summarise(worst_origin = origin[which.max(mean_delay_s)], best_origin = origin[which.min(mean_delay_s)],
+            worst_over_best = round(max(mean_delay_s) / min(mean_delay_s), 2), .groups = "drop")
+kable(fair_ratio, caption = "Largest / smallest mean delay over origins, per demand level")
+fair_ep %>% group_by(demand_asym, side) %>%
+  summarise(episodes = n_distinct(episode_id), mean_delay_s = round(mean(mean_delay), 1), .groups = "drop") %>%
+  pivot_wider(names_from = side, values_from = mean_delay_s) %>%
+  kable(caption = "Mean delay by side of entry (N/E/S/W) and demand asymmetry")
+```
+
+Half of the episodes use the `ns_heavy` asymmetry (north and south entries
+spawn more cars), so a higher delay on the N/S arms is expected there; the
+ratio of the worst to the best origin is the number to watch when controllers
+are compared later.
+
+## Queue over time at the four junctions of one episode
+
+One design-demand episode driven by `max_pressure` with ambulances is picked
+(the first such episode in the table). `q_total` is the number of queued
+vehicles (v < 2 m/s) on the four approaches of a junction, logged every
+second. The shaded bands are the warm-up and the cool-down.
+
+```{r qtotal, fig.height=5}
+pick <- ep %>% filter(demand_level == "design", controller == "max_pressure", ev_rate == "default") %>%
+  arrange(episode_id)
+ep_id <- if (nrow(pick) > 0) pick$episode_id[1] else ep$episode_id[1]
+ep_info <- ep %>% filter(episode_id == ep_id)
+jz %>% filter(episode_id == ep_id) %>%
+  mutate(junction = paste0("J", junction_id)) %>%
+  ggplot(aes(t, q_total)) +
+  annotate("rect", xmin = 0, xmax = cfg$warmup_s, ymin = -Inf, ymax = Inf, alpha = 0.12, fill = "grey40") +
+  annotate("rect", xmin = cfg$warmup_s + cfg$main_s, xmax = cfg$warmup_s + cfg$main_s + cfg$cooldown_s,
+           ymin = -Inf, ymax = Inf, alpha = 0.12, fill = "grey40") +
+  geom_line(colour = "steelblue", linewidth = 0.3) +
+  facet_wrap(~ junction, ncol = 2) +
+  labs(title = sprintf("Episode %d (%s demand, %s): queued vehicles per junction at 1 Hz",
+                       ep_id, ep_info$demand_level, ep_info$controller),
+       x = "time [s]", y = "q_total [veh]")
+```
+
+## Label balance of `y_mp_action`
+
+The imitation label is the approach (0 N, 1 E, 2 S, 3 W) that the
+priority-aware max-pressure teacher would give green to. Because the label is
+recomputed from every row regardless of which controller drove the episode,
+the classes are roughly balanced; an excess of N and S reflects the
+`ns_heavy` demand asymmetry in half of the episodes.
+
+```{r label-balance}
+lab <- main %>% mutate(y = factor(y_mp_action, levels = 0:3, labels = c("0 (N)", "1 (E)", "2 (S)", "3 (W)")))
+balance <- lab %>% count(y) %>% mutate(share = round(n / sum(n), 3))
+kable(balance, caption = "Label balance of y_mp_action on main-period rows")
+
+ggplot(lab %>% count(controller, y) %>% group_by(controller) %>% mutate(share = n / sum(n)),
+       aes(controller, share, fill = y)) +
+  geom_col(position = "dodge") +
+  labs(title = "Label balance by driving controller", x = NULL, y = "share of rows", fill = "y_mp_action")
+
+# how often does the label disagree with the current phase (a "switch")?
+switch_share <- mean(main$y_mp_action != main$phase)
+cat("Share of rows where the teacher wants a switch:", round(switch_share, 3), "\n")
+```
+
+## Hidden driver aggressiveness `alpha` against delay
+
+Every vehicle has a latent aggressiveness `alpha ~ Beta(2, 2)` that scales
+its desired speed, acceleration and headway. It is in `vehicles.csv` but not
+observable by a controller. Does it matter for the vehicle's delay? The
+scatter uses a log y-axis, so it applies the same rule as above (finished
+trips with delay >= 1 s); the table and the correlation use *all* finished
+trips, including the ones the log axis cannot show.
+
+```{r alpha, fig.height=5}
+alpha_all  <- cars %>% filter(completed)
+alpha_pool <- alpha_all %>% filter(total_delay_s >= delay_min)
+n_alpha <- min(60000, nrow(alpha_pool))
+alpha_plot <- alpha_pool %>% slice_sample(n = n_alpha)
+ggplot(alpha_plot, aes(alpha, total_delay_s)) +
+  geom_point(alpha = 0.08, size = 0.5) +
+  geom_smooth(method = "gam", formula = y ~ s(x, bs = "cs"), colour = "firebrick") +
+  scale_y_log10(labels = label_comma()) +
+  facet_wrap(~ demand_level, ncol = 4, scales = "free_y") +
+  labs(title = "Hidden aggressiveness alpha vs total delay",
+       subtitle = sprintf("%s finished trips with delay >= %d s (%d dropped by the log axis); red = GAM smooth",
+                          format(n_alpha, big.mark = ","), delay_min, nrow(alpha_all) - nrow(alpha_pool)),
+       x = "alpha (0 = timid, 1 = aggressive)", y = "total delay [s], log scale")
+
+alpha_all %>%
+  mutate(alpha_bin = cut(alpha, breaks = seq(0, 1, 0.2), include.lowest = TRUE)) %>%
+  group_by(alpha_bin) %>%
+  summarise(vehicles = n(), mean_delay_s = round(mean(total_delay_s), 1),
+            mean_free_flow_s = round(mean(free_flow_time_s), 1), .groups = "drop") %>%
+  kable(caption = "Mean delay by alpha bin (all finished trips)")
+rho_alpha <- cor(alpha_all$alpha, alpha_all$total_delay_s, method = "spearman")
+cat("Spearman correlation alpha vs delay (all finished trips):", round(rho_alpha, 3), "\n")
+```
+
+The dependence is weak (Spearman rho = `r round(rho_alpha, 3)`): in a queue
+everybody waits for the signal, so delay is dominated by the demand level and
+the controller rather than by the driver. This is reassuring for the project,
+because a controller cannot see `alpha`.
+
+## Ambulance versus car delay
+
+In the episodes with `ev_rate == "default"`
+(`r sum(ep$ev_rate == "default")` of `r nrow(ep)`), ambulances (faster, more
+aggressive vehicles drawn from their own random stream) enter the grid at
+`r cfg$lambda_ev_vph` per hour per entry node. In this version they are
+subject to the same signals as cars: the controllers that drove the episodes
+do not give them priority, so their delay is of the same order as a car's,
+and only their shorter headway and higher desired speed make a difference. The
+teacher label `y_mp_action` encodes what a priority-aware rule *would* have
+requested; whether that reduces ambulance delay is a closed-loop question for
+the project, not something this table can show. The boxplot applies the same
+plotting rule as the other delay figures (delay >= `r delay_min` s on a log
+axis); the table uses all vehicles.
+
+```{r ev-delay, fig.height=4.5}
+ev_eps <- ep$episode_id[ep$ev_rate == "default"]
+vtype <- vh %>% filter(!is_warmup, episode_id %in% ev_eps) %>%
+  left_join(ep %>% select(episode_id, demand_level), by = "episode_id") %>%
+  mutate(demand_level = factor(demand_level, levels = lvl))
+ev_dropped <- sum(vtype$total_delay_s < delay_min, na.rm = TRUE)
+ggplot(vtype %>% filter(total_delay_s >= delay_min), aes(vehicle_type, total_delay_s, fill = vehicle_type)) +
+  geom_boxplot(outlier.size = 0.3, alpha = 0.7) +
+  scale_y_log10(labels = label_comma()) +
+  facet_wrap(~ demand_level, ncol = 4) +
+  labs(title = "Total delay: ambulances vs cars (episodes with ambulances)",
+       subtitle = sprintf("vehicles with delay >= %d s (%d dropped by the log axis)", delay_min, ev_dropped),
+       x = NULL, y = "total delay [s], log scale") +
+  theme(legend.position = "none")
+
+vtype %>% group_by(demand_level, vehicle_type) %>%
+  summarise(vehicles = n(), mean_delay_s = round(mean(total_delay_s, na.rm = TRUE), 1),
+            median_delay_s = round(median(total_delay_s, na.rm = TRUE), 1),
+            mean_stops = round(mean(n_stops), 2), .groups = "drop") %>%
+  kable(caption = "Ambulance vs car delay by demand level (all vehicles of the ambulance episodes)")
+```
+
+## Per-episode KPI table
+
+```{r kpi-table}
+kpi_cols <- c("episode_id", "demand_level", "controller", "split", "ev_rate", "throughput_vph",
+              "mean_total_delay_s", "p90_total_delay_s", "max_queue_veh", "switches_per_min",
+              "n_red_commits", "gridlock", "n_ambulances", "ev_mean_delay_s", "n_invariant_violations")
+ep %>% select(all_of(kpi_cols)) %>% arrange(episode_id)
+```
+
+# A simple feasibility model
+
+**Question.** Can the teacher's request `y_mp_action` be recovered from the
+feature row alone? If a shallow model manages it, learning a controller from
+this table is feasible.
+
+**Protocol.** Features are the observable columns of the dictionary
+(`twin_observable == TRUE`) minus the noisy sensor copies `obs_q_*`: the
+signal state, the per-approach counts, the downstream and neighbour columns
+and the ambulance channel. Keys, period flags, the controller's own actions
+and the labels are excluded. The split is **by episode** (`split` column),
+never by row, because consecutive rows five seconds apart are
+near-duplicates. The model is a depth-5 `rpart` tree, fitted on the `train`
+episodes and scored on the `test` episodes.
+
+```{r features}
+observable <- dd$column[dd$table == "signal_ticks" & dd$twin_observable]
+sensor     <- dd$column[dd$table == "signal_ticks" & dd$namespace == "sensor"]
+features   <- setdiff(intersect(observable, names(main)), sensor)
+cat(length(features), "features:\n"); print(features)
+
+train <- main %>% filter(split == "train")
+test  <- main %>% filter(split == "test")
+ood   <- main %>% filter(split == "test_ood")
+if (nrow(test) == 0) {            # a small development release may have no test episodes
+  cat("No 'test' episodes in this release: the 'val' episodes serve as the hold-out set.\n")
+  test <- main %>% filter(split == "val")
+}
+cat("train rows:", nrow(train), " test rows:", nrow(test), " test_ood rows:", nrow(ood), "\n")
+```
+
+```{r tree-raw}
+set.seed(42)
+t0 <- Sys.time()
+formula_raw <- as.formula(paste("factor(y_mp_action) ~", paste(features, collapse = " + ")))
+fit_raw <- rpart(formula_raw, data = train, method = "class",
+                 control = rpart.control(maxdepth = 5, cp = 0.001, minbucket = 50))
+cat("Fitted in", round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1), "s\n")
+
+pred_raw <- predict(fit_raw, test, type = "class")
+acc_raw  <- mean(pred_raw == test$y_mp_action)
+cat(sprintf("Test accuracy (raw features, depth 5): %.3f  (chance = 0.25, majority class = %.3f)\n",
+            acc_raw, max(table(test$y_mp_action)) / nrow(test)))
+conf_raw <- table(predicted = pred_raw, actual = test$y_mp_action)
+kable(conf_raw, caption = "Confusion table on test episodes (rows = predicted, columns = actual)")
+```
+
+```{r tree-raw-print}
+print(fit_raw)
+```
+
+Rather than describing the tree by hand, a helper reads the fitted object:
+which condition is at the root, which variables appear at each depth, and
+how the accuracy differs between rows with and without an ambulance in
+sight.
+
+```{r tree-story}
+tree_story <- function(fit) {
+  fr    <- fit$frame
+  node  <- as.integer(rownames(fr))        # rpart node numbers: children of k are 2k and 2k+1
+  depth <- floor(log2(node))
+  lab   <- labels(fit)                     # the condition that leads INTO each node
+  is_split <- fr$var != "<leaf>"
+  vars_by_depth <- tapply(as.character(fr$var[is_split]), depth[is_split],
+                          function(v) paste(unique(v), collapse = ", "))
+  list(root = lab[node == 2],              # condition of the left child = the root split
+       by_depth = data.frame(depth = as.integer(names(vars_by_depth)) + 1,
+                             split_variables = unname(vars_by_depth)),
+       n_leaves = sum(!is_split),
+       vars_used = unique(as.character(fr$var[is_split])))
+}
+ev_in_sight <- function(d) d$ev_present_N | d$ev_present_E | d$ev_present_S | d$ev_present_W
+acc_by_ev <- function(pred, d) {
+  ev <- ev_in_sight(d)
+  data.frame(rows = c("ambulance in sight", "no ambulance"),
+             n = c(sum(ev), sum(!ev)),
+             share_of_rows = round(c(mean(ev), mean(!ev)), 3),
+             accuracy = round(c(mean(pred[ev] == d$y_mp_action[ev]), mean(pred[!ev] == d$y_mp_action[!ev])), 3))
+}
+story_raw <- tree_story(fit_raw)
+cat("Root split:", story_raw$root, "\n")
+kable(story_raw$by_depth, caption = "Variables used at each depth of the raw-feature tree")
+kable(acc_by_ev(pred_raw, test), caption = "Raw-feature tree: test accuracy with and without an ambulance in sight")
+share_no_ev_main <- mean(!ev_in_sight(main))
+cat(sprintf("Share of main-period rows with no ambulance in sight: %.3f\n", share_no_ev_main))
+```
+
+**Reading (generated from the fitted tree).** The root split is
+`` `r story_raw$root` ``; the variables used, from the top down, are
+`r paste(story_raw$vars_used, collapse = ", ")` (`r story_raw$n_leaves` leaves).
+`r if (any(grepl("^ev_", story_raw$vars_used))) "The ambulance channel appears among the split variables: when an ambulance is close to a stop line the teacher asks for that approach, which a single threshold can express." else "The ambulance channel does not appear among the split variables."`
+Rows without an ambulance in sight are
+`r sprintf("%.1f%%", 100 * share_no_ev_main)` of the main-period rows; on
+those the label is the plain max-pressure rule, which compares *differences*
+of counts (`n_a - mean(down_n)` across approaches, with hysteresis against the
+current phase). A depth-5 tree over raw counts cannot express those
+comparisons, so its accuracy on the no-ambulance rows stays at
+`r sprintf("%.3f", acc_by_ev(pred_raw, test)$accuracy[2])`.
+
+```{r tree-raw-importance}
+imp <- sort(fit_raw$variable.importance, decreasing = TRUE)[1:min(10, length(fit_raw$variable.importance))]
+kable(data.frame(variable = names(imp), importance = round(imp, 0), row.names = NULL),
+      caption = "Top-10 variables by rpart importance (raw features)")
+```
+
+## The same tree with the pressures computed from the row
+
+The max-pressure rule is a function of the row, so we can *compute* the
+pressures from the observable columns (this is exactly what the twin will do
+at run time) and offer them to the tree:
+
+```{r pressure}
+dirs <- c("N", "E", "S", "W")
+add_pressure <- function(d) {
+  # pressure_a = n_a - mean(down_n over a's unblocked exits), as in the controller
+  for (a in dirs) {
+    total <- 0; count <- 0
+    for (o in setdiff(dirs, a)) {
+      ok    <- !d[[paste0("down_blocked_", o)]]
+      total <- total + ifelse(ok, d[[paste0("down_n_", o)]], 0)
+      count <- count + ok
+    }
+    # as.numeric(): keep one storage type in every split, which rpart::predict insists on
+    d[[paste0("pressure_", a)]] <- as.numeric(ifelse(count > 0, d[[paste0("n_", a)]] - total / pmax(count, 1), -1e9))
+  }
+  P <- as.matrix(d[paste0("pressure_", dirs)])
+  d$pressure_cur  <- as.numeric(P[cbind(seq_len(nrow(d)), d$phase + 1)])   # pressure of the current green
+  d$pressure_best <- as.numeric(apply(P, 1, max))
+  d$best_dir      <- as.numeric(apply(P, 1, which.max) - 1)
+  d$pressure_gain <- d$pressure_best - d$pressure_cur
+  d
+}
+train_p <- add_pressure(train); test_p <- add_pressure(test); ood_p <- add_pressure(ood)
+features_p <- c(features, grep("^pressure_|^best_dir$", names(train_p), value = TRUE))
+
+set.seed(42)
+fit_p <- rpart(as.formula(paste("factor(y_mp_action) ~", paste(features_p, collapse = " + "))),
+               data = train_p, method = "class",
+               control = rpart.control(maxdepth = 5, cp = 0.001, minbucket = 50))
+pred_p <- predict(fit_p, test_p, type = "class")
+acc_p  <- mean(pred_p == test_p$y_mp_action)
+acc_p_ood <- mean(predict(fit_p, ood_p, type = "class") == ood_p$y_mp_action)
+cat(sprintf("Test accuracy (with pressures, depth 5): %.3f;  on stress episodes (test_ood): %.3f\n", acc_p, acc_p_ood))
+kable(table(predicted = pred_p, actual = test_p$y_mp_action),
+      caption = "Confusion table on test episodes, tree with pressure features")
+print(fit_p)
+```
+
+```{r tree-summary}
+# a compact text summary of both trees: size, splits used, accuracy
+tree_summary <- function(fit, name, acc) {
+  frame <- fit$frame
+  data.frame(model = name, terminal_nodes = sum(frame$var == "<leaf>"),
+             splits_on = paste(unique(as.character(frame$var[frame$var != "<leaf>"])), collapse = ", "),
+             test_accuracy = round(acc, 3))
+}
+kable(bind_rows(tree_summary(fit_raw, "raw features", acc_raw),
+                tree_summary(fit_p, "raw + pressures", acc_p)),
+      caption = "Text summary of the two trees")
+story_p <- tree_story(fit_p)
+cat("Root split of the pressure tree:", story_p$root, "\n")
+kable(story_p$by_depth, caption = "Variables used at each depth of the pressure tree")
+kable(acc_by_ev(pred_p, test_p), caption = "Pressure tree: test accuracy with and without an ambulance in sight")
+printcp(fit_p)
+```
+
+**Reading (generated from the fitted tree).** With the pressures available,
+the five-level tree reaches `r sprintf("%.1f%%", 100 * acc_p)` accuracy on
+unseen episodes (`r sprintf("%.1f%%", 100 * acc_raw)` without them). Its root
+split is `` `r story_p$root` `` and the variables it uses are
+`r paste(story_p$vars_used, collapse = ", ")`, i.e. the tree
+`r if (isTRUE(any(grepl("^pressure_|^best_dir$", story_p$vars_used)))) "picks the computed pressure columns first" else "does not use the computed pressure columns"`.
+`r if (any(grepl("^ev_", story_p$vars_used))) "The ambulance columns are still used, for the rows where the teacher overrides the pressures." else "The ambulance columns are not used by this tree; on the ambulance rows it relies on the pressures alone."`
+The accuracy on the stress episodes is `r sprintf("%.1f%%", 100 * acc_p_ood)`,
+`r if (isTRUE(acc_p_ood >= acc_p - 0.05)) "so the rule transfers to a demand level never seen in training" else "lower than on the test episodes, so the rule only partly transfers to a demand level never seen in training"`.
+```{r tree-ev-compare}
+ev_cmp <- data.frame(tree = c("raw features", "raw + pressures"),
+                     acc_ambulance_rows = c(acc_by_ev(pred_raw, test)$accuracy[1], acc_by_ev(pred_p, test_p)$accuracy[1]),
+                     acc_no_ambulance_rows = c(acc_by_ev(pred_raw, test)$accuracy[2], acc_by_ev(pred_p, test_p)$accuracy[2]))
+kable(ev_cmp, caption = "Test accuracy of the two trees on rows with / without an ambulance in sight")
+```
+
+On the rows *without* an ambulance the pressure tree scores
+`r sprintf("%.3f", ev_cmp$acc_no_ambulance_rows[2])` against
+`r sprintf("%.3f", ev_cmp$acc_no_ambulance_rows[1])` for the raw tree; on the
+rows *with* an ambulance in sight it scores
+`r sprintf("%.3f", ev_cmp$acc_ambulance_rows[2])` against
+`r sprintf("%.3f", ev_cmp$acc_ambulance_rows[1])`, so
+`r if (isTRUE(ev_cmp$acc_ambulance_rows[2] < ev_cmp$acc_ambulance_rows[1])) "with only five levels the pressure tree spends its splits on the (far more frequent) max-pressure rows and gives up part of the ambulance rows; a model with more capacity is needed to get both" else "it keeps the ambulance rows as well"`.
+The remaining errors are the hysteresis and max-green corner cases that a
+depth-5 tree cannot carve out; a deeper tree or a boosted model (the plan
+for the final project) is expected to close part of that gap.
+
+# Results of the Python ML pipeline (if available)
+
+The project's Python pipeline (`traffic_twin/ml.py`) trains logistic
+regression, gradient boosting and a decision tree for Task A (imitation of
+`y_mp_action`) and ridge / gradient boosting for Task B (predicting
+`y_q_total_t30`). If its `results.json` is next to this report, the headline
+test metrics are pulled in; the section is skipped otherwise.
+
+```{r ml-results, results="asis"}
+ml_path <- params$ml_results
+if (!file.exists(ml_path)) {
+  cat("No `", ml_path, "` found: ML pipeline results not shown.\n\n", sep = "")
+} else {
+  ml <- fromJSON(ml_path, simplifyVector = FALSE)
+  same_release <- isTRUE(ml$n_episodes == nrow(ep)) && isTRUE(ml$n_main_rows == nrow(main))
+  cat(sprintf("`results.json`: %d episodes, %d main rows (this report: %d episodes, %d main rows) -> **%s**\n\n",
+              ml$n_episodes, ml$n_main_rows, nrow(ep), nrow(main),
+              if (same_release) "same release" else "DIFFERENT release: the numbers below were computed on other data"))
+  task_a <- bind_rows(lapply(names(ml$task_a$models), function(m) {
+    s <- ml$task_a$models[[m]]$splits
+    data.frame(task = "A: y_mp_action", model = m,
+               test_bal_acc = round(s$test$balanced_accuracy, 3), test_macro_f1 = round(s$test$macro_f1, 3),
+               ood_bal_acc = round(s$test_ood$balanced_accuracy, 3), ood_macro_f1 = round(s$test_ood$macro_f1, 3))
+  }))
+  cat(kable(task_a, caption = "Task A (classification) headline metrics from results.json"), sep = "\n")
+  task_b <- bind_rows(lapply(names(ml$task_b$models), function(m) {
+    s <- ml$task_b$models[[m]]$splits
+    data.frame(task = "B: y_q_total_t30", model = m,
+               test_mae = round(s$test$mae, 2), test_r2 = round(s$test$r2, 3),
+               ood_mae = round(s$test_ood$mae, 2), ood_r2 = round(s$test_ood$r2, 3))
+  }))
+  nb <- ml$task_b$naive_baseline
+  task_b <- bind_rows(task_b, data.frame(task = "B: y_q_total_t30", model = "naive (q_total now)",
+                                         test_mae = round(nb$test$mae, 2), test_r2 = round(nb$test$r2, 3),
+                                         ood_mae = round(nb$test_ood$mae, 2), ood_r2 = round(nb$test_ood$r2, 3)))
+  cat(kable(task_b, caption = "Task B (regression) headline metrics from results.json"), sep = "\n")
+  cat("\n")
+}
+```
+
+# Cross-checks against the methodology
+
+The methodology fixes several numbers that the dataset must reproduce.
+`config.json` holds the configuration with which every episode was generated.
+
+```{r config}
+cat("generator_version:", cfg$generator_version, "\n")
+cat("measured saturation flow:", cfg$measured_sat_flow_vphpl, "veh/h/lane (expected range",
+    paste(cfg$sat_flow_expected_range, collapse = "-"), ")\n")
+cat("start-up lost time:", cfg$startup_lost_time_s, "s\n")
+if (!is.null(cfg$capacity_vph))
+  cat("capacity per approach: formula", cfg$capacity_formula_vph, "veh/h, realised", cfg$capacity_vph,
+      "veh/h (realisation", cfg$capacity_realisation, ")\n")
+lambda <- data.frame(demand_level = names(cfg$lambda_base_vph), lambda_base_vph = unlist(cfg$lambda_base_vph), row.names = NULL)
+kable(lambda, caption = "Calibrated arrival rate per entry node and demand level (veh/h)")
+```
+
+```{r checks}
+checks <- c(
+  "saturation flow inside the expected range" =
+    cfg$measured_sat_flow_vphpl >= cfg$sat_flow_expected_range[1] && cfg$measured_sat_flow_vphpl <= cfg$sat_flow_expected_range[2],
+  "every episode stores the same measured saturation flow" = all(ep$measured_sat_flow_vphpl == cfg$measured_sat_flow_vphpl),
+  "episode lambda = level lambda x jitter in [0.9, 1.1]" = all(abs(ep$lambda_base_vph /
+      unlist(cfg$lambda_base_vph)[ep$demand_level] - 1) <= cfg$demand_jitter + 1e-6),
+  "invariant violations are zero in every episode" = all(ep$n_invariant_violations == 0),
+  "seed = seed_base + episode_id (deterministic)" = all(ep$seed == cfg$seed_base + ep$episode_id),
+  "one config_hash and generator_version for all episodes" =
+    length(unique(ep$config_hash)) == 1 && length(unique(ep$generator_version)) == 1,
+  "episodes.csv generator_version equals config.json" = all(ep$generator_version == cfg$generator_version),
+  "row counts equal the data card head line" = all(count_check$match),
+  "vehicle conservation: spawned = arrived + in network + queued" =
+    all(ep$n_spawned == ep$n_arrived + ep$n_in_network_end + ep$n_entry_queued_end),
+  "stress episodes are all in test_ood" = all(ep$split[ep$demand_level == "stress"] == "test_ood"),
+  "random_dwell episodes are train only" = all(ep$split[ep$controller == "random_dwell"] == "train")
+)
+kable(data.frame(check = names(checks), passed = unname(checks)), caption = "Methodology cross-checks")
+cat("Checks passed:", sum(checks), "of", length(checks), "\n")
+cat("Total invariant violations over", nrow(ep), "episodes:", sum(ep$n_invariant_violations), "\n")
+cat("config_hash:", unique(ep$config_hash), "\n")
+```
+
+# Limitations and next steps
+
+- **It is simulated data.** The physics (IDM drivers without reaction time,
+  no lane changes, no pedestrians, two-colour signals) is a simplification and
+  the numbers are only as realistic as the calibration (saturation flow
+  `r cfg$measured_sat_flow_vphpl` veh/h/lane, inside the textbook range). Next step:
+  validate one scenario against SUMO or a published intersection study.
+- **The label is a rule, not the optimum.** `y_mp_action` is what max-pressure
+  with ambulance priority would do; imitating it can at best tie the teacher,
+  and the data card notes that this teacher switches often and is worse than
+  fixed time at high demand. Next step: use the 30 s-ahead queue label
+  `y_q_total_t30` for a model that predicts the *effect* of an action, and
+  compare controllers in closed loop on paired seeds with t-based intervals.
+- **Ambulances are a channel, not yet a benefit.** The episodes were driven by
+  controllers that do not use the ambulance channel, so the data show how
+  ambulances fare *without* priority; any claim about the gain of priority has
+  to come from the closed-loop comparison planned for the project.
+- **Shallow model, truth features.** A depth-5 tree on raw counts is a
+  feasibility check, not the final model, and the noisy sensor copies
+  (`obs_q_*`) were not used. Next step: gradient boosting with GroupKFold by
+  episode, trained on `obs_q_*`, with balanced accuracy, macro-F1 and the
+  stress episodes as the out-of-distribution test.
+
+# Appendix: data dictionary of `signal_ticks`
+
+```{r dict-full}
+dd %>% filter(table == "signal_ticks") %>%
+  select(column, dtype, unit, namespace, twin_observable, leaky_for, null_policy, description) %>%
+  kable(caption = "All columns of signal_ticks.csv, from data_dictionary.csv")
+```
+
+```{r session}
+cat("Total render time:", round(as.numeric(difftime(Sys.time(), t_start, units = "mins")), 1), "minutes\n")
+sessionInfo()
+```

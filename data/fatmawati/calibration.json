@@ -1,0 +1,381 @@
+{
+ "scale": {
+  "N": 0.242,
+  "E": 0.239,
+  "S": 0.22,
+  "W": 0.36
+ },
+ "capacity_limited": {
+  "N": false,
+  "E": false,
+  "S": false,
+  "W": true
+ },
+ "converged": {
+  "N": true,
+  "E": false,
+  "S": false,
+  "W": false
+ },
+ "rel_error": {
+  "N": 0.058,
+  "E": -0.189,
+  "S": -0.237,
+  "W": -0.53
+ },
+ "method": "Dishub fixed plan, observed movements x per-approach scale.  Damped rounds s <- s (target/achieved)^0.7 overshot: near capacity an approach's hourly maximum queue tips from a short queue to spill-back past the 300 m camera, and it varies a lot between seeds.  The scales were then bracketed and checked over 4 seeds; an approach whose entry gates carry < 90% of the demand sent to it is capacity-limited.  W (RA Kartini) is capacity-limited: above about 0.38 its demand backs up upstream of the camera or spills past it, so its 155.5 m target is not reachable; it runs at 0.36 of the observed volume.",
+ "sources": [
+  "Sumabrata, Haqueline & Mauramdha (2026), Microscopic Simulation Analysis of The Fatmawati Intersection in Jakarta, Proc. QiR 2025, AER 303, 31-44, doi:10.2991/978-94-6239-717-0_4 (CC BY-NC 4.0)",
+  "Yusuf & Isradi (2025), ETJ 10(3), 4052-4060, doi:10.47191/etj/v10i03.15 (CC BY 4.0): vehicle mix"
+ ],
+ "vehicle_mix": {
+  "motorcycle": 0.8,
+  "car": 0.19,
+  "bus": 0.005,
+  "truck": 0.005
+ },
+ "target_max_queue_m": {
+  "N": 289.5,
+  "S": 166.6,
+  "E": 239.0,
+  "W": 155.5
+ },
+ "verification": {
+  "seeds": [
+   11,
+   12,
+   13,
+   14
+  ],
+  "max_queue_m": {
+   "N": 306.4,
+   "E": 193.9,
+   "S": 127.1,
+   "W": 73.1
+  },
+  "max_queue_sd_m": {
+   "N": 1.8,
+   "E": 59.0,
+   "S": 3.8,
+   "W": 16.1
+  },
+  "stopped_delay_s": {
+   "N": 191.1,
+   "E": 98.5,
+   "S": 86.0,
+   "W": 41.5
+  },
+  "pkji_delay_s": {
+   "N": 79.8,
+   "S": 106.3,
+   "E": 78.7,
+   "W": 78.3
+  },
+  "entry_veh_h": {
+   "N": 1218.8,
+   "E": 2268.8,
+   "S": 1007.5,
+   "W": 2218.8
+  },
+  "observed_veh_h": {
+   "N": 5456,
+   "E": 9455,
+   "S": 4632,
+   "W": 6334
+  },
+  "volume_share_of_observed": {
+   "N": 0.223,
+   "E": 0.24,
+   "S": 0.218,
+   "W": 0.35
+  },
+  "lane_collisions": 28,
+  "lane_collisions_study": 10,
+  "junction_overlaps": 1107,
+  "junction_overlaps_study": 711,
+  "teleports": 151,
+  "veh_km": 215472.0,
+  "speed_x": 12.3
+ },
+ "rounds": [
+  {
+   "round": 0,
+   "scale": {
+    "N": 0.242,
+    "E": 0.229,
+    "S": 0.263,
+    "W": 0.4
+   },
+   "max_queue_m": {
+    "N": 308.5,
+    "E": 237.5,
+    "S": 300.8,
+    "W": 63.0
+   },
+   "rel_error": {
+    "N": 0.066,
+    "E": -0.006,
+    "S": 0.806,
+    "W": -0.595
+   },
+   "served_share": {
+    "N": 0.899,
+    "E": 0.963,
+    "S": 0.955,
+    "W": 0.917
+   }
+  },
+  {
+   "round": 1,
+   "scale": {
+    "N": 0.242,
+    "E": 0.229,
+    "S": 0.174,
+    "W": 0.752
+   },
+   "max_queue_m": {
+    "N": 304.4,
+    "E": 165.2,
+    "S": 102.7,
+    "W": 69.0
+   },
+   "rel_error": {
+    "N": 0.051,
+    "E": -0.309,
+    "S": -0.384,
+    "W": -0.556
+   },
+   "served_share": {
+    "N": 0.92,
+    "E": 1.005,
+    "S": 0.989,
+    "W": 0.454
+   }
+  },
+  {
+   "round": 2,
+   "scale": {
+    "N": 0.242,
+    "E": 0.297,
+    "S": 0.244,
+    "W": 0.341
+   },
+   "max_queue_m": {
+    "N": 306.0,
+    "E": 307.8,
+    "S": 301.4,
+    "W": 79.5
+   },
+   "rel_error": {
+    "N": 0.057,
+    "E": 0.288,
+    "S": 0.809,
+    "W": -0.489
+   },
+   "served_share": {
+    "N": 0.874,
+    "E": 0.837,
+    "S": 0.928,
+    "W": 1.013
+   }
+  },
+  {
+   "round": 3,
+   "scale": {
+    "N": 0.242,
+    "E": 0.249,
+    "S": 0.161,
+    "W": 0.341
+   },
+   "max_queue_m": {
+    "N": 304.4,
+    "E": 293.0,
+    "S": 73.0,
+    "W": 72.0
+   },
+   "rel_error": {
+    "N": 0.052,
+    "E": 0.226,
+    "S": -0.562,
+    "W": -0.537
+   },
+   "served_share": {
+    "N": 0.912,
+    "E": 0.986,
+    "S": 0.989,
+    "W": 0.996
+   }
+  }
+ ],
+ "grid_runs": [],
+ "verification_runs": [
+  {
+   "scale": {
+    "N": 0.242,
+    "E": 0.239,
+    "S": 0.22,
+    "W": 0.36
+   },
+   "seed": 11,
+   "max_queue_m": {
+    "N": 305.3,
+    "E": 177.0,
+    "S": 130.8,
+    "W": 58.8
+   },
+   "stopped_delay_s": {
+    "N": 281.4,
+    "E": 110.0,
+    "S": 92.5,
+    "W": 39.5
+   },
+   "entry_veh_h": {
+    "N": 1177,
+    "E": 2261,
+    "S": 1021,
+    "W": 2231
+   },
+   "stopline_veh_h": {
+    "N": 950,
+    "E": 1543,
+    "S": 787,
+    "W": 1162
+   },
+   "waiting_to_enter": 0,
+   "lane_collisions": 13,
+   "junction_overlaps": 347,
+   "teleports": 33,
+   "lane_collisions_study": 3,
+   "junction_overlaps_study": 237,
+   "veh_km": 54500.8,
+   "veh_km_study": 7792.4,
+   "speed_x": 11.6
+  },
+  {
+   "scale": {
+    "N": 0.242,
+    "E": 0.239,
+    "S": 0.22,
+    "W": 0.36
+   },
+   "seed": 12,
+   "max_queue_m": {
+    "N": 308.3,
+    "E": 187.6,
+    "S": 129.3,
+    "W": 94.4
+   },
+   "stopped_delay_s": {
+    "N": 236.4,
+    "E": 91.8,
+    "S": 94.9,
+    "W": 43.9
+   },
+   "entry_veh_h": {
+    "N": 1225,
+    "E": 2252,
+    "S": 1017,
+    "W": 2260
+   },
+   "stopline_veh_h": {
+    "N": 958,
+    "E": 1498,
+    "S": 772,
+    "W": 1184
+   },
+   "waiting_to_enter": 0,
+   "lane_collisions": 5,
+   "junction_overlaps": 300,
+   "teleports": 31,
+   "lane_collisions_study": 2,
+   "junction_overlaps_study": 195,
+   "veh_km": 54309.7,
+   "veh_km_study": 7869.5,
+   "speed_x": 11.8
+  },
+  {
+   "scale": {
+    "N": 0.242,
+    "E": 0.239,
+    "S": 0.22,
+    "W": 0.36
+   },
+   "seed": 13,
+   "max_queue_m": {
+    "N": 307.5,
+    "E": 135.4,
+    "S": 122.3,
+    "W": 76.6
+   },
+   "stopped_delay_s": {
+    "N": 99.6,
+    "E": 56.0,
+    "S": 72.6,
+    "W": 42.0
+   },
+   "entry_veh_h": {
+    "N": 1254,
+    "E": 2269,
+    "S": 977,
+    "W": 2222
+   },
+   "stopline_veh_h": {
+    "N": 1003,
+    "E": 1579,
+    "S": 772,
+    "W": 1162
+   },
+   "waiting_to_enter": 0,
+   "lane_collisions": 3,
+   "junction_overlaps": 178,
+   "teleports": 37,
+   "lane_collisions_study": 3,
+   "junction_overlaps_study": 97,
+   "veh_km": 52823.8,
+   "veh_km_study": 7846.7,
+   "speed_x": 13.5
+  },
+  {
+   "scale": {
+    "N": 0.242,
+    "E": 0.239,
+    "S": 0.22,
+    "W": 0.36
+   },
+   "seed": 14,
+   "max_queue_m": {
+    "N": 304.4,
+    "E": 275.7,
+    "S": 126.0,
+    "W": 62.8
+   },
+   "stopped_delay_s": {
+    "N": 147.2,
+    "E": 136.0,
+    "S": 84.2,
+    "W": 40.4
+   },
+   "entry_veh_h": {
+    "N": 1219,
+    "E": 2293,
+    "S": 1015,
+    "W": 2162
+   },
+   "stopline_veh_h": {
+    "N": 964,
+    "E": 1572,
+    "S": 790,
+    "W": 1161
+   },
+   "waiting_to_enter": 0,
+   "lane_collisions": 7,
+   "junction_overlaps": 282,
+   "teleports": 50,
+   "lane_collisions_study": 2,
+   "junction_overlaps_study": 182,
+   "veh_km": 53837.7,
+   "veh_km_study": 7826.8,
+   "speed_x": 12.4
+  }
+ ]
+}

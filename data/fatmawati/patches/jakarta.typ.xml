@@ -1,0 +1,16 @@
+<!-- Jakarta defaults for OSM road classes without a maxspeed tag (an OSM maxspeed tag still wins):
+     urban arterials 50 km/h (PM 111/2015 urban limit), tertiary and slip/link roads 40 km/h, toll roads 80 km/h.
+     Motorcycles are not allowed on toll roads in Indonesia (PP 15/2005 Jalan Tol), so motorway and motorway_link
+     disallow them.  Loaded after SUMO's osmNetconvert.typ.xml, so only these attributes are overridden. -->
+<types>
+    <type id="highway.motorway"       numLanes="3" speed="22.22" priority="14" oneway="true"  disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle moped motorcycle"/>
+    <type id="highway.motorway_link"  numLanes="1" speed="11.11" priority="9"  oneway="true"  disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle moped motorcycle"/>
+    <type id="highway.trunk"          numLanes="2" speed="13.89" priority="13" oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle"/>
+    <type id="highway.trunk_link"     numLanes="1" speed="11.11" priority="8"  oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship pedestrian bicycle"/>
+    <type id="highway.primary"        numLanes="2" speed="13.89" priority="12" oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+    <type id="highway.primary_link"   numLanes="1" speed="11.11" priority="7"  oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+    <type id="highway.secondary"      numLanes="1" speed="13.89" priority="11" oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+    <type id="highway.secondary_link" numLanes="1" speed="11.11" priority="6"  oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+    <type id="highway.tertiary"       numLanes="1" speed="11.11" priority="10" oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+    <type id="highway.tertiary_link"  numLanes="1" speed="11.11" priority="5"  oneway="false" disallow="rail rail_urban rail_electric rail_fast tram drone aircraft scooter container wheelchair subway cable_car ship"/>
+</types>

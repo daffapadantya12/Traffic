@@ -1,0 +1,46 @@
+{
+ "eval_dir": "data/fatmawati_eval",
+ "levels": [
+  "design",
+  "high",
+  "low"
+ ],
+ "methods": [
+  "fixed",
+  "longest_queue",
+  "max_pressure",
+  "preempt_naive",
+  "priority_mp",
+  "random",
+  "still"
+ ],
+ "passing": [],
+ "pareto_front": [],
+ "winner": null,
+ "point_estimate": {
+  "passing": [
+   "fixed"
+  ],
+  "pareto_front": [
+   "fixed"
+  ],
+  "winner": null,
+  "nash": {
+   "fixed": NaN
+  }
+ },
+ "bootstrap": {
+  "resamples": 1000,
+  "seeds": [
+   1,
+   2,
+   3,
+   4
+  ],
+  "win_share": {
+   "none": 1.0
+  }
+ },
+ "implied_lambda": {}
+}
+python3 -m traffic_twin.fatmawati.kpi summary --eval data/fatmawati_eval --ou  69.89s user 0.93s system 82% cpu 1:25.39 total

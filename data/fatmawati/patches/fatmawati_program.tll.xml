@@ -1,0 +1,35 @@
+<!-- Dishub static plan at Perempatan Fatmawati (Sumabrata et al. 2026): S1 W+E through 80 s, S2 E through+right 12 s,
+     S3 N 78 s, S4 S 45 s, amber 2 s + all-red 2 s; phases 0-11 are that cycle, the rest are the other stage
+     transitions for adaptive control (traffic_twin/fatmawati/build_net.py). -->
+<tlLogics>
+    <tlLogic id="fatmawati" type="static" programID="dishub" offset="0">
+        <phase duration="80" state="GGrrrrrrrrrrrrGGrrrr" name="S1 green"/>
+        <phase duration="2" state="GGrrrrrrrrrrrryyrrrr" name="S1>S2 amber"/>
+        <phase duration="2" state="GGrrrrrrrrrrrrrrrrrr" name="S1>S2 all-red"/>
+        <phase duration="12" state="GGGGrrrrrrrrrrrrGGrr" name="S2 green"/>
+        <phase duration="2" state="yyyyrrrrrrrrrrrrGGrr" name="S2>S3 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrryyrr" name="S2>S3 all-red"/>
+        <phase duration="78" state="rrrrGGGGrrrGGGrrrrrr" name="S3 green"/>
+        <phase duration="2" state="rrrrGGGGrrryyyrrrrrr" name="S3>S4 amber"/>
+        <phase duration="2" state="rrrryyyyrrrrrrrrrrrr" name="S3>S4 all-red"/>
+        <phase duration="45" state="rrrrrrrrGGGrrrrrGGGG" name="S4 green"/>
+        <phase duration="2" state="rrrrrrrryyyrrrrrGGGG" name="S4>S1 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrryyyy" name="S4>S1 all-red"/>
+        <phase duration="2" state="yyrrrrrrrrrrrryyrrrr" name="S1>S3 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrrrrrr" name="S1>S3 all-red"/>
+        <phase duration="2" state="yyrrrrrrrrrrrryyrrrr" name="S1>S4 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrrrrrr" name="S1>S4 all-red"/>
+        <phase duration="2" state="GGyyrrrrrrrrrrrrGGrr" name="S2>S1 amber"/>
+        <phase duration="2" state="GGrrrrrrrrrrrrrryyrr" name="S2>S1 all-red"/>
+        <phase duration="2" state="yyyyrrrrrrrrrrrrGGrr" name="S2>S4 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrrGGrr" name="S2>S4 all-red"/>
+        <phase duration="2" state="rrrrGGGGrrryyyrrrrrr" name="S3>S1 amber"/>
+        <phase duration="2" state="rrrryyyyrrrrrrrrrrrr" name="S3>S1 all-red"/>
+        <phase duration="2" state="rrrrGGGGrrryyyrrrrrr" name="S3>S2 amber"/>
+        <phase duration="2" state="rrrryyyyrrrrrrrrrrrr" name="S3>S2 all-red"/>
+        <phase duration="2" state="rrrrrrrryyyrrrrrGGGG" name="S4>S2 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrrGGyy" name="S4>S2 all-red"/>
+        <phase duration="2" state="rrrrrrrryyyrrrrrGGGG" name="S4>S3 amber"/>
+        <phase duration="2" state="rrrrrrrrrrrrrrrryyyy" name="S4>S3 all-red"/>
+    </tlLogic>
+</tlLogics>

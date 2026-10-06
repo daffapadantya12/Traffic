@@ -1,0 +1,34 @@
+<!-- Virtual sensors of the Fatmawati twin (traffic_twin/fatmawati/sensors.py); read through libsumo. -->
+<additional>
+    <inductionLoop id="SL_N0" lane="953628421#0_0" pos="8.56" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_N1" lane="953628421#0_1" pos="8.56" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_N2" lane="953628421#0_2" pos="8.56" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_N0" lane="645192712#0_0" pos="454.26" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_N1" lane="645192712#0_1" pos="454.26" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_N2" lane="645192712#0_2" pos="454.26" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_N0" lane="776123438_0" pos="60.91" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_N1" lane="776123438_1" pos="60.91" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_E0" lane="1069005557#0_0" pos="12.6" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_E1" lane="1069005557#0_1" pos="12.6" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_E2" lane="1069005557#0_2" pos="12.6" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_E3" lane="1069005557#0_3" pos="12.6" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_E0" lane="652562979_0" pos="96.35" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_E1" lane="652562979_1" pos="96.35" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_E2" lane="652562979_2" pos="96.35" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_E3" lane="652562979_3" pos="96.35" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_E0" lane="698419632#0_0" pos="89.06" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_E1" lane="698419632#0_1" pos="89.06" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_E2" lane="698419632#0_2" pos="89.06" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_S0" lane="1069005556#0_0" pos="21.06" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_S1" lane="1069005556#0_1" pos="21.06" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_S0" lane="648964736#6_0" pos="290.0" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_S1" lane="648964736#6_1" pos="290.0" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_S0" lane="1069005555#0_0" pos="111.76" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_S1" lane="1069005555#0_1" pos="111.76" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_W0" lane="1069005554#0_0" pos="12.46" period="86400" file="/dev/null"/>
+    <inductionLoop id="SL_W1" lane="1069005554#0_1" pos="12.46" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_W0" lane="638194766#0_0" pos="20.51" period="86400" file="/dev/null"/>
+    <inductionLoop id="EN_W1" lane="638194766#0_1" pos="20.51" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_W0" lane="1097936838#5_0" pos="47.47" period="86400" file="/dev/null"/>
+    <inductionLoop id="EX_W1" lane="1097936838#5_1" pos="47.47" period="86400" file="/dev/null"/>
+</additional>

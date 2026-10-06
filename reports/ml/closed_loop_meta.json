@@ -1,0 +1,55 @@
+{
+  "n_seeds": 8,
+  "seeds": [
+    900001,
+    900002,
+    900003,
+    900004,
+    900005,
+    900006,
+    900007,
+    900008
+  ],
+  "lambda_ev_vph": 4.0,
+  "sensor_noise_level": 0.0,
+  "noise_variant": 0.1,
+  "noise_controllers": [
+    "max_pressure",
+    "ml_sensor"
+  ],
+  "paired_ev_off": true,
+  "wall_s": 352.2314381249889,
+  "workers": 8,
+  "model_path": "reports/ml/models/taskA_hgb_sensor.joblib",
+  "margin": 0.1,
+  "controllers": [
+    "fixed_time",
+    "max_pressure",
+    "preempt_naive",
+    "priority_mp",
+    "ml_sensor"
+  ],
+  "demands": [
+    "design",
+    "high"
+  ],
+  "n_episodes": 224,
+  "bound_factor": 1.1,
+  "ml_name": "ml_sensor",
+  "ml_aliases": [
+    "ml_v1"
+  ],
+  "command": "python3 -m traffic_twin.evaluate --data data/traffic_v1 --models reports/ml/models --out reports/ml",
+  "thread_env": {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1"
+  },
+  "simulator_generator_version": "traffic_twin_v1.2",
+  "simulator_config_hash": "ecd36a4b3cad",
+  "data_dir": "data/traffic_v1",
+  "dataset_config_hash": "ecd36a4b3cad",
+  "dataset_generator_version": "traffic_twin_v1.2",
+  "dataset_n_episodes": 120,
+  "hash_match": true
+}

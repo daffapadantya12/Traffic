@@ -1,0 +1,94 @@
+|--- ev_q_ahead_W <= -0.50
+|   |--- ev_present_E <= 0.50
+|   |   |--- ev_present_N <= 0.50
+|   |   |   |--- ev_eta_S <= -0.50
+|   |   |   |   |--- nb_W_exists <= 0.50
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- nb_W_exists >  0.50
+|   |   |   |   |   |--- class: 3
+|   |   |   |--- ev_eta_S >  -0.50
+|   |   |   |   |--- ev_dist_S <= 99.68
+|   |   |   |   |   |--- class: 2
+|   |   |   |   |--- ev_dist_S >  99.68
+|   |   |   |   |   |--- class: 2
+|   |   |--- ev_present_N >  0.50
+|   |   |   |--- ev_q_ahead_S <= -0.50
+|   |   |   |   |--- ev_dist_N <= 87.10
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- ev_dist_N >  87.10
+|   |   |   |   |   |--- class: 0
+|   |   |   |--- ev_q_ahead_S >  -0.50
+|   |   |   |   |--- ev_dist_N <= 17.65
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- ev_dist_N >  17.65
+|   |   |   |   |   |--- class: 2
+|   |--- ev_present_E >  0.50
+|   |   |--- ev_dist_N <= -0.50
+|   |   |   |--- ev_dist_S <= -0.50
+|   |   |   |   |--- ev_dist_E <= 84.10
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- ev_dist_E >  84.10
+|   |   |   |   |   |--- class: 1
+|   |   |   |--- ev_dist_S >  -0.50
+|   |   |   |   |--- ev_eta_E <= 4.64
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- ev_eta_E >  4.64
+|   |   |   |   |   |--- class: 2
+|   |   |--- ev_dist_N >  -0.50
+|   |   |   |--- ev_dist_N <= 21.44
+|   |   |   |   |--- ev_eta_E <= 2.77
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- ev_eta_E >  2.77
+|   |   |   |   |   |--- class: 0
+|   |   |   |--- ev_dist_N >  21.44
+|   |   |   |   |--- ev_dist_E <= 53.98
+|   |   |   |   |   |--- class: 1
+|   |   |   |   |--- ev_dist_E >  53.98
+|   |   |   |   |   |--- class: 0
+|--- ev_q_ahead_W >  -0.50
+|   |--- ev_eta_N <= -0.50
+|   |   |--- ev_present_E <= 0.50
+|   |   |   |--- ev_present_S <= 0.50
+|   |   |   |   |--- ev_dist_W <= 79.49
+|   |   |   |   |   |--- class: 3
+|   |   |   |   |--- ev_dist_W >  79.49
+|   |   |   |   |   |--- class: 3
+|   |   |   |--- ev_present_S >  0.50
+|   |   |   |   |--- ev_dist_W <= 21.48
+|   |   |   |   |   |--- class: 3
+|   |   |   |   |--- ev_dist_W >  21.48
+|   |   |   |   |   |--- class: 2
+|   |   |--- ev_present_E >  0.50
+|   |   |   |--- ev_dist_E <= 14.97
+|   |   |   |   |--- ev_eta_W <= 2.81
+|   |   |   |   |   |--- class: 3
+|   |   |   |   |--- ev_eta_W >  2.81
+|   |   |   |   |   |--- class: 1
+|   |   |   |--- ev_dist_E >  14.97
+|   |   |   |   |--- ev_dist_W <= 40.90
+|   |   |   |   |   |--- class: 3
+|   |   |   |   |--- ev_dist_W >  40.90
+|   |   |   |   |   |--- class: 1
+|   |--- ev_eta_N >  -0.50
+|   |   |--- ev_eta_W <= 5.33
+|   |   |   |--- ev_eta_N <= 2.82
+|   |   |   |   |--- ev_dist_N <= 14.78
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- ev_dist_N >  14.78
+|   |   |   |   |   |--- class: 3
+|   |   |   |--- ev_eta_N >  2.82
+|   |   |   |   |--- ev_eta_N <= 4.98
+|   |   |   |   |   |--- class: 3
+|   |   |   |   |--- ev_eta_N >  4.98
+|   |   |   |   |   |--- class: 3
+|   |   |--- ev_eta_W >  5.33
+|   |   |   |--- ev_dist_N <= 34.41
+|   |   |   |   |--- ev_eta_N <= 5.28
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- ev_eta_N >  5.28
+|   |   |   |   |   |--- class: 0
+|   |   |   |--- ev_dist_N >  34.41
+|   |   |   |   |--- ev_present_E <= 0.50
+|   |   |   |   |   |--- class: 0
+|   |   |   |   |--- ev_present_E >  0.50
+|   |   |   |   |   |--- class: 1

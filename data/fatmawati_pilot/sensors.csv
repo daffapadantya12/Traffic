@@ -1,0 +1,40 @@
+sensor_id,kind,leg,lane,street,lat,lon,dist_centre_m,zone_length_m,n_lane_segments
+SL_N0,stopline_loop,N,0,Jalan RS Fatmawati,-6.291924,106.795306,64.4,0.0,1
+SL_N1,stopline_loop,N,1,Jalan RS Fatmawati,-6.291924,106.795277,64.0,0.0,1
+SL_N2,stopline_loop,N,2,Jalan RS Fatmawati,-6.291924,106.795247,63.8,0.0,1
+EN_N0,entry_gate,N,0,Jalan RS Fatmawati,-6.291151,106.79531,149.5,0.0,1
+EN_N1,entry_gate,N,1,Jalan RS Fatmawati,-6.291145,106.79528,150.0,0.0,1
+EN_N2,entry_gate,N,2,Jalan RS Fatmawati,-6.291139,106.795251,150.6,0.0,1
+EX_N0,exit_gate,N,0,Jalan RS Fatmawati,-6.291144,106.795173,150.0,0.0,1
+EX_N1,exit_gate,N,1,Jalan RS Fatmawati,-6.291144,106.795202,150.0,0.0,1
+SL_E0,stopline_loop,E,0,Jalan Tahi Bonar Simatupang,-6.292504,106.795371,16.7,0.0,1
+SL_E1,stopline_loop,E,1,Jalan Tahi Bonar Simatupang,-6.292474,106.795371,16.9,0.0,1
+SL_E2,stopline_loop,E,2,Jalan Tahi Bonar Simatupang,-6.292445,106.795371,17.8,0.0,1
+SL_E3,stopline_loop,E,3,Jalan Tahi Bonar Simatupang,-6.292416,106.795371,19.2,0.0,1
+EN_E0,entry_gate,E,0,Jalan Tahi Bonar Simatupang,-6.292528,106.796576,150.1,0.0,1
+EN_E1,entry_gate,E,1,Jalan Tahi Bonar Simatupang,-6.292498,106.796576,150.1,0.0,1
+EN_E2,entry_gate,E,2,Jalan Tahi Bonar Simatupang,-6.292469,106.796577,150.2,0.0,1
+EN_E3,entry_gate,E,3,Jalan Tahi Bonar Simatupang,-6.29244,106.796578,150.5,0.0,1
+EX_E0,exit_gate,E,0,Jalan Tahi Bonar Simatupang,-6.291989,106.796476,150.1,0.0,1
+EX_E1,exit_gate,E,1,Jalan Tahi Bonar Simatupang,-6.292018,106.796475,148.7,0.0,1
+EX_E2,exit_gate,E,2,Jalan Tahi Bonar Simatupang,-6.292047,106.796473,147.4,0.0,1
+SL_S0,stopline_loop,S,0,Jalan RS Fatmawati,-6.292561,106.795157,9.6,0.0,1
+SL_S1,stopline_loop,S,1,Jalan RS Fatmawati,-6.292563,106.795186,7.9,0.0,1
+EN_S0,entry_gate,S,0,Jalan RS Fatmawati,-6.293851,106.795087,150.2,0.0,1
+EN_S1,entry_gate,S,1,Jalan RS Fatmawati,-6.293853,106.795116,150.0,0.0,1
+EX_S0,exit_gate,S,0,Jalan RS Fatmawati,-6.293857,106.795208,150.1,0.0,1
+EX_S1,exit_gate,S,1,Jalan RS Fatmawati,-6.293855,106.795179,149.9,0.0,1
+SL_W0,stopline_loop,W,0,Jalan Raden Ajeng Kartini,-6.291988,106.7951,58.1,0.0,1
+SL_W1,stopline_loop,W,1,Jalan Raden Ajeng Kartini,-6.292018,106.795101,55.0,0.0,1
+EN_W0,entry_gate,W,0,Jalan Raden Ajeng Kartini,-6.29199,106.793627,185.1,0.0,1
+EN_W1,entry_gate,W,1,Jalan Raden Ajeng Kartini,-6.29202,106.793627,184.1,0.0,1
+EX_W0,exit_gate,W,0,Jalan Raden Ajeng Kartini,-6.292525,106.793547,185.1,0.0,1
+EX_W1,exit_gate,W,1,Jalan Raden Ajeng Kartini,-6.292495,106.793547,185.2,0.0,1
+QC_N,queue_camera,N,-1,Jalan RS Fatmawati,-6.291933,106.795306,63.4,300.0,6
+XC_N,exit_camera,N,-1,Jalan RS Fatmawati,-6.291929,106.795182,63.3,150.0,4
+QC_E,queue_camera,E,-1,Jalan Tahi Bonar Simatupang,-6.292504,106.795363,15.9,300.0,16
+XC_E,exit_camera,E,-1,Jalan Tahi Bonar Simatupang,-6.291984,106.795357,59.0,150.0,7
+QC_S,queue_camera,S,-1,Jalan RS Fatmawati,-6.292553,106.795158,9.0,300.0,4
+XC_S,exit_camera,S,-1,Jalan RS Fatmawati,-6.292555,106.795292,10.1,150.0,4
+QC_W,queue_camera,W,-1,Jalan Raden Ajeng Kartini,-6.291988,106.795109,57.9,300.0,10
+XC_W,exit_camera,W,-1,Jalan Raden Ajeng Kartini,-6.292477,106.795098,13.8,150.0,10
