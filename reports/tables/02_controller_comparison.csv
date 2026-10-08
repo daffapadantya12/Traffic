@@ -1,0 +1,13 @@
+level,controller,stopped_delay_s,stopped_delay_s_N,stopped_delay_s_E,stopped_delay_s_S,stopped_delay_s_W,fairness_ratio,cordon_tt_mean_s,ambulance_tt_mean_s,entry_veh_h
+low,max_pressure,18.8,22.6,13.8,27.0,16.3,2.1,60.2,329.0,4165.3
+low,longest_queue,19.5,24.4,14.8,29.4,14.4,2.4,62.0,342.9,4180.9
+low,priority_mp,21.2,24.0,17.4,32.3,15.9,2.2,61.5,334.2,4163.2
+low,fixed,45.4,44.1,41.9,63.4,39.2,1.8,84.0,378.7,4151.2
+design,priority_mp,55.1,65.0,40.2,85.0,46.1,2.0,96.0,491.6,5498.0
+design,max_pressure,60.1,71.9,40.0,93.4,54.3,2.4,99.1,516.8,5464.6
+design,fixed,61.9,69.1,71.6,69.4,40.3,2.2,96.1,488.3,5459.2
+design,longest_queue,62.6,78.7,47.4,100.5,42.4,2.6,102.1,525.2,5465.3
+high,priority_mp,95.5,111.6,66.9,149.7,80.4,2.3,132.0,487.2,6085.0
+high,fixed,102.4,135.3,113.4,112.0,53.8,3.2,118.8,503.5,6082.0
+high,max_pressure,106.9,123.9,73.9,167.4,94.3,2.3,132.6,558.3,6053.3
+high,longest_queue,113.4,153.6,72.0,173.5,94.0,2.6,139.5,520.7,6024.3

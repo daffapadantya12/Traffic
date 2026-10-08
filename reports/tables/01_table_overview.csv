@@ -1,0 +1,10 @@
+table,rows,columns,MB,one row is
+sensors,39,10,0.0,one sensor
+episodes,108,29,0.0,one simulated hour (window x level x controller x seed)
+loops_1min,200880,16,13.6,one loop detector lane in one minute
+cameras_1min,51840,15,3.9,one camera in one minute
+ticks_5s,77760,85,21.1,the whole junction every 5 s (ML features + labels)
+signal_log,77202,7,3.6,one signal phase change
+turning_counts_15min,15238,10,0.8,one movement x vehicle class in 15 min
+ambulance_trips,732,20,0.1,one ambulance trip
+simulation_qc,108,14,0.0,engine diagnostics for one episode

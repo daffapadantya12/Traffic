@@ -1,0 +1,13 @@
+level,controller,trips,arrived_%,travel_time_mean_s,travel_time_p90_s,recovery_mean_s
+low,priority_mp,54,100.0,330.6,557.6,13.3
+low,max_pressure,54,100.0,331.3,464.0,8.8
+low,longest_queue,54,100.0,337.4,505.0,41.6
+low,fixed,54,100.0,379.5,595.6,48.7
+design,fixed,59,100.0,503.7,815.4,41.1
+design,priority_mp,59,100.0,506.2,869.4,54.4
+design,longest_queue,59,100.0,539.1,1059.9,21.5
+design,max_pressure,59,100.0,541.4,993.5,35.5
+high,fixed,70,95.7,490.6,752.2,38.8
+high,priority_mp,70,98.6,490.7,880.6,37.0
+high,longest_queue,70,95.7,501.9,870.7,18.3
+high,max_pressure,70,98.6,555.7,970.9,127.7

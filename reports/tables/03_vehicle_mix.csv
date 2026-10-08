@@ -1,0 +1,6 @@
+class,vehicles,share_%
+n_motorcycle,293875,80.06
+n_car,69703,18.99
+n_bus,1709,0.47
+n_truck,1404,0.38
+n_emergency,360,0.1

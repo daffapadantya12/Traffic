@@ -1,0 +1,5 @@
+controller,lane_collisions_study,junction_overlaps_study,teleports,collisions_per_1000_vkm_study
+fixed,0.67,88.37,18.96,0.11
+longest_queue,0.78,222.15,19.3,0.13
+max_pressure,1.74,210.26,17.37,0.28
+priority_mp,1.07,193.74,19.15,0.16
