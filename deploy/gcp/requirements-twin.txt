@@ -4,3 +4,4 @@ libsumo==1.27.1
 sumolib==1.27.1
 numpy>=1.26
 pandas>=2.0
+pyproj>=3.6
