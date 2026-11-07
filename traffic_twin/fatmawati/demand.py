@@ -26,31 +26,31 @@ import os
 import numpy as np
 
 from ..config import DAILY_PROFILE
+from .site import SITE
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
-DATA = os.path.join(ROOT, "data", "fatmawati")
-NET = os.path.join(DATA, "net", "fatmawati.net.xml")
+DATA = SITE.data
+NET = SITE.network_file
+LEGS = SITE.legs
 
-MIX = {"motorcycle": 0.80, "car": 0.19, "bus": 0.005, "truck": 0.005}
+MIX = SITE.mix                                   # class shares of the junction's traffic
 ALPHAS = (0.1, 0.3, 0.5, 0.7, 0.9)              # driver profiles per class (latent aggressiveness quantiles)
 # per lane; toll roads (motorway) mostly pass overhead on the viaduct, so they get a small share of the trips
 CLASS_WEIGHT = {"motorway": 0.6, "motorway_link": 0.4, "trunk": 6.0, "trunk_link": 2.0, "primary": 4.0,
                 "primary_link": 1.5, "secondary": 2.0, "secondary_link": 1.0, "tertiary": 1.0, "tertiary_link": 0.5}
-HOSPITAL_LONLAT = (106.79627, -6.29525)          # RSUP Fatmawati (OSM amenity=hospital, emergency=yes)
+HOSPITAL_NAME, HOSPITAL_LONLAT = SITE.hospital_name, SITE.hospital_lonlat   # the ambulance destination (OSM amenity=hospital)
+HOSPITAL_STREET_NAME = SITE.hospital_street_name                           # the street its edge is on
 # observed weekday peak-hour movement volumes, veh/h, all classes, (entry leg, exit leg); same leg = U-turn
-# (Sumabrata, Haqueline & Mauramdha 2026, CCTV counts); there is no RA Kartini right turn
-MOVEMENTS = {("N", "S"): 3135, ("N", "W"): 1254, ("N", "E"): 1067, ("S", "N"): 1495, ("S", "E"): 2174, ("S", "W"): 963,
-             ("E", "W"): 5607, ("E", "N"): 858, ("E", "S"): 1226, ("E", "E"): 1764,
-             ("W", "E"): 3271, ("W", "N"): 1215, ("W", "W"): 1848}
-LEG_SOURCE = {"N": "778513710#0", "E": "698048527#0", "S": "648964736#6", "W": "692766250#0"}   # upstream end of each leg
-LEG_SINK = {"N": "1304381185#0", "E": "31806415#0", "S": "1069005555#0", "W": "827224286#8"}    # far end of each exit
-CALIBRATION = os.path.join(DATA, "calibration.json")
-LEVEL_FACTOR = {"low": 0.75, "design": 1.0, "high": 1.15}      # x the calibrated peak
-BASE_INFLOW_VPH = {k: 3000.0 * f for k, f in LEVEL_FACTOR.items()}   # background trips at the profile peak
-CORDON_M = 200.0                                               # background trips stay this far from the junction
-EV_PER_HOUR = 6.0
-EV_LEGS = ("N", "E", "W")                                      # ambulance origins with a route to RSUP Fatmawati
+MOVEMENTS = SITE.movements
+LEG_SOURCE = SITE.leg_source                     # upstream end of each leg
+LEG_SINK = SITE.leg_sink                         # far end of each exit
+CALIBRATION = SITE.calibration_file
+LEVEL_FACTOR = SITE.level_factor                 # x the calibrated peak
+BASE_INFLOW_VPH = {k: SITE.base_inflow_vph_at_design * f for k, f in LEVEL_FACTOR.items()}   # background trips at the profile peak
+CORDON_M = SITE.cordon_m                         # background trips stay this far from the junction
+EV_PER_HOUR = SITE.ev_per_hour
+EV_LEGS = SITE.ev_legs                           # ambulance origins with a route to the hospital
 
 
 def load_calibration() -> dict:
@@ -60,7 +60,7 @@ def load_calibration() -> dict:
         with open(CALIBRATION) as f:
             return {k: float(v) for k, v in json.load(f)["scale"].items()}
     except (OSError, KeyError, ValueError):
-        return {g: 0.3 for g in "NESW"}
+        return {g: 0.3 for g in LEGS}
 
 
 def _clip(v, lo, hi):
@@ -130,12 +130,14 @@ def fringe(net):
 
 
 def hospital_edge(net):
-    """(edge, arrival position) on Jl. RS Fatmawati nearest RSUP Fatmawati.  The campus lies east of the road,
-    i.e. beside the southbound carriageway under left-hand traffic."""
+    """(edge, arrival position) on the hospital's street nearest the hospital (Fatmawati: Jl. RS Fatmawati by RSUP
+    Fatmawati; the campus lies east of the road, i.e. beside the southbound carriageway under left-hand traffic)."""
     import sumolib
     x, y = net.convertLonLat2XY(*HOSPITAL_LONLAT)
     cands = [(d, e) for e, d in net.getNeighboringEdges(x, y, 250.0)
-             if e.getName() == "Jalan RS Fatmawati" and e.allows("emergency")]
+             if e.getName() == HOSPITAL_STREET_NAME and e.allows("emergency")]
+    if not cands:
+        raise ValueError(f"no edge named {HOSPITAL_STREET_NAME!r} open to emergency vehicles within 250 m of {HOSPITAL_NAME}")
     d, e = min(cands, key=lambda t: t[0])
     pos = sumolib.geomhelper.polygonOffsetWithMinimumDistanceToPoint((x, y), e.getShape())
     return e, max(1.0, min(pos, e.getLength() - 1.0))
@@ -187,8 +189,7 @@ def background_pairs(net, src, snk) -> dict:
     key = (NET, os.path.getmtime(NET))
     if key in _BACKGROUND_PAIRS:
         return _BACKGROUND_PAIRS[key]
-    from .build_net import JUNCTION_LAT, JUNCTION_LON
-    x0, y0 = net.convertLonLat2XY(JUNCTION_LON, JUNCTION_LAT)
+    x0, y0 = net.convertLonLat2XY(SITE.centre_lon, SITE.centre_lat)
 
     def near(e):
         return any(math.hypot(x - x0, y - y0) < CORDON_M for x, y in e.getShape())
@@ -269,8 +270,9 @@ def routes_xml(path: str, level: str = "design", seed: int = 0, start_hour: floa
         trips.append((t_ev, LEG_SOURCE[leg], hosp.getID(), "ambulance", ("via", entry[leg])))
         n_ev += 1
     trips.sort()
+    car = (1.0 - MIX["bus"] - MIX["truck"]) / 5                    # car_only: cars take the motorcycles' share
     lines = ['<routes>', '    <vTypeDistribution id="car_only" vTypes="car_a1 car_a3 car_a5 car_a7 car_a9 bus truck" '
-             'probabilities="0.198 0.198 0.198 0.198 0.198 0.005 0.005"/>']
+             f'probabilities="{car:.3f} {car:.3f} {car:.3f} {car:.3f} {car:.3f} {MIX["bus"]} {MIX["truck"]}"/>']
     for i, (t, o, d, typ, (kind, edges)) in enumerate(trips):
         prefix = "ev" if typ == "ambulance" else "v"
         common = f'id="{prefix}{i}" type="{typ}" depart="{t:.2f}" departLane="best" departSpeed="max"'

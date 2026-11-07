@@ -149,6 +149,8 @@ A copy of Perempatan Fatmawati (Cilandak, South Jakarta) in Eclipse SUMO, with t
 
 Requires `deploy/gcp/requirements-twin.txt` (eclipse-sumo, libsumo, sumolib 1.27.1).
 
+To reproduce the release and the evaluation, or to repeat the study at another junction, follow `docs/REPRODUCIBILITY.md`; the site facts the pipeline uses are listed in `data/sites/` (Fatmawati verified against the code by `tests/test_site_spec.py`, and a Bundaran HI skeleton).
+
 Build the network and the 3D geometry:
 
 ```bash
@@ -159,7 +161,7 @@ python3 -m traffic_twin.fatmawati.build_net
 python3 -m traffic_twin.fatmawati.geometry3d
 ```
 
-Run the live 3D viewer, then open http://localhost:8770. The camera buttons cover the junction, the motorcycle box, the JORR toll flyover, the hospital and following a vehicle. "See-through flyover" makes the toll deck transparent so you can watch the junction underneath.
+Run the live 3D viewer, then open http://localhost:8770. The camera buttons cover the junction, the motorcycle box, the JORR toll flyover, MRT Fatmawati station, the hospital and following a vehicle or an MRT train. "See-through flyover" makes the toll deck and the MRT viaduct transparent so you can watch the junction underneath. The live view also runs JORR through-traffic on the toll flyover (`--toll-vph`, 0 turns it off) and MRT Jakarta trains to the published timetable (`--no-mrt` turns them off); neither is in the dataset.
 
 ```bash
 python3 -m traffic_twin.fatmawati.webapp3d --port 8770

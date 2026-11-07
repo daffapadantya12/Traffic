@@ -13,8 +13,8 @@ import pytest
 sumolib = pytest.importorskip("sumolib")
 pytest.importorskip("libsumo")
 
-from traffic_twin.fatmawati.build_net import APPROACHES, RHK_DEPTH_M, TLS_ID  # noqa: E402
-from traffic_twin.fatmawati.demand import DATA, NET, reachable, routes_xml, vtypes_xml  # noqa: E402
+from traffic_twin.fatmawati.build_net import APPROACHES, PROGRAM_ID, RHK_DEPTH_M, TLS_ID  # noqa: E402
+from traffic_twin.fatmawati.demand import DATA, LEGS, NET, reachable, routes_xml, vtypes_xml  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not os.path.exists(NET), reason="Fatmawati network not built")
 
@@ -35,7 +35,7 @@ def routes(tmp_path_factory):
 def test_dishub_stage_program(net):
     from traffic_twin.fatmawati.build_net import stage_link_sets
     tl = net.getTLS(TLS_ID)
-    phases = tl.getPrograms()["dishub"].getPhases()
+    phases = tl.getPrograms()[PROGRAM_ID].getPhases()
     assert len(phases) == 4 + 12 * 2             # stage greens + amber and all-red for every ordered stage pair
     assert [round(p.duration) for p in phases[:12]] == [80, 2, 2, 12, 2, 2, 78, 2, 2, 45, 2, 2]   # the Dishub cycle
     assert [p.name for p in phases[:3]] == ["S1 green", "S1>S2 amber", "S1>S2 all-red"]
@@ -82,7 +82,7 @@ def test_trips_only_between_connected_ends(net, routes):
 def test_junction_demand_follows_the_observed_movements(tmp_path):
     from traffic_twin.fatmawati.demand import LEG_SINK, LEG_SOURCE, MOVEMENTS
     path = str(tmp_path / "peak.rou.xml")
-    routes_xml(path, "design", seed=5, duration_s=3600.0, peak=True, scale={g: 0.25 for g in "NESW"}, ev_per_hour=0)
+    routes_xml(path, "design", seed=5, duration_s=3600.0, peak=True, scale={g: 0.25 for g in LEGS}, ev_per_hour=0)
     leg_of_src = {v: k for k, v in LEG_SOURCE.items()}
     leg_of_snk = {v: k for k, v in LEG_SINK.items()}
     counts = collections.Counter((leg_of_src[t.get("from")], leg_of_snk[t.get("to")]) for _, t in ET.iterparse(path)
@@ -153,6 +153,10 @@ def test_short_run_no_lane_collisions_and_cars_respect_the_box(routes):
 def test_sensor_layout_matches_the_design(net):
     from traffic_twin.fatmawati.sensors import CAMERA_M, GATE_R, build_layout
     lay = build_layout()
+    # learn.py reads the teacher's saturation flows off this layout (not the site file's fallback)
+    from traffic_twin.fatmawati import learn
+    assert learn._sat_flow() == {c["leg"]: c["sat_flow_pcu_h"] for c in lay["cameras"] if c["kind"] == "queue_camera"}
+    assert set(learn._sat_flow()) == set(LEGS)
     kinds = collections.Counter(s["kind"] for s in lay["loops"])
     assert kinds["stopline_loop"] == sum(net.getEdge(e).getLaneNumber() for e in APPROACHES.values())
     assert kinds["entry_gate"] > 0 and kinds["exit_gate"] > 0
@@ -204,13 +208,20 @@ def test_fixed_controller_runs_the_dishub_greens(routes):
     assert set(amber) == {2.0}
 
 
-def test_toll_flyover_spans_the_junction_on_piers_clear_of_the_streets(tmp_path):
+@pytest.fixture(scope="module")
+def geometry(tmp_path_factory):
+    import json
+    from traffic_twin.fatmawati.geometry3d import build
+    tmp = tmp_path_factory.mktemp("geometry")
+    return json.load(open(build(str(tmp / "geometry.json"), buildings_path=str(tmp / "none.json"))))
+
+
+def test_toll_flyover_spans_the_junction_on_piers_clear_of_the_streets(geometry):
     """The JORR toll road crosses above the junction on a deck with room for a bus below; streets stay on the
     ground (also where SUMO lifts a river bridge); no pier stands in a street lane."""
-    import json
     import math
-    from traffic_twin.fatmawati.geometry3d import DECK_DEPTH_M, PIER_HALF_M, _seg_dist, build
-    g = json.load(open(build(str(tmp_path / "geometry.json"), buildings_path=str(tmp_path / "none.json"))))
+    from traffic_twin.fatmawati.geometry3d import DECK_DEPTH_M, PIER_HALF_M, _seg_dist
+    g = geometry
     fly = g["flyover"]
     over = {d["edge"]: [p for p in d["p"] if math.hypot(p[0], p[1]) < 80] for d in fly["decks"]}
     over = {e: pts for e, pts in over.items() if pts}
@@ -225,3 +236,81 @@ def test_toll_flyover_spans_the_junction_on_piers_clear_of_the_streets(tmp_path)
             pts = ln["p"]
             gap = min(_seg_dist(x, y, a[0], a[1], b[0], b[1]) for a, b in zip(pts, pts[1:]))
             assert gap >= ln["w"] / 2 + PIER_HALF_M, (x, y, ln["id"])
+
+
+def test_jorr_through_traffic_stays_on_the_toll_mainline(tmp_path):
+    """Live-view toll traffic: motorway edges only, both carriageways of the flyover, no motorcycles; in SUMO
+    the vehicles reach the deck and never leave the toll road."""
+    import libsumo
+    from traffic_twin.fatmawati.jorr import routes_xml as toll_routes_xml
+    path = str(tmp_path / "jorr.rou.xml")
+    info = toll_routes_xml(path, start_hour=8.0, duration_s=600.0)
+    root = ET.parse(path).getroot()
+    net = sumolib.net.readNet(NET)
+    edges = {r.get("id"): r.get("edges").split() for r in root.iter("route")}
+    assert all(net.getEdge(e).getType() == "highway.motorway" for es in edges.values() for e in es)
+    assert "1220203645" in edges["jorr_westbound"] and "1125239070" in edges["jorr_eastbound"]
+    assert "moto" not in root.find("vTypeDistribution").get("vTypes")
+    assert info["expected_vehicles"] > 600
+    vtypes_xml(os.path.join(DATA, "demand", "vtypes.add.xml"))
+    libsumo.start(["sumo", "-n", NET, "-r", path, "-a", os.path.join(DATA, "demand", "vtypes.add.xml"),
+                   "--step-length", "0.5", "--no-step-log", "true", "--no-warnings", "true", "--end", "420"])
+    try:
+        on_deck, off_toll = set(), 0
+        for _ in range(840):
+            libsumo.simulationStep()
+            for v in libsumo.vehicle.getIDList():
+                road = libsumo.vehicle.getRoadID(v)
+                if road in ("1220203645", "1125239070"):
+                    on_deck.add(v)
+                elif not road.startswith(":") and net.getEdge(road).getType() != "highway.motorway":
+                    off_toll += 1
+        assert len(on_deck) > 50 and off_toll == 0
+        assert libsumo.simulation.getStartingTeleportNumber() == 0
+    finally:
+        libsumo.close()
+
+
+def test_mrt_runs_the_timetable_on_a_viaduct_clear_of_streets_and_toll(geometry):
+    """MRT Jakarta from OpenStreetMap: two tracks with Lebak Bulus, Fatmawati and Cipete Raya in order; a train
+    every 5 min in the peaks and 10 min otherwise, none at night; piers clear of the streets and off the toll deck;
+    the rails well above the toll deck where the line crosses it; no toll lamp post under the viaduct."""
+    import math
+    from traffic_twin.fatmawati import mrt
+    from traffic_twin.fatmawati.geometry3d import MRT_LAMP_CLEAR_M, _seg_dist
+    M = geometry["mrt"]
+    if M is None:
+        pytest.skip("MRT data not downloaded (offline)")
+    stops = {k: [n for n, _ in t["stops"]] for k, t in M["tracks"].items()}
+    names = ["Lebak Bulus Bank Syariah Indonesia", "Fatmawati Indomaret", "Cipete Raya TUKU"]
+    assert stops == {"northbound": names, "southbound": names[::-1]}
+    trains = mrt.Trains(M["tracks"])
+    nb = trains.dirs[0]["departs"]
+    assert sum(7 * 3600 <= d + mrt.TERMINUS_S < 9 * 3600 for d in nb) == 24     # every 5 min in the morning peak
+    assert sum(10 * 3600 <= d + mrt.TERMINUS_S < 12 * 3600 for d in nb) == 12    # every 10 min off-peak
+    assert trains.rows(3 * 3600) == []
+    rows = trains.rows(8 * 3600)
+    assert len({r[0] // 10 for r in rows}) >= 3 and all(r[3] == mrt.RAIL_Z and r[5] == mrt.MRT_CODE for r in rows)
+    by_train = {}
+    for r in rows:
+        by_train.setdefault(r[0] // 10, []).append(r)
+    for cars in by_train.values():                              # cars of a train follow each other along the track
+        cars.sort()
+        for a, b in zip(cars, cars[1:]):
+            assert math.hypot(a[1] - b[1], a[2] - b[2]) == pytest.approx(mrt.CAR_M + mrt.COUPLING_M, abs=1.5)
+    streets = [ln for ln in geometry["lanes"] if not ln["k"].startswith("motorway")]
+    decks = geometry["flyover"]["decks"]
+    for x, y, under, _, _, half in M["piers"]:
+        if half == 0 or math.hypot(x, y) > 600:                 # viaduct piers near the junction
+            continue
+        for ln in streets:
+            assert min(_seg_dist(x, y, a[0], a[1], b[0], b[1]) for a, b in zip(ln["p"], ln["p"][1:])) >= ln["w"] / 2 + 1.0
+        for d in decks:
+            assert min(_seg_dist(x, y, a[0], a[1], b[0], b[1]) for a, b in zip(d["p"], d["p"][1:])) >= d["hw"]
+    track = M["tracks"]["northbound"]["p"]
+    crossing = [p for d in decks for p in d["p"]
+                if min(_seg_dist(p[0], p[1], a[0], a[1], b[0], b[1]) for a, b in zip(track, track[1:])) < 15]
+    assert crossing and M["rail"] - max(p[2] for p in crossing) >= 7.0
+    for x, y, *_ in geometry["flyover"]["lamps"]:
+        assert all(_seg_dist(x, y, a[0], a[1], b[0], b[1]) >= MRT_LAMP_CLEAR_M - 0.01
+                   for t in M["tracks"].values() for a, b in zip(t["p"], t["p"][1:]))

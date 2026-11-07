@@ -22,7 +22,10 @@ Per run (episodes_eval.csv): served_<leg> (stop-line count over [warm-up end, en
 vehicle-seconds in the approach camera / served_<leg>), longest_red_s_<leg> (longest spell without green for the
 approach after the warm-up; TB Simatupang keeps green through S1>S2), end_s.
 
-  python3 -m traffic_twin.fatmawati.evaluate --methods fixed,priority_mp --levels design --seeds 1,2 --workers 8
+  python3 -m traffic_twin.fatmawati.evaluate --methods fixed,priority_mp --levels design --seeds 1,2 --workers 8 [--site <slug>]
+
+The release legs, the hospital side, the schedule and the method list come from data/sites/<slug>.json (site.py,
+`evaluation` group); the movements described above are Fatmawati's.
 """
 
 from __future__ import annotations
@@ -33,7 +36,7 @@ import os
 import sys
 import tempfile
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 import pandas as pd
@@ -41,17 +44,18 @@ import pandas as pd
 from .build_net import ALLRED_S, APPROACHES, DISHUB_GREEN_S, STAGE_LINKS, STAGES, TLS_ID, YELLOW_S
 from .demand import DATA, NET, routes_xml, vtypes_xml
 from .sensors import LEGS, chain_upstream
+from .site import SITE, add_site_argument
 
-EV_MOVES = ("N", "E", "W")               # release legs; every ambulance drives to RSUP Fatmawati
-HOSPITAL_LEG = "S"                       # the exit gate on the hospital side ends a passage
-EXTRA_S = 1800.0                         # keep running (unrecorded) until released ambulances have arrived
-RELEASE_MIN_M = 400.0
-SLICES = 8
-CYCLE_S = sum(DISHUB_GREEN_S.values()) + len(STAGES) * (YELLOW_S + ALLRED_S)   # 231 s
-RELEASE_EVERY_S = 600.0
-WARM_S = 900.0
-TAIL_S = 600.0
-METHODS = ("random", "still", "fixed", "longest_queue", "max_pressure", "priority_mp", "preempt_naive")
+EV_MOVES = SITE.ev_moves                 # release legs; every ambulance drives to the hospital
+HOSPITAL_LEG = SITE.hospital_leg         # the exit gate on the hospital side ends a passage
+EXTRA_S = SITE.extra_s                   # keep running (unrecorded) until released ambulances have arrived
+RELEASE_MIN_M = SITE.release_min_m
+SLICES = SITE.slices
+CYCLE_S = sum(DISHUB_GREEN_S.values()) + len(STAGES) * (YELLOW_S + ALLRED_S)   # Fatmawati: 231 s
+RELEASE_EVERY_S = SITE.release_every_s
+WARM_S = SITE.eval_warm_s
+TAIL_S = SITE.tail_s
+METHODS = SITE.methods
 REFERENCE_OF = {"priority_mp": "max_pressure", "preempt_naive": "fixed"}     # identical without ambulances
 
 
@@ -315,13 +319,20 @@ def evaluate(out: str, methods: list, levels: list, seeds: list, workers: int = 
     jobs = [(lv, sd, m, True) for lv in levels for sd in seeds for m in methods]
     if references:
         jobs += [(lv, sd, m, False) for lv in levels for sd in seeds for m in sorted(set(ref.values()))]
-    with tempfile.TemporaryDirectory(prefix="fatmawati_eval_") as tmp:
+    with tempfile.TemporaryDirectory(prefix=f"{SITE.slug}_eval_") as tmp:
         for lv in levels:                                        # trips first, shared by every method
             for sd in seeds:
                 routes_xml(os.path.join(tmp, f"eval_{lv}_s{sd}.rou.xml"), lv, seed=sd, start_hour=7.0,
                            duration_s=schedule(n_releases)[-1][0] + TAIL_S, peak=True, ev_per_hour=0.0)
-        with ProcessPoolExecutor(max_workers=workers) as pool:
-            results = list(pool.map(run_episode, *zip(*[(lv, sd, m, ev, tmp, n_releases, vt) for lv, sd, m, ev in jobs])))
+        with ProcessPoolExecutor(max_workers=workers) as pool:          # a progress line per finished run (long grids)
+            futs = {pool.submit(run_episode, lv, sd, m, ev, tmp, n_releases, vt): i for i, (lv, sd, m, ev) in enumerate(jobs)}
+            results, t0 = [None] * len(jobs), time.time()
+            for n, fut in enumerate(as_completed(futs), 1):
+                i = futs[fut]
+                results[i] = fut.result()
+                lv, sd, m, ev = jobs[i]
+                print(f"[{time.strftime('%Y-%m-%d %H:%M')}] run {n}/{len(jobs)} done: {lv} seed {sd} {m}"
+                      f"{'' if ev else ' (no ambulances)'}, {(time.time() - t0) / 3600:.1f} h elapsed", file=sys.stderr, flush=True)
     by = {(r["level"], r["seed"], r["method"], r["with_ev"]): r for r in results}
     rows = []
     for lv in levels:
@@ -333,7 +344,7 @@ def evaluate(out: str, methods: list, levels: list, seeds: list, workers: int = 
     pd.DataFrame([r["qc"] for r in results]).to_csv(os.path.join(out, "evaluation_qc.csv"), index=False)
     with open(os.path.join(out, "evaluation_config.json"), "w") as f:
         from .demand import MIX, mix_with_moto_share
-        json.dump(dict(methods=methods, levels=levels, seeds=seeds, t_empty_s=t_empty, release_points=release_points(),
+        json.dump(dict(site=SITE.slug, methods=methods, levels=levels, seeds=seeds, t_empty_s=t_empty, release_points=release_points(),
                        reference_runs=references,
                        vehicle_mix=mix_with_moto_share(moto_share) if moto_share is not None else MIX,
                        schedule=schedule(n_releases), cycle_s=CYCLE_S, release_every_s=RELEASE_EVERY_S, warm_s=WARM_S), f, indent=1)
@@ -342,13 +353,15 @@ def evaluate(out: str, methods: list, levels: list, seeds: list, workers: int = 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--out", default=os.path.join("data", "fatmawati_eval"))
+    add_site_argument(ap)
+    ap.add_argument("--out", default=os.path.join("data", f"{SITE.slug}_eval"))
     ap.add_argument("--methods", default=",".join(METHODS))
-    ap.add_argument("--levels", default="low,design,high")
-    ap.add_argument("--seeds", default="1,2,3,4,5,6,7,8")
+    ap.add_argument("--levels", default=",".join(SITE.level_factor))
+    ap.add_argument("--seeds", default=",".join(str(s) for s in SITE.grid_seeds))
     ap.add_argument("--workers", type=int, default=8)
-    ap.add_argument("--releases", type=int, default=None, help="releases per episode (default 24 = 3 movements x 8 slices)")
-    ap.add_argument("--moto-share", type=float, default=None, help="motorcycle share for a sensitivity run (base 0.80)")
+    ap.add_argument("--releases", type=int, default=None,
+                    help=f"releases per episode (default {len(EV_MOVES) * SLICES} = {len(EV_MOVES)} movements x {SLICES} slices)")
+    ap.add_argument("--moto-share", type=float, default=None, help=f"motorcycle share for a sensitivity run (base {SITE.mix['motorcycle']:g})")
     ap.add_argument("--no-reference", action="store_true", help="skip the runs without ambulances (recovery and extra wait empty)")
     ap.add_argument("--hindsight", action="store_true", help="best switch time per passage (first seed only, forked replays)")
     ap.add_argument("--children", type=int, default=4, help="hindsight: forked replays at a time per episode")
@@ -476,7 +489,7 @@ def hindsight(out: str, levels: list, seed: int, workers: int = 8, max_children:
     os.makedirs(out, exist_ok=True)
     vtypes_xml(os.path.join(DATA, "demand", "vtypes.add.xml"))
     t_empty = empty_road_times()
-    with tempfile.TemporaryDirectory(prefix="fatmawati_hind_") as tmp:
+    with tempfile.TemporaryDirectory(prefix=f"{SITE.slug}_hind_") as tmp:
         for lv in levels:
             routes_xml(os.path.join(tmp, f"eval_{lv}_s{seed}.rou.xml"), lv, seed=seed, start_hour=7.0,
                        duration_s=schedule(n_releases)[-1][0] + TAIL_S, peak=True, ev_per_hour=0.0)

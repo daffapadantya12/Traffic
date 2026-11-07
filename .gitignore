@@ -22,3 +22,6 @@ reports/a3/learning/models/taskA_random_forest.joblib
 # Generated at run time: trip files for the viewer and generator, the TomTom request counter
 data/fatmawati/demand/*.rou.xml
 data/fatmawati/tomtom_usage.json
+
+# Run logs
+*.log

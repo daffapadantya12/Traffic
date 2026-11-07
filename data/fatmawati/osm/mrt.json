@@ -1,0 +1,1768 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-10-06T04:13:00Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 3859688994,
+  "lat": -6.2783627,
+  "lon": 106.7973012,
+  "tags": {
+    "name": "Cipete Raya TUKU",
+    "name:th": "จีเปเต",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 5015723484,
+  "lat": -6.2783724,
+  "lon": 106.7973416,
+  "tags": {
+    "name": "Cipete Raya TUKU",
+    "name:th": "จีเปเต",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6195584511,
+  "lat": -6.2924711,
+  "lon": 106.7924632,
+  "tags": {
+    "name": "Fatmawati Indomaret",
+    "name:th": "ฟัตมาวาตี",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6195584512,
+  "lat": -6.2924285,
+  "lon": 106.7924656,
+  "tags": {
+    "name": "Fatmawati Indomaret",
+    "name:th": "ฟัตมาวาตี",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6195584521,
+  "lat": -6.2892957,
+  "lon": 106.7749323,
+  "tags": {
+    "name": "Lebak Bulus Bank Syariah Indonesia",
+    "name:th": "เลอบักบูลุซ",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6195584522,
+  "lat": -6.2892542,
+  "lon": 106.7749374,
+  "tags": {
+    "name": "Lebak Bulus Bank Syariah Indonesia",
+    "name:th": "เลอบักบูลุซ",
+    "network": "MRT Jakarta",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "subway": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 6196107729,
+  "lat": -6.2783596,
+  "lon": 106.7973159,
+  "tags": {
+    "alt_name": "Stasiun Cipete Raya",
+    "name": "Cipete Raya TUKU",
+    "name:th": "จีเปเต",
+    "network": "MRT Jakarta",
+    "network:short": "MRTJ",
+    "network:wikidata": "Q3333785",
+    "operator": "MRT Jakarta",
+    "operator:wikidata": "Q3333785",
+    "public_transport": "station",
+    "railway": "station",
+    "railway:ref": "CPR",
+    "station": "subway",
+    "subway": "yes",
+    "wikidata": "Q61365099",
+    "wikipedia": "id:Stasiun MRT Cipete Raya"
+  }
+},
+{
+  "type": "node",
+  "id": 6577753462,
+  "lat": -6.2924511,
+  "lon": 106.7924644,
+  "tags": {
+    "alt_name": "Stasiun Fatmawati",
+    "internet_access": "yes",
+    "name": "Fatmawati Indomaret",
+    "name:th": "ฟัตมาวาตี",
+    "network": "MRT Jakarta",
+    "network:short": "MRTJ",
+    "network:wikidata": "Q3333785",
+    "operator": "MRT Jakarta",
+    "operator:wikidata": "Q3333785",
+    "public_transport": "station",
+    "railway": "station",
+    "railway:ref": "FTM",
+    "station": "subway",
+    "subway": "yes",
+    "website": "https://jakartamrt.co.id/",
+    "wikidata": "Q61365063",
+    "wikipedia": "id:Stasiun MRT Fatmawati"
+  }
+},
+{
+  "type": "node",
+  "id": 6577753463,
+  "lat": -6.2892744,
+  "lon": 106.7749355,
+  "tags": {
+    "alt_name": "Stasiun Lebak Bulus",
+    "name": "Lebak Bulus Bank Syariah Indonesia",
+    "name:th": "เลอบักบูลุซ",
+    "network": "MRT Jakarta",
+    "network:short": "MRTJ",
+    "network:wikidata": "Q3333785",
+    "operator": "MRT Jakarta",
+    "operator:wikidata": "Q3333785",
+    "public_transport": "station",
+    "railway": "station",
+    "railway:ref": "LBB",
+    "station": "subway",
+    "subway": "yes",
+    "wheelchair": "yes",
+    "wikidata": "Q61365057",
+    "wikipedia": "id:Stasiun MRT Lebak Bulus"
+  }
+},
+{
+  "type": "way",
+  "id": 382750282,
+  "bounds": {
+    "minlat": -6.2791808,
+    "minlon": 106.7970716,
+    "maxlat": -6.2776165,
+    "maxlon": 106.7975158
+  },
+  "geometry": [
+    { "lat": -6.2776165, "lon": 106.7975158 },
+    { "lat": -6.2783627, "lon": 106.7973012 },
+    { "lat": -6.2788387, "lon": 106.7971668 },
+    { "lat": -6.2791808, "lon": 106.7970716 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 512995216,
+  "bounds": {
+    "minlat": -6.2791926,
+    "minlon": 106.7971131,
+    "maxlat": -6.2776319,
+    "maxlon": 106.7975549
+  },
+  "geometry": [
+    { "lat": -6.2791926, "lon": 106.7971131 },
+    { "lat": -6.2788485, "lon": 106.7972078 },
+    { "lat": -6.2783724, "lon": 106.7973416 },
+    { "lat": -6.2776319, "lon": 106.7975549 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 540631051,
+  "bounds": {
+    "minlat": -6.2894460,
+    "minlon": 106.7692760,
+    "maxlat": -6.2893858,
+    "maxlon": 106.7721173
+  },
+  "geometry": [
+    { "lat": -6.2894297, "lon": 106.7692760 },
+    { "lat": -6.2893858, "lon": 106.7696814 },
+    { "lat": -6.2894460, "lon": 106.7721173 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "2",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 540631053,
+  "bounds": {
+    "minlat": -6.2895637,
+    "minlon": 106.7726588,
+    "maxlat": -6.2894598,
+    "maxlon": 106.7771093
+  },
+  "geometry": [
+    { "lat": -6.2894598, "lon": 106.7726588 },
+    { "lat": -6.2894671, "lon": 106.7731165 },
+    { "lat": -6.2894692, "lon": 106.7731695 },
+    { "lat": -6.2894752, "lon": 106.7734716 },
+    { "lat": -6.2895637, "lon": 106.7771093 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487076,
+  "bounds": {
+    "minlat": -6.2898283,
+    "minlon": 106.7731695,
+    "maxlat": -6.2894692,
+    "maxlon": 106.7772755
+  },
+  "geometry": [
+    { "lat": -6.2894692, "lon": 106.7731695 },
+    { "lat": -6.2895003, "lon": 106.7734185 },
+    { "lat": -6.2895657, "lon": 106.7736801 },
+    { "lat": -6.2896764, "lon": 106.7739551 },
+    { "lat": -6.2897252, "lon": 106.7741223 },
+    { "lat": -6.2897525, "lon": 106.7743369 },
+    { "lat": -6.2897770, "lon": 106.7753282 },
+    { "lat": -6.2898283, "lon": 106.7772755 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487077,
+  "bounds": {
+    "minlat": -6.2900418,
+    "minlon": 106.7726588,
+    "maxlat": -6.2894598,
+    "maxlon": 106.7745455
+  },
+  "geometry": [
+    { "lat": -6.2894598, "lon": 106.7726588 },
+    { "lat": -6.2894815, "lon": 106.7729315 },
+    { "lat": -6.2895157, "lon": 106.7731251 },
+    { "lat": -6.2895327, "lon": 106.7732560 },
+    { "lat": -6.2895765, "lon": 106.7734166 },
+    { "lat": -6.2896549, "lon": 106.7736195 },
+    { "lat": -6.2898505, "lon": 106.7740819 },
+    { "lat": -6.2899546, "lon": 106.7743400 },
+    { "lat": -6.2900418, "lon": 106.7745455 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487078,
+  "bounds": {
+    "minlat": -6.2899095,
+    "minlon": 106.7734166,
+    "maxlat": -6.2895765,
+    "maxlon": 106.7754951
+  },
+  "geometry": [
+    { "lat": -6.2895765, "lon": 106.7734166 },
+    { "lat": -6.2896515, "lon": 106.7736941 },
+    { "lat": -6.2898486, "lon": 106.7744047 },
+    { "lat": -6.2898779, "lon": 106.7745629 },
+    { "lat": -6.2898954, "lon": 106.7747384 },
+    { "lat": -6.2899095, "lon": 106.7754951 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487079,
+  "bounds": {
+    "minlat": -6.2902814,
+    "minlon": 106.7754324,
+    "maxlat": -6.2902764,
+    "maxlon": 106.7755818
+  },
+  "geometry": [
+    { "lat": -6.2902814, "lon": 106.7755818 },
+    { "lat": -6.2902764, "lon": 106.7754324 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487080,
+  "bounds": {
+    "minlat": -6.2902467,
+    "minlon": 106.7756642,
+    "maxlat": -6.2902162,
+    "maxlon": 106.7769328
+  },
+  "geometry": [
+    { "lat": -6.2902467, "lon": 106.7769328 },
+    { "lat": -6.2902162, "lon": 106.7756642 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487081,
+  "bounds": {
+    "minlat": -6.2901542,
+    "minlon": 106.7743400,
+    "maxlat": -6.2899546,
+    "maxlon": 106.7756766
+  },
+  "geometry": [
+    { "lat": -6.2901542, "lon": 106.7756766 },
+    { "lat": -6.2901388, "lon": 106.7751937 },
+    { "lat": -6.2901161, "lon": 106.7749596 },
+    { "lat": -6.2900765, "lon": 106.7747456 },
+    { "lat": -6.2899546, "lon": 106.7743400 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487082,
+  "bounds": {
+    "minlat": -6.2901030,
+    "minlon": 106.7740819,
+    "maxlat": -6.2898505,
+    "maxlon": 106.7756792
+  },
+  "geometry": [
+    { "lat": -6.2898505, "lon": 106.7740819 },
+    { "lat": -6.2899262, "lon": 106.7743413 },
+    { "lat": -6.2900061, "lon": 106.7746382 },
+    { "lat": -6.2900672, "lon": 106.7749239 },
+    { "lat": -6.2900928, "lon": 106.7751579 },
+    { "lat": -6.2901030, "lon": 106.7756792 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487083,
+  "bounds": {
+    "minlat": -6.2900583,
+    "minlon": 106.7754922,
+    "maxlat": -6.2900525,
+    "maxlon": 106.7762908
+  },
+  "geometry": [
+    { "lat": -6.2900583, "lon": 106.7762908 },
+    { "lat": -6.2900525, "lon": 106.7754922 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487084,
+  "bounds": {
+    "minlat": -6.2901485,
+    "minlon": 106.7710768,
+    "maxlat": -6.2895271,
+    "maxlon": 106.7746541
+  },
+  "geometry": [
+    { "lat": -6.2901485, "lon": 106.7746541 },
+    { "lat": -6.2898788, "lon": 106.7740374 },
+    { "lat": -6.2896806, "lon": 106.7735437 },
+    { "lat": -6.2896083, "lon": 106.7733671 },
+    { "lat": -6.2895743, "lon": 106.7731726 },
+    { "lat": -6.2895674, "lon": 106.7728045 },
+    { "lat": -6.2895575, "lon": 106.7725134 },
+    { "lat": -6.2895271, "lon": 106.7710768 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487085,
+  "bounds": {
+    "minlat": -6.2898788,
+    "minlon": 106.7736195,
+    "maxlat": -6.2896549,
+    "maxlon": 106.7740374
+  },
+  "geometry": [
+    { "lat": -6.2898788, "lon": 106.7740374 },
+    { "lat": -6.2896549, "lon": 106.7736195 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487086,
+  "bounds": {
+    "minlat": -6.2899860,
+    "minlon": 106.7736941,
+    "maxlat": -6.2896515,
+    "maxlon": 106.7754931
+  },
+  "geometry": [
+    { "lat": -6.2896515, "lon": 106.7736941 },
+    { "lat": -6.2897446, "lon": 106.7739406 },
+    { "lat": -6.2898246, "lon": 106.7741928 },
+    { "lat": -6.2898886, "lon": 106.7744288 },
+    { "lat": -6.2899339, "lon": 106.7746487 },
+    { "lat": -6.2899659, "lon": 106.7749196 },
+    { "lat": -6.2899860, "lon": 106.7754931 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487087,
+  "bounds": {
+    "minlat": -6.2895157,
+    "minlon": 106.7710727,
+    "maxlat": -6.2894689,
+    "maxlon": 106.7731251
+  },
+  "geometry": [
+    { "lat": -6.2894689, "lon": 106.7710727 },
+    { "lat": -6.2895012, "lon": 106.7726560 },
+    { "lat": -6.2895157, "lon": 106.7731251 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487088,
+  "bounds": {
+    "minlat": -6.2895012,
+    "minlon": 106.7726560,
+    "maxlat": -6.2894671,
+    "maxlon": 106.7731165
+  },
+  "geometry": [
+    { "lat": -6.2895012, "lon": 106.7726560 },
+    { "lat": -6.2894815, "lon": 106.7729315 },
+    { "lat": -6.2894671, "lon": 106.7731165 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487090,
+  "bounds": {
+    "minlat": -6.2896006,
+    "minlon": 106.7737609,
+    "maxlat": -6.2895152,
+    "maxlon": 106.7771296
+  },
+  "geometry": [
+    { "lat": -6.2895152, "lon": 106.7737609 },
+    { "lat": -6.2896006, "lon": 106.7771296 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487092,
+  "bounds": {
+    "minlat": -6.2896434,
+    "minlon": 106.7737609,
+    "maxlat": -6.2895152,
+    "maxlon": 106.7771579
+  },
+  "geometry": [
+    { "lat": -6.2895152, "lon": 106.7737609 },
+    { "lat": -6.2895651, "lon": 106.7741149 },
+    { "lat": -6.2895734, "lon": 106.7742682 },
+    { "lat": -6.2896434, "lon": 106.7771579 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487094,
+  "bounds": {
+    "minlat": -6.2897682,
+    "minlon": 106.7736801,
+    "maxlat": -6.2895657,
+    "maxlon": 106.7771913
+  },
+  "geometry": [
+    { "lat": -6.2895657, "lon": 106.7736801 },
+    { "lat": -6.2896551, "lon": 106.7740167 },
+    { "lat": -6.2896901, "lon": 106.7742072 },
+    { "lat": -6.2897005, "lon": 106.7744386 },
+    { "lat": -6.2897682, "lon": 106.7771913 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487096,
+  "bounds": {
+    "minlat": -6.2897308,
+    "minlon": 106.7734185,
+    "maxlat": -6.2895003,
+    "maxlon": 106.7771931
+  },
+  "geometry": [
+    { "lat": -6.2897308, "lon": 106.7771931 },
+    { "lat": -6.2896540, "lon": 106.7742489 },
+    { "lat": -6.2896223, "lon": 106.7740403 },
+    { "lat": -6.2895376, "lon": 106.7736921 },
+    { "lat": -6.2895003, "lon": 106.7734185 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 614487098,
+  "bounds": {
+    "minlat": -6.2896841,
+    "minlon": 106.7736921,
+    "maxlat": -6.2895376,
+    "maxlon": 106.7771917
+  },
+  "geometry": [
+    { "lat": -6.2895376, "lon": 106.7736921 },
+    { "lat": -6.2895925, "lon": 106.7740648 },
+    { "lat": -6.2896175, "lon": 106.7742692 },
+    { "lat": -6.2896841, "lon": 106.7771917 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 661773068,
+  "bounds": {
+    "minlat": -6.2894846,
+    "minlon": 106.7738872,
+    "maxlat": -6.2891078,
+    "maxlon": 106.7757653
+  },
+  "geometry": [
+    { "lat": -6.2891078, "lon": 106.7738941 },
+    { "lat": -6.2891460, "lon": 106.7753110 },
+    { "lat": -6.2891567, "lon": 106.7757653 },
+    { "lat": -6.2891859, "lon": 106.7757645 },
+    { "lat": -6.2894198, "lon": 106.7757583 },
+    { "lat": -6.2894103, "lon": 106.7753960 },
+    { "lat": -6.2894336, "lon": 106.7753954 },
+    { "lat": -6.2894658, "lon": 106.7753946 },
+    { "lat": -6.2894846, "lon": 106.7753941 },
+    { "lat": -6.2894606, "lon": 106.7744745 },
+    { "lat": -6.2894375, "lon": 106.7744743 },
+    { "lat": -6.2893863, "lon": 106.7744764 },
+    { "lat": -6.2893709, "lon": 106.7738872 },
+    { "lat": -6.2891429, "lon": 106.7738932 },
+    { "lat": -6.2891078, "lon": 106.7738941 }
+  ],
+  "tags": {
+    "addr:street": "Jalan Pasar Jumat",
+    "building": "train_station",
+    "internet_access": "yes",
+    "layer": "1",
+    "name": "Stasiun Lebak Bulus Bank Syariah Indonesia",
+    "name:en": "Lebak Bulus Bank Syariah Indonesia Station",
+    "name:th": "สถานีเลอบักบูลุซ",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta",
+    "website": "https://jakartamrt.co.id/"
+  }
+},
+{
+  "type": "way",
+  "id": 681475410,
+  "bounds": {
+    "minlat": -6.2894297,
+    "minlon": 106.7692760,
+    "maxlat": -6.2893057,
+    "maxlon": 106.7713514
+  },
+  "geometry": [
+    { "lat": -6.2893057, "lon": 106.7713514 },
+    { "lat": -6.2893151, "lon": 106.7705654 },
+    { "lat": -6.2893218, "lon": 106.7698722 },
+    { "lat": -6.2893637, "lon": 106.7695443 },
+    { "lat": -6.2894297, "lon": 106.7692760 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 868618588,
+  "bounds": {
+    "minlat": -6.2898753,
+    "minlon": 106.7753282,
+    "maxlat": -6.2897770,
+    "maxlon": 106.7772633
+  },
+  "geometry": [
+    { "lat": -6.2898753, "lon": 106.7772633 },
+    { "lat": -6.2898442, "lon": 106.7758321 },
+    { "lat": -6.2898352, "lon": 106.7757263 },
+    { "lat": -6.2898002, "lon": 106.7754865 },
+    { "lat": -6.2897770, "lon": 106.7753282 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 868618589,
+  "bounds": {
+    "minlat": -6.2905387,
+    "minlon": 106.7756452,
+    "maxlat": -6.2905063,
+    "maxlon": 106.7771125
+  },
+  "geometry": [
+    { "lat": -6.2905063, "lon": 106.7756452 },
+    { "lat": -6.2905387, "lon": 106.7771125 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 868618590,
+  "bounds": {
+    "minlat": -6.2904527,
+    "minlon": 106.7756442,
+    "maxlat": -6.2904263,
+    "maxlon": 106.7771124
+  },
+  "geometry": [
+    { "lat": -6.2904263, "lon": 106.7756442 },
+    { "lat": -6.2904527, "lon": 106.7771124 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 868618591,
+  "bounds": {
+    "minlat": -6.2903927,
+    "minlon": 106.7756461,
+    "maxlat": -6.2903557,
+    "maxlon": 106.7771207
+  },
+  "geometry": [
+    { "lat": -6.2903557, "lon": 106.7756461 },
+    { "lat": -6.2903927, "lon": 106.7771207 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 868618592,
+  "bounds": {
+    "minlat": -6.2896856,
+    "minlon": 106.7714465,
+    "maxlat": -6.2895674,
+    "maxlon": 106.7728045
+  },
+  "geometry": [
+    { "lat": -6.2896783, "lon": 106.7714465 },
+    { "lat": -6.2896856, "lon": 106.7718102 },
+    { "lat": -6.2896759, "lon": 106.7719668 },
+    { "lat": -6.2896038, "lon": 106.7723495 },
+    { "lat": -6.2895843, "lon": 106.7725609 },
+    { "lat": -6.2895674, "lon": 106.7728045 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 868618593,
+  "bounds": {
+    "minlat": -6.2895960,
+    "minlon": 106.7711318,
+    "maxlat": -6.2895802,
+    "maxlon": 106.7718570
+  },
+  "geometry": [
+    { "lat": -6.2895802, "lon": 106.7711318 },
+    { "lat": -6.2895960, "lon": 106.7718570 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 898547115,
+  "bounds": {
+    "minlat": -6.2924402,
+    "minlon": 106.7713514,
+    "maxlat": -6.2791808,
+    "maxlon": 106.7970716
+  },
+  "geometry": [
+    { "lat": -6.2791808, "lon": 106.7970716 },
+    { "lat": -6.2794140, "lon": 106.7970025 },
+    { "lat": -6.2796037, "lon": 106.7969225 },
+    { "lat": -6.2803461, "lon": 106.7965872 },
+    { "lat": -6.2804841, "lon": 106.7965281 },
+    { "lat": -6.2807669, "lon": 106.7964305 },
+    { "lat": -6.2810485, "lon": 106.7963445 },
+    { "lat": -6.2818064, "lon": 106.7961295 },
+    { "lat": -6.2821019, "lon": 106.7960697 },
+    { "lat": -6.2823753, "lon": 106.7960429 },
+    { "lat": -6.2841281, "lon": 106.7959435 },
+    { "lat": -6.2847721, "lon": 106.7958897 },
+    { "lat": -6.2854504, "lon": 106.7958068 },
+    { "lat": -6.2860095, "lon": 106.7957355 },
+    { "lat": -6.2866017, "lon": 106.7956347 },
+    { "lat": -6.2873983, "lon": 106.7954631 },
+    { "lat": -6.2875756, "lon": 106.7954281 },
+    { "lat": -6.2877249, "lon": 106.7954008 },
+    { "lat": -6.2878741, "lon": 106.7953805 },
+    { "lat": -6.2880322, "lon": 106.7953703 },
+    { "lat": -6.2883426, "lon": 106.7953250 },
+    { "lat": -6.2888705, "lon": 106.7953384 },
+    { "lat": -6.2893290, "lon": 106.7953370 },
+    { "lat": -6.2897543, "lon": 106.7953062 },
+    { "lat": -6.2908540, "lon": 106.7951922 },
+    { "lat": -6.2910833, "lon": 106.7951614 },
+    { "lat": -6.2912806, "lon": 106.7951131 },
+    { "lat": -6.2914885, "lon": 106.7950313 },
+    { "lat": -6.2916925, "lon": 106.7949267 },
+    { "lat": -6.2918698, "lon": 106.7947899 },
+    { "lat": -6.2920311, "lon": 106.7946397 },
+    { "lat": -6.2921577, "lon": 106.7944694 },
+    { "lat": -6.2922604, "lon": 106.7943017 },
+    { "lat": -6.2923430, "lon": 106.7941019 },
+    { "lat": -6.2924070, "lon": 106.7938887 },
+    { "lat": -6.2924402, "lon": 106.7936232 },
+    { "lat": -6.2924285, "lon": 106.7924656 },
+    { "lat": -6.2924212, "lon": 106.7905413 },
+    { "lat": -6.2924028, "lon": 106.7874138 },
+    { "lat": -6.2923810, "lon": 106.7865137 },
+    { "lat": -6.2923230, "lon": 106.7860968 },
+    { "lat": -6.2922166, "lon": 106.7855859 },
+    { "lat": -6.2920206, "lon": 106.7849323 },
+    { "lat": -6.2917431, "lon": 106.7840715 },
+    { "lat": -6.2914977, "lon": 106.7832368 },
+    { "lat": -6.2912739, "lon": 106.7824464 },
+    { "lat": -6.2910374, "lon": 106.7816817 },
+    { "lat": -6.2908500, "lon": 106.7811106 },
+    { "lat": -6.2906740, "lon": 106.7806578 },
+    { "lat": -6.2903873, "lon": 106.7800993 },
+    { "lat": -6.2900893, "lon": 106.7796047 },
+    { "lat": -6.2896225, "lon": 106.7788666 },
+    { "lat": -6.2894290, "lon": 106.7785867 },
+    { "lat": -6.2892844, "lon": 106.7782596 },
+    { "lat": -6.2891910, "lon": 106.7779277 },
+    { "lat": -6.2891460, "lon": 106.7777209 },
+    { "lat": -6.2891217, "lon": 106.7774571 },
+    { "lat": -6.2891242, "lon": 106.7772168 },
+    { "lat": -6.2891443, "lon": 106.7769300 },
+    { "lat": -6.2892370, "lon": 106.7763124 },
+    { "lat": -6.2892693, "lon": 106.7760707 },
+    { "lat": -6.2892712, "lon": 106.7758229 },
+    { "lat": -6.2892542, "lon": 106.7749374 },
+    { "lat": -6.2892222, "lon": 106.7732661 },
+    { "lat": -6.2892027, "lon": 106.7723026 },
+    { "lat": -6.2892185, "lon": 106.7719915 },
+    { "lat": -6.2893057, "lon": 106.7713514 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 898547116,
+  "bounds": {
+    "minlat": -6.2776165,
+    "minlon": 106.7965879,
+    "maxlat": -6.2336678,
+    "maxlon": 106.7984349
+  },
+  "geometry": [
+    { "lat": -6.2336678, "lon": 106.7984328 },
+    { "lat": -6.2352615, "lon": 106.7984349 },
+    { "lat": -6.2366204, "lon": 106.7984322 },
+    { "lat": -6.2379225, "lon": 106.7984312 },
+    { "lat": -6.2387703, "lon": 106.7984239 },
+    { "lat": -6.2398930, "lon": 106.7984195 },
+    { "lat": -6.2417164, "lon": 106.7984287 },
+    { "lat": -6.2420328, "lon": 106.7983916 },
+    { "lat": -6.2422554, "lon": 106.7983404 },
+    { "lat": -6.2426824, "lon": 106.7982092 },
+    { "lat": -6.2429095, "lon": 106.7981354 },
+    { "lat": -6.2431197, "lon": 106.7980775 },
+    { "lat": -6.2433143, "lon": 106.7980418 },
+    { "lat": -6.2435375, "lon": 106.7980230 },
+    { "lat": -6.2438169, "lon": 106.7980189 },
+    { "lat": -6.2444225, "lon": 106.7980099 },
+    { "lat": -6.2454167, "lon": 106.7979952 },
+    { "lat": -6.2457214, "lon": 106.7979745 },
+    { "lat": -6.2464296, "lon": 106.7979299 },
+    { "lat": -6.2467165, "lon": 106.7979004 },
+    { "lat": -6.2477700, "lon": 106.7977667 },
+    { "lat": -6.2491084, "lon": 106.7975865 },
+    { "lat": -6.2494992, "lon": 106.7975433 },
+    { "lat": -6.2497681, "lon": 106.7975182 },
+    { "lat": -6.2510970, "lon": 106.7974511 },
+    { "lat": -6.2534193, "lon": 106.7973309 },
+    { "lat": -6.2544778, "lon": 106.7972525 },
+    { "lat": -6.2557819, "lon": 106.7971191 },
+    { "lat": -6.2567725, "lon": 106.7970155 },
+    { "lat": -6.2573577, "lon": 106.7969569 },
+    { "lat": -6.2578094, "lon": 106.7969155 },
+    { "lat": -6.2601690, "lon": 106.7966999 },
+    { "lat": -6.2612338, "lon": 106.7965991 },
+    { "lat": -6.2615446, "lon": 106.7965879 },
+    { "lat": -6.2617555, "lon": 106.7965948 },
+    { "lat": -6.2620514, "lon": 106.7966310 },
+    { "lat": -6.2623250, "lon": 106.7966998 },
+    { "lat": -6.2631885, "lon": 106.7969575 },
+    { "lat": -6.2639479, "lon": 106.7971966 },
+    { "lat": -6.2643106, "lon": 106.7972944 },
+    { "lat": -6.2645035, "lon": 106.7973269 },
+    { "lat": -6.2647170, "lon": 106.7973427 },
+    { "lat": -6.2651822, "lon": 106.7973515 },
+    { "lat": -6.2654936, "lon": 106.7973549 },
+    { "lat": -6.2658616, "lon": 106.7973468 },
+    { "lat": -6.2666928, "lon": 106.7973045 },
+    { "lat": -6.2674225, "lon": 106.7972704 },
+    { "lat": -6.2676425, "lon": 106.7972709 },
+    { "lat": -6.2682600, "lon": 106.7972873 },
+    { "lat": -6.2696876, "lon": 106.7974029 },
+    { "lat": -6.2700159, "lon": 106.7974311 },
+    { "lat": -6.2701937, "lon": 106.7974452 },
+    { "lat": -6.2718347, "lon": 106.7975569 },
+    { "lat": -6.2728482, "lon": 106.7976148 },
+    { "lat": -6.2732061, "lon": 106.7976291 },
+    { "lat": -6.2740178, "lon": 106.7976542 },
+    { "lat": -6.2748893, "lon": 106.7976899 },
+    { "lat": -6.2763677, "lon": 106.7977179 },
+    { "lat": -6.2765666, "lon": 106.7977148 },
+    { "lat": -6.2767300, "lon": 106.7977026 },
+    { "lat": -6.2770032, "lon": 106.7976605 },
+    { "lat": -6.2772552, "lon": 106.7976113 },
+    { "lat": -6.2776165, "lon": 106.7975158 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 898547117,
+  "bounds": {
+    "minlat": -6.2924853,
+    "minlon": 106.7713514,
+    "maxlat": -6.2791926,
+    "maxlon": 106.7971131
+  },
+  "geometry": [
+    { "lat": -6.2893057, "lon": 106.7713514 },
+    { "lat": -6.2893045, "lon": 106.7716338 },
+    { "lat": -6.2892591, "lon": 106.7720012 },
+    { "lat": -6.2892465, "lon": 106.7723049 },
+    { "lat": -6.2892663, "lon": 106.7732712 },
+    { "lat": -6.2892957, "lon": 106.7749323 },
+    { "lat": -6.2893118, "lon": 106.7758382 },
+    { "lat": -6.2893111, "lon": 106.7760651 },
+    { "lat": -6.2892814, "lon": 106.7763224 },
+    { "lat": -6.2891850, "lon": 106.7769335 },
+    { "lat": -6.2891660, "lon": 106.7772267 },
+    { "lat": -6.2891662, "lon": 106.7774632 },
+    { "lat": -6.2891885, "lon": 106.7777173 },
+    { "lat": -6.2892318, "lon": 106.7779414 },
+    { "lat": -6.2893198, "lon": 106.7782452 },
+    { "lat": -6.2894663, "lon": 106.7785706 },
+    { "lat": -6.2896587, "lon": 106.7788519 },
+    { "lat": -6.2899036, "lon": 106.7792491 },
+    { "lat": -6.2901261, "lon": 106.7795949 },
+    { "lat": -6.2904355, "lon": 106.7800927 },
+    { "lat": -6.2907081, "lon": 106.7806277 },
+    { "lat": -6.2908820, "lon": 106.7811012 },
+    { "lat": -6.2910723, "lon": 106.7816684 },
+    { "lat": -6.2913099, "lon": 106.7824356 },
+    { "lat": -6.2915376, "lon": 106.7832296 },
+    { "lat": -6.2917809, "lon": 106.7840581 },
+    { "lat": -6.2920609, "lon": 106.7849204 },
+    { "lat": -6.2922524, "lon": 106.7855702 },
+    { "lat": -6.2923630, "lon": 106.7860848 },
+    { "lat": -6.2924164, "lon": 106.7865146 },
+    { "lat": -6.2924345, "lon": 106.7874175 },
+    { "lat": -6.2924629, "lon": 106.7905430 },
+    { "lat": -6.2924711, "lon": 106.7924632 },
+    { "lat": -6.2924853, "lon": 106.7936270 },
+    { "lat": -6.2924510, "lon": 106.7939048 },
+    { "lat": -6.2923857, "lon": 106.7941247 },
+    { "lat": -6.2922990, "lon": 106.7943299 },
+    { "lat": -6.2921817, "lon": 106.7945150 },
+    { "lat": -6.2920551, "lon": 106.7946853 },
+    { "lat": -6.2918938, "lon": 106.7948355 },
+    { "lat": -6.2917165, "lon": 106.7949723 },
+    { "lat": -6.2915125, "lon": 106.7950822 },
+    { "lat": -6.2912953, "lon": 106.7951654 },
+    { "lat": -6.2910913, "lon": 106.7952164 },
+    { "lat": -6.2908660, "lon": 106.7952445 },
+    { "lat": -6.2897569, "lon": 106.7953585 },
+    { "lat": -6.2893250, "lon": 106.7953880 },
+    { "lat": -6.2888731, "lon": 106.7953920 },
+    { "lat": -6.2883666, "lon": 106.7953706 },
+    { "lat": -6.2880280, "lon": 106.7954041 },
+    { "lat": -6.2878769, "lon": 106.7954167 },
+    { "lat": -6.2877277, "lon": 106.7954357 },
+    { "lat": -6.2875820, "lon": 106.7954642 },
+    { "lat": -6.2874051, "lon": 106.7954995 },
+    { "lat": -6.2866175, "lon": 106.7956696 },
+    { "lat": -6.2860123, "lon": 106.7957751 },
+    { "lat": -6.2854603, "lon": 106.7958476 },
+    { "lat": -6.2847708, "lon": 106.7959307 },
+    { "lat": -6.2841352, "lon": 106.7959796 },
+    { "lat": -6.2823792, "lon": 106.7960836 },
+    { "lat": -6.2821011, "lon": 106.7961093 },
+    { "lat": -6.2818209, "lon": 106.7961692 },
+    { "lat": -6.2810617, "lon": 106.7963824 },
+    { "lat": -6.2807771, "lon": 106.7964684 },
+    { "lat": -6.2804974, "lon": 106.7965644 },
+    { "lat": -6.2803536, "lon": 106.7966283 },
+    { "lat": -6.2796151, "lon": 106.7969646 },
+    { "lat": -6.2794275, "lon": 106.7970381 },
+    { "lat": -6.2791926, "lon": 106.7971131 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "tracks": "1",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 898547118,
+  "bounds": {
+    "minlat": -6.2776319,
+    "minlon": 106.7966325,
+    "maxlat": -6.2336668,
+    "maxlon": 106.7984838
+  },
+  "geometry": [
+    { "lat": -6.2776319, "lon": 106.7975549 },
+    { "lat": -6.2772738, "lon": 106.7976500 },
+    { "lat": -6.2770081, "lon": 106.7977045 },
+    { "lat": -6.2767378, "lon": 106.7977415 },
+    { "lat": -6.2765700, "lon": 106.7977561 },
+    { "lat": -6.2763661, "lon": 106.7977595 },
+    { "lat": -6.2748869, "lon": 106.7977337 },
+    { "lat": -6.2740123, "lon": 106.7977030 },
+    { "lat": -6.2732009, "lon": 106.7976708 },
+    { "lat": -6.2728463, "lon": 106.7976547 },
+    { "lat": -6.2718190, "lon": 106.7975928 },
+    { "lat": -6.2701847, "lon": 106.7974823 },
+    { "lat": -6.2700099, "lon": 106.7974683 },
+    { "lat": -6.2696841, "lon": 106.7974411 },
+    { "lat": -6.2682515, "lon": 106.7973318 },
+    { "lat": -6.2676417, "lon": 106.7973090 },
+    { "lat": -6.2674231, "lon": 106.7973107 },
+    { "lat": -6.2666958, "lon": 106.7973445 },
+    { "lat": -6.2658742, "lon": 106.7973902 },
+    { "lat": -6.2654988, "lon": 106.7974004 },
+    { "lat": -6.2651621, "lon": 106.7973946 },
+    { "lat": -6.2647055, "lon": 106.7973840 },
+    { "lat": -6.2645003, "lon": 106.7973678 },
+    { "lat": -6.2643021, "lon": 106.7973341 },
+    { "lat": -6.2639376, "lon": 106.7972424 },
+    { "lat": -6.2631778, "lon": 106.7970055 },
+    { "lat": -6.2623132, "lon": 106.7967414 },
+    { "lat": -6.2620431, "lon": 106.7966721 },
+    { "lat": -6.2617505, "lon": 106.7966363 },
+    { "lat": -6.2615394, "lon": 106.7966325 },
+    { "lat": -6.2612262, "lon": 106.7966421 },
+    { "lat": -6.2601742, "lon": 106.7967447 },
+    { "lat": -6.2578122, "lon": 106.7969580 },
+    { "lat": -6.2573587, "lon": 106.7970024 },
+    { "lat": -6.2567823, "lon": 106.7970614 },
+    { "lat": -6.2557872, "lon": 106.7971718 },
+    { "lat": -6.2544800, "lon": 106.7972954 },
+    { "lat": -6.2534206, "lon": 106.7973676 },
+    { "lat": -6.2511031, "lon": 106.7974954 },
+    { "lat": -6.2497736, "lon": 106.7975555 },
+    { "lat": -6.2495007, "lon": 106.7975804 },
+    { "lat": -6.2491107, "lon": 106.7976277 },
+    { "lat": -6.2477806, "lon": 106.7978044 },
+    { "lat": -6.2468744, "lon": 106.7979333 },
+    { "lat": -6.2465874, "lon": 106.7979754 },
+    { "lat": -6.2457317, "lon": 106.7981448 },
+    { "lat": -6.2454240, "lon": 106.7982030 },
+    { "lat": -6.2449172, "lon": 106.7982379 },
+    { "lat": -6.2444226, "lon": 106.7982388 },
+    { "lat": -6.2438200, "lon": 106.7982399 },
+    { "lat": -6.2435284, "lon": 106.7982384 },
+    { "lat": -6.2432230, "lon": 106.7982383 },
+    { "lat": -6.2430400, "lon": 106.7982576 },
+    { "lat": -6.2426644, "lon": 106.7983145 },
+    { "lat": -6.2425149, "lon": 106.7983501 },
+    { "lat": -6.2420456, "lon": 106.7984475 },
+    { "lat": -6.2417242, "lon": 106.7984735 },
+    { "lat": -6.2399069, "lon": 106.7984715 },
+    { "lat": -6.2387709, "lon": 106.7984696 },
+    { "lat": -6.2379225, "lon": 106.7984720 },
+    { "lat": -6.2366177, "lon": 106.7984725 },
+    { "lat": -6.2352631, "lon": 106.7984807 },
+    { "lat": -6.2336668, "lon": 106.7984838 }
+  ],
+  "tags": {
+    "bridge": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "layer": "3",
+    "maxspeed": "90",
+    "name": "MRT Jakarta Jalur Utara-Selatan",
+    "name:en": "Jakarta MRT North-South Line",
+    "network": "MRT Jakarta",
+    "operator": "PT MRT Jakarta (Perseroda)",
+    "railway": "subway",
+    "start_date": "2019-03-24",
+    "voltage": "1500",
+    "wikidata": "Q3333785",
+    "wikipedia": "id:MRT Jakarta"
+  }
+},
+{
+  "type": "way",
+  "id": 1298002487,
+  "bounds": {
+    "minlat": -6.2925802,
+    "minlon": 106.7916150,
+    "maxlat": -6.2923538,
+    "maxlon": 106.7932935
+  },
+  "geometry": [
+    { "lat": -6.2923538, "lon": 106.7916167 },
+    { "lat": -6.2925673, "lon": 106.7916150 },
+    { "lat": -6.2925686, "lon": 106.7917840 },
+    { "lat": -6.2925798, "lon": 106.7932380 },
+    { "lat": -6.2925802, "lon": 106.7932919 },
+    { "lat": -6.2923664, "lon": 106.7932935 },
+    { "lat": -6.2923659, "lon": 106.7932315 },
+    { "lat": -6.2923538, "lon": 106.7916167 }
+  ],
+  "tags": {
+    "alt_name": "Stasiun MRT Fatmawati",
+    "building": "train_station",
+    "layer": "1",
+    "name": "Stasiun MRT Fatmawati Indomaret",
+    "name:th": "สถานีฟัตมาวาตี"
+  }
+},
+{
+  "type": "way",
+  "id": 1300045443,
+  "bounds": {
+    "minlat": -6.2792028,
+    "minlon": 106.7969812,
+    "maxlat": -6.2776050,
+    "maxlon": 106.7976367
+  },
+  "geometry": [
+    { "lat": -6.2776050, "lon": 106.7974123 },
+    { "lat": -6.2776673, "lon": 106.7976367 },
+    { "lat": -6.2780505, "lon": 106.7975292 },
+    { "lat": -6.2786810, "lon": 106.7973523 },
+    { "lat": -6.2792028, "lon": 106.7972059 },
+    { "lat": -6.2791404, "lon": 106.7969812 },
+    { "lat": -6.2786329, "lon": 106.7971235 },
+    { "lat": -6.2779936, "lon": 106.7973031 },
+    { "lat": -6.2776050, "lon": 106.7974123 }
+  ],
+  "tags": {
+    "building": "train_station",
+    "building:levels": "2",
+    "layer": "4",
+    "name": "Stasiun MRT Cipete Raya TUKU",
+    "name:th": "สถานีจีเปเต"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710949,
+  "bounds": {
+    "minlat": -6.2901321,
+    "minlon": 106.7756792,
+    "maxlat": -6.2901030,
+    "maxlon": 106.7769336
+  },
+  "geometry": [
+    { "lat": -6.2901030, "lon": 106.7756792 },
+    { "lat": -6.2901321, "lon": 106.7769336 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710950,
+  "bounds": {
+    "minlat": -6.2901919,
+    "minlon": 106.7756766,
+    "maxlat": -6.2901542,
+    "maxlon": 106.7769337
+  },
+  "geometry": [
+    { "lat": -6.2901919, "lon": 106.7769337 },
+    { "lat": -6.2901542, "lon": 106.7756766 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710951,
+  "bounds": {
+    "minlat": -6.2902162,
+    "minlon": 106.7747456,
+    "maxlat": -6.2900765,
+    "maxlon": 106.7756642
+  },
+  "geometry": [
+    { "lat": -6.2902162, "lon": 106.7756642 },
+    { "lat": -6.2901942, "lon": 106.7752338 },
+    { "lat": -6.2901831, "lon": 106.7751246 },
+    { "lat": -6.2901482, "lon": 106.7749631 },
+    { "lat": -6.2900765, "lon": 106.7747456 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710952,
+  "bounds": {
+    "minlat": -6.2902764,
+    "minlon": 106.7745455,
+    "maxlat": -6.2900418,
+    "maxlon": 106.7754324
+  },
+  "geometry": [
+    { "lat": -6.2902764, "lon": 106.7754324 },
+    { "lat": -6.2902731, "lon": 106.7752956 },
+    { "lat": -6.2902512, "lon": 106.7751515 },
+    { "lat": -6.2902224, "lon": 106.7750219 },
+    { "lat": -6.2901512, "lon": 106.7748140 },
+    { "lat": -6.2900418, "lon": 106.7745455 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710953,
+  "bounds": {
+    "minlat": -6.2899500,
+    "minlon": 106.7758325,
+    "maxlat": -6.2899160,
+    "maxlon": 106.7772839
+  },
+  "geometry": [
+    { "lat": -6.2899160, "lon": 106.7758325 },
+    { "lat": -6.2899500, "lon": 106.7772839 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710954,
+  "bounds": {
+    "minlat": -6.2899160,
+    "minlon": 106.7754951,
+    "maxlat": -6.2899095,
+    "maxlon": 106.7758325
+  },
+  "geometry": [
+    { "lat": -6.2899095, "lon": 106.7754951 },
+    { "lat": -6.2899160, "lon": 106.7758325 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710955,
+  "bounds": {
+    "minlat": -6.2900314,
+    "minlon": 106.7763539,
+    "maxlat": -6.2900086,
+    "maxlon": 106.7773083
+  },
+  "geometry": [
+    { "lat": -6.2900086, "lon": 106.7763539 },
+    { "lat": -6.2900314, "lon": 106.7773083 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710956,
+  "bounds": {
+    "minlat": -6.2900086,
+    "minlon": 106.7754931,
+    "maxlat": -6.2899860,
+    "maxlon": 106.7763539
+  },
+  "geometry": [
+    { "lat": -6.2899860, "lon": 106.7754931 },
+    { "lat": -6.2900086, "lon": 106.7763539 }
+  ],
+  "tags": {
+    "covered": "yes",
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710957,
+  "bounds": {
+    "minlat": -6.2900525,
+    "minlon": 106.7743413,
+    "maxlat": -6.2899262,
+    "maxlon": 106.7754922
+  },
+  "geometry": [
+    { "lat": -6.2900525, "lon": 106.7754922 },
+    { "lat": -6.2900463, "lon": 106.7751558 },
+    { "lat": -6.2900210, "lon": 106.7749030 },
+    { "lat": -6.2899262, "lon": 106.7743413 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710992,
+  "bounds": {
+    "minlat": -6.2905063,
+    "minlon": 106.7747952,
+    "maxlat": -6.2901813,
+    "maxlon": 106.7756452
+  },
+  "geometry": [
+    { "lat": -6.2901813, "lon": 106.7747952 },
+    { "lat": -6.2904109, "lon": 106.7752038 },
+    { "lat": -6.2904588, "lon": 106.7753283 },
+    { "lat": -6.2904950, "lon": 106.7754768 },
+    { "lat": -6.2905063, "lon": 106.7756452 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710993,
+  "bounds": {
+    "minlat": -6.2904263,
+    "minlon": 106.7745455,
+    "maxlat": -6.2900418,
+    "maxlon": 106.7756442
+  },
+  "geometry": [
+    { "lat": -6.2900418, "lon": 106.7745455 },
+    { "lat": -6.2901813, "lon": 106.7747952 },
+    { "lat": -6.2903467, "lon": 106.7751870 },
+    { "lat": -6.2903951, "lon": 106.7753666 },
+    { "lat": -6.2904204, "lon": 106.7755081 },
+    { "lat": -6.2904263, "lon": 106.7756442 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710994,
+  "bounds": {
+    "minlat": -6.2903557,
+    "minlon": 106.7748140,
+    "maxlat": -6.2901512,
+    "maxlon": 106.7756461
+  },
+  "geometry": [
+    { "lat": -6.2901512, "lon": 106.7748140 },
+    { "lat": -6.2902244, "lon": 106.7749725 },
+    { "lat": -6.2903002, "lon": 106.7751864 },
+    { "lat": -6.2903395, "lon": 106.7754176 },
+    { "lat": -6.2903557, "lon": 106.7756461 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710995,
+  "bounds": {
+    "minlat": -6.2895152,
+    "minlon": 106.7734716,
+    "maxlat": -6.2894752,
+    "maxlon": 106.7737609
+  },
+  "geometry": [
+    { "lat": -6.2894752, "lon": 106.7734716 },
+    { "lat": -6.2895152, "lon": 106.7737609 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710996,
+  "bounds": {
+    "minlat": -6.2894598,
+    "minlon": 106.7721173,
+    "maxlat": -6.2894460,
+    "maxlon": 106.7726588
+  },
+  "geometry": [
+    { "lat": -6.2894460, "lon": 106.7721173 },
+    { "lat": -6.2894510, "lon": 106.7723056 },
+    { "lat": -6.2894598, "lon": 106.7726588 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "embankment": "yes",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710997,
+  "bounds": {
+    "minlat": -6.2896256,
+    "minlon": 106.7711315,
+    "maxlat": -6.2895960,
+    "maxlon": 106.7718570
+  },
+  "geometry": [
+    { "lat": -6.2896203, "lon": 106.7711315 },
+    { "lat": -6.2896256, "lon": 106.7713987 },
+    { "lat": -6.2896221, "lon": 106.7715403 },
+    { "lat": -6.2896098, "lon": 106.7716712 },
+    { "lat": -6.2895960, "lon": 106.7718570 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+},
+{
+  "type": "way",
+  "id": 1408710998,
+  "bounds": {
+    "minlat": -6.2895968,
+    "minlon": 106.7718570,
+    "maxlat": -6.2895575,
+    "maxlon": 106.7725134
+  },
+  "geometry": [
+    { "lat": -6.2895960, "lon": 106.7718570 },
+    { "lat": -6.2895968, "lon": 106.7720681 },
+    { "lat": -6.2895732, "lon": 106.7723057 },
+    { "lat": -6.2895575, "lon": 106.7725134 }
+  ],
+  "tags": {
+    "electrified": "contact_line",
+    "frequency": "0",
+    "gauge": "1067",
+    "railway": "subway",
+    "service": "yard",
+    "voltage": "1500"
+  }
+}
+
+  ]
+}

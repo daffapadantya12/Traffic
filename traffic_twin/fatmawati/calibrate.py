@@ -9,7 +9,9 @@ at the per-approach scales then reports the queues, the stopped delays (validati
 how far the volumes stay below the real counts.  The result is data/fatmawati/calibration.json, which the demand
 model reads.
 
-  python3 -m traffic_twin.fatmawati.calibrate --workers 8
+  python3 -m traffic_twin.fatmawati.calibrate --workers 8 [--site <slug>]
+
+Targets, grid, seeds and the citation come from data/sites/<slug>.json (site.py).
 """
 
 from __future__ import annotations
@@ -26,15 +28,18 @@ import numpy as np
 
 from .demand import CALIBRATION, MIX, MOVEMENTS, routes_xml, vtypes_xml, DATA
 from .sensors import LEGS
+from .site import SITE, add_site_argument
 
-TARGET_MAX_QUEUE_M = {"N": 289.5, "S": 166.6, "E": 239.0, "W": 155.5}       # VISSIM maximum queue
-PKJI_DELAY_S = {"N": 79.8, "S": 106.3, "E": 78.7, "W": 78.3}                  # PKJI 2023 delay per approach
-PKJI_DS = {"N": 0.86, "S": 0.79, "E": 0.85, "W": 0.65}                        # degree of saturation
-VISSIM_JUNCTION_DELAY_S = 67.4
+TARGET_MAX_QUEUE_M = SITE.target_max_queue_m          # observed longest queue per approach (Fatmawati: VISSIM maximum queue)
+PKJI_DELAY_S = SITE.pkji_delay_s                      # published validation numbers (optional, DATACARD text only)
+PKJI_DS = SITE.pkji_ds
+VISSIM_JUNCTION_DELAY_S = SITE.vissim_junction_delay_s
 OBSERVED_VEH_H = {g: sum(v for (a, _), v in MOVEMENTS.items() if a == g) for g in LEGS}
-GRID = (0.15, 0.25, 0.35, 0.5, 0.7)
-SEEDS = (11, 12)
-WARM_S, MAIN_S = 900.0, 3600.0
+GRID = SITE.grid
+SEEDS = SITE.fit_seeds
+VERIFY_SEEDS = SITE.verify_seeds
+WARM_S, MAIN_S = SITE.cal_warm_s, SITE.cal_main_s
+SOURCES = list(SITE.sources)
 
 
 def run(scale: dict, seed: int, tmp: str, vtypes: str | None = None) -> dict:
@@ -102,7 +107,7 @@ def calibrate(workers: int = 8, rounds: int = 3, tol: float = 0.10, damp: float 
     of the demand sent to it is capacity-limited: its scale is set to the flow it served and it is flagged."""
     vtypes_xml(os.path.join(DATA, "demand", "vtypes.add.xml"))
     history, grid_runs = [], []
-    with tempfile.TemporaryDirectory(prefix="fatmawati_cal_") as tmp:
+    with tempfile.TemporaryDirectory(prefix=f"{SITE.slug}_cal_") as tmp:
         if grid or start is None:
             jobs = [({g: k for g in LEGS}, seed) for k in GRID for seed in SEEDS]
             with ProcessPoolExecutor(max_workers=workers) as pool:
@@ -138,9 +143,7 @@ def calibrate(workers: int = 8, rounds: int = 3, tol: float = 0.10, damp: float 
         method=f"Dishub fixed plan, observed movements x per-approach scale; damped rounds s <- s (target/achieved)^{damp} until the "
                f"peak-hour maximum queue (camera, VISSIM queue definition) is within {tol:.0%} of the VISSIM maximum queue; "
                "approaches whose entry gates carry < 90% of the demand sent to them are capacity-limited; mean of seeds " + str(list(SEEDS)),
-        sources=["Sumabrata, Haqueline & Mauramdha (2026), Microscopic Simulation Analysis of The Fatmawati Intersection "
-                 "in Jakarta, Proc. QiR 2025, AER 303, 31-44, doi:10.2991/978-94-6239-717-0_4 (CC BY-NC 4.0)",
-                 "Yusuf & Isradi (2025), ETJ 10(3), 4052-4060, doi:10.47191/etj/v10i03.15 (CC BY 4.0): vehicle mix"],
+        sources=SOURCES, site=SITE.slug,
         vehicle_mix=MIX, target_max_queue_m=TARGET_MAX_QUEUE_M,
         verification=dict(max_queue_m={g: mean("max_queue_m", g) for g in LEGS},
                           stopped_delay_s={g: mean("stopped_delay_s", g) for g in LEGS}, pkji_delay_s=PKJI_DELAY_S,
@@ -157,7 +160,7 @@ def calibrate(workers: int = 8, rounds: int = 3, tol: float = 0.10, damp: float 
     return result
 
 
-def verify_and_save(scale: dict, seeds=(11, 12, 13, 14), capacity_limited: dict | None = None, note: str = "",
+def verify_and_save(scale: dict, seeds=VERIFY_SEEDS, capacity_limited: dict | None = None, note: str = "",
                     workers: int = 4) -> dict:
     """Final check of hand-chosen scales over several seeds (the hourly maximum queue is noisy near capacity),
     written to calibration.json together with the earlier rounds."""
@@ -167,7 +170,7 @@ def verify_and_save(scale: dict, seeds=(11, 12, 13, 14), capacity_limited: dict 
             previous = json.load(f)
     except (OSError, ValueError):
         previous = {}
-    with tempfile.TemporaryDirectory(prefix="fatmawati_cal_") as tmp:
+    with tempfile.TemporaryDirectory(prefix=f"{SITE.slug}_cal_") as tmp:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             runs = list(pool.map(run, [scale] * len(seeds), list(seeds), [tmp] * len(seeds)))
     stat = lambda key, g: [r[key][g] for r in runs if r[key][g] is not None]
@@ -180,7 +183,7 @@ def verify_and_save(scale: dict, seeds=(11, 12, 13, 14), capacity_limited: dict 
                "overshot: near capacity an approach's hourly maximum queue tips from a short queue to spill-back past the "
                "300 m camera, and it varies a lot between seeds.  The scales were then bracketed and checked over "
                f"{len(seeds)} seeds; an approach whose entry gates carry < 90% of the demand sent to it is capacity-limited.  " + note,
-        sources=previous.get("sources"), vehicle_mix=MIX, target_max_queue_m=TARGET_MAX_QUEUE_M,
+        sources=previous.get("sources") or SOURCES, site=SITE.slug, vehicle_mix=MIX, target_max_queue_m=TARGET_MAX_QUEUE_M,
         verification=dict(seeds=list(seeds),
                           max_queue_m={g: round(float(np.mean(q[g])), 1) for g in LEGS},
                           max_queue_sd_m={g: round(float(np.std(q[g], ddof=1)), 1) for g in LEGS},
@@ -203,6 +206,7 @@ def verify_and_save(scale: dict, seeds=(11, 12, 13, 14), capacity_limited: dict 
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--start", default=None, help='JSON scale to start the rounds from, e.g. {"N":0.24,"E":0.23,"S":0.26,"W":0.4}')
     ap.add_argument("--rounds", type=int, default=3)

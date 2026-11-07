@@ -1,6 +1,6 @@
-<!-- Dishub static plan at Perempatan Fatmawati (Sumabrata et al. 2026): S1 W+E through 80 s, S2 E through+right 12 s,
-     S3 N 78 s, S4 S 45 s, amber 2 s + all-red 2 s; phases 0-11 are that cycle, the rest are the other stage
-     transitions for adaptive control (traffic_twin/fatmawati/build_net.py). -->
+<!-- Fixed plan at Perempatan Fatmawati (data/sites/fatmawati.json): S1 80 s, S2 12 s, S3 78 s, S4 45 s, amber 2 s + all-red 2 s;
+     phases 0-11 are that cycle, the rest are the other stage transitions for adaptive control
+     (traffic_twin/fatmawati/build_net.py). -->
 <tlLogics>
     <tlLogic id="fatmawati" type="static" programID="dishub" offset="0">
         <phase duration="80" state="GGrrrrrrrrrrrrGGrrrr" name="S1 green"/>

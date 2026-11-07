@@ -11,8 +11,12 @@ teacher rule), and a leakage audit; the shuffled-label test runs with Task A.
 load_policy(path) turns a saved Task A model into a controller: policy(row) -> "S1".."S4", where row is the
 dict of ticks_5s columns that the twin builds at a decision instant.
 
-  python3 -m traffic_twin.fatmawati.learn validate --data data/fatmawati_pilot
+  python3 -m traffic_twin.fatmawati.learn validate --data data/fatmawati_pilot [--site <slug>]
   python3 -m traffic_twin.fatmawati.learn train --data data/fatmawati_v3 --out reports/a3/learning --jobs 2
+
+The leg set, the stages, the stage of each approach and the teacher's timing constants come from
+data/sites/<slug>.json (site.py); this module needs no SUMO, except to read the saturation flows off the built
+network (the site file's sat_flow_pcu_h is the fallback).
 """
 from __future__ import annotations
 
@@ -26,11 +30,14 @@ import warnings
 import numpy as np
 import pandas as pd
 
-LEGS = ("N", "E", "S", "W")
-STAGES = ("S1", "S2", "S3", "S4")
-STAGE_OF_APPROACH = {"W": "S1", "E": "S2", "N": "S3", "S": "S4"}
-INTERGREEN_S, START_LOSS_S, DECISION_S, MP_MARGIN_PCU = 4.0, 2.0, 5.0, 1.0
-SAT_FLOW_DEFAULT = {"N": 5850.0, "E": 7800.0, "S": 3900.0, "W": 3900.0}     # PKJI 2023: S0 = 600 W_e pcu/h
+from .site import SITE, add_site_argument
+
+LEGS = SITE.legs
+STAGES = SITE.stages
+STAGE_OF_APPROACH = SITE.stage_of_approach
+INTERGREEN_S = SITE.yellow_s + SITE.allred_s                                # the plant's intergreen (sumo_world.INTERGREEN_S)
+START_LOSS_S, DECISION_S, MP_MARGIN_PCU = 2.0, SITE.plant["decision_s"], 1.0
+SAT_FLOW_DEFAULT = SITE.sat_flow_pcu_h       # PKJI 2023: S0 = 600 W_e pcu/h, per approach; None until the site's network is built
 NO_AMB_ETA_S, NO_AMB_DIST_M = 600.0, 400.0                                  # stand-ins when no ambulance is seen
 EXCLUDE = {"episode_id", "t", "clock", "controller", "controller_request"}
 CATEGORICAL = ("stage", "phase_state", "transition_to", "green_arm", "phase_arm")
@@ -38,10 +45,16 @@ CATEGORICAL = ("stage", "phase_state", "transition_to", "green_arm", "phase_arm"
 
 # ---------------------------------------------------------------------------------------------------- data
 def _sat_flow() -> dict:
+    """Per-approach saturation flow (pcu/h) as the teacher used it: read off the built network's queue cameras
+    (sumo_world.sensor_layout); without SUMO or the network, the site file's values."""
     try:
-        from .sensors import sensor_layout
+        from .sumo_world import sensor_layout
         return {c["leg"]: float(c["sat_flow_pcu_h"]) for c in sensor_layout()["cameras"] if c["kind"] == "queue_camera"}
-    except Exception:                                                        # stand-alone use
+    except Exception as err:                                                 # stand-alone use (no SUMO, no network)
+        if SAT_FLOW_DEFAULT is None:
+            raise RuntimeError(f"saturation flows: the network of site {SITE.slug!r} cannot be read ({err!r}) and "
+                               "sensors.sat_flow_pcu_h is null in its site file") from err
+        print(f"saturation flows from data/sites/{SITE.slug}.json, not the network ({type(err).__name__})", file=sys.stderr)
         return dict(SAT_FLOW_DEFAULT)
 
 
@@ -505,6 +518,7 @@ def load_policy(path: str):
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     sub = ap.add_subparsers(dest="cmd", required=True)
     v = sub.add_parser("validate"); v.add_argument("--data", required=True)
     t = sub.add_parser("train"); t.add_argument("--data", required=True); t.add_argument("--out", required=True)

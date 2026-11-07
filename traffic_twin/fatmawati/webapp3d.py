@@ -3,13 +3,14 @@
   GET /           -> traffic_twin/fatmawati/static/index.html (Three.js)
   GET /geometry   -> data/fatmawati/viewer/geometry.json (lanes, junctions, stop lines, motorcycle boxes,
                      signal heads, the toll flyover, buildings; (c) OpenStreetMap contributors, ODbL)
-  GET /stream     -> Server-Sent Events, one frame per simulation tick; the first viewer also gets "tomtom"
-                     events (live TomTom flow, display only, see tomtom.py)
+  GET /stream     -> Server-Sent Events, one frame per simulation tick (SUMO's vehicles plus the MRT trains of
+                     mrt.py); the first viewer also gets "tomtom" events (live TomTom flow, display only, see tomtom.py)
   GET /control?speed=N&pause=0|1&controller=fixed|longest_queue
   GET /health
 
 The SUMO simulation (libsumo) lives in one thread and is only touched there; HTTP threads read the
-latest frame.  Run:  python3 -m traffic_twin.fatmawati.webapp3d --port 8770 --start-hour 7 --hours 3
+latest frame.  The live view adds what the dataset leaves out: JORR through-traffic on the toll flyover
+(jorr.py, in SUMO) and MRT trains on the viaduct (mrt.py, by timetable).  Run:  python3 -m traffic_twin.fatmawati.webapp3d --port 8770 --start-hour 7 --hours 3
 """
 
 from __future__ import annotations
@@ -25,6 +26,9 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from .demand import DATA, routes_xml, vtypes_xml
+from .jorr import PEAK_VPH as TOLL_PEAK_VPH, routes_xml as toll_routes_xml
+from .mrt import Trains
+from .site import SITE, add_site_argument
 from .sumo_world import CONTROLLERS
 
 # trained controllers the viewer can run (the closed-loop winner of the evaluation; reports/a3)
@@ -38,9 +42,11 @@ MAX_SPEED = 200.0
 
 
 class Sim(threading.Thread):
-    def __init__(self, routes: str, start_hour: float, speed: float, controller: str, seed: int, warmup_s: float = 0.0):
+    def __init__(self, routes: str, start_hour: float, speed: float, controller: str, seed: int, warmup_s: float = 0.0,
+                 trains=None):
         super().__init__(daemon=True)
         self.routes, self.start_hour, self.speed, self.controller, self.seed = routes, start_hour, speed, controller, seed
+        self.trains = trains                                     # MRT timetable (mrt.Trains), drawn with the vehicles
         self.warmup_s = warmup_s
         self.paused = False
         self.lock = threading.Lock()
@@ -96,6 +102,8 @@ class Sim(threading.Thread):
                             break
                 if stepped or self.frame_seq == 0:
                     f = w.frame()
+                    if self.trains is not None:
+                        f["vehicles"] += self.trains.rows(self.start_hour * 3600.0 + w.t)
                     f["ctl"] = dict(speed=self.speed, paused=self.paused, controller=self.controller)
                     self.frame_json = json.dumps(f, separators=(",", ":"))
                     self.frame_seq += 1
@@ -211,6 +219,7 @@ def make_handler(sim: Sim, viewers: Viewers | None = None, tomtom=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8770)
     ap.add_argument("--start-hour", type=float, default=7.0)
@@ -220,6 +229,9 @@ def main(argv=None):
     ap.add_argument("--controller", default="fixed", choices=list(CONTROLLERS))
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--warmup-min", type=float, default=10.0, help="simulated minutes run before the first live frame")
+    ap.add_argument("--toll-vph", type=float, default=TOLL_PEAK_VPH,
+                    help="toll through-traffic per direction at the daily peak, live view only (0: none; the default at a site without a toll road)")
+    ap.add_argument("--no-mrt", action="store_true", help="no MRT trains")
     args = ap.parse_args(argv)
     if not os.path.exists(GEOMETRY):
         from .geometry3d import build
@@ -227,7 +239,16 @@ def main(argv=None):
     vtypes_xml(os.path.join(DATA, "demand", "vtypes.add.xml"))
     routes = os.path.join(DATA, "demand", f"live_{args.level}_{int(args.start_hour):02d}h_{args.hours:g}h.rou.xml")
     info = routes_xml(routes, args.level, start_hour=args.start_hour, duration_s=args.hours * 3600.0, seed=args.seed)
-    sim = Sim(routes, args.start_hour, args.speed, args.controller, args.seed, warmup_s=60.0 * args.warmup_min)
+    if args.toll_vph > 0:                                        # JORR through-traffic: the live view only, not the dataset
+        toll = toll_routes_xml(os.path.join(DATA, "demand", f"live_jorr_{int(args.start_hour):02d}h_{args.hours:g}h.rou.xml"),
+                               args.start_hour, args.hours * 3600.0, peak_vph=args.toll_vph)
+        routes += "," + toll["path"]
+    trains = None
+    if not args.no_mrt:
+        with open(GEOMETRY) as fh:
+            line = json.load(fh).get("mrt")
+        trains = Trains(line["tracks"]) if line else None
+    sim = Sim(routes, args.start_hour, args.speed, args.controller, args.seed, warmup_s=60.0 * args.warmup_min, trains=trains)
     sim.start()
     from .sumo_world import sensor_layout
     from .tomtom import TomTomLive, probes
@@ -236,7 +257,7 @@ def main(argv=None):
     tomtom.start()
     httpd = ThreadingHTTPServer((args.host, args.port), make_handler(sim, viewers, tomtom))
     httpd.daemon_threads = True
-    print(f"Fatmawati 3D twin on http://{args.host}:{args.port}/  ({info['n_vehicles']} vehicles, {info['n_ambulances']} ambulances "
+    print(f"{SITE.name} 3D twin on http://{args.host}:{args.port}/  ({info['n_vehicles']} vehicles, {info['n_ambulances']} ambulances "
           f"over {args.hours:g} h from {args.start_hour:g}:00, {args.level} demand)", flush=True)
     try:
         httpd.serve_forever(poll_interval=0.2)

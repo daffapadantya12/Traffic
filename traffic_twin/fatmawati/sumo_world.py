@@ -21,20 +21,22 @@ import math
 import os
 import time
 
-from .build_net import (ALLRED_S, APPROACHES, DISHUB_GREEN_S, JUNCTION_LAT, JUNCTION_LON, STAGE_APPROACHES, STAGE_LABEL,
-                        STAGE_OF_APPROACH, STAGES, TLS_ID, YELLOW_S)
-from .demand import DATA, NET
+from .build_net import (ALLRED_S, APPROACHES, DISHUB_GREEN_S, JUNCTION_LAT, JUNCTION_LON, PROGRAM_ID, STAGE_APPROACHES,
+                        STAGE_LABEL, STAGE_OF_APPROACH, STAGES, TLS_ID, YELLOW_S)
+from .demand import DATA, HOSPITAL_NAME, NET
 from .geometry3d import raised_z
+from .site import SITE
 
 VTYPES = os.path.join(DATA, "demand", "vtypes.add.xml")
 TYPE_CODE = {"car": 0, "ambulance": 1, "moto": 2, "bus": 3, "truck": 4}
-ARMS = ("N", "E", "S", "W")
+ARMS = SITE.legs
 CONTROLLERS = ("fixed", "longest_queue", "max_pressure", "priority_mp", "preempt_naive", "random", "still")
 PREEMPT_ETA_S = 20.0                                            # naive pre-emption: ambulance this close in time
-INTERGREEN_S = YELLOW_S + ALLRED_S                              # amber 2 + all-red 2 (Dishub)
+INTERGREEN_S = YELLOW_S + ALLRED_S                              # amber + all-red of the city's plan
 START_LOSS_S = 2.0                                              # start-up lost time
-STARVE_S = 240.0                                                # longest red for a stage with standing vehicles
-STUDY_M = 300.0                                                 # the study area: sensors lie within it
+PLANT = SITE.plant                                              # adaptive plant limits (site file, signal.plant)
+STARVE_S = PLANT["starvation_s"]                                # longest red for a stage with standing vehicles
+STUDY_M = SITE.study_m                                          # the study area: sensors lie within it
 VKM_EVERY_S = 10.0
 _LAYOUT = None
 _RAISED = None
@@ -68,7 +70,8 @@ def type_code(type_id: str) -> int:
 
 class FatmawatiWorld:
     def __init__(self, routes: str, start_hour: float = 8.0, seed: int = 1, sublane: float = 0.8,
-                 controller: str = "fixed", min_green: float = 5.0, max_green: float = 90.0, decision_s: float = 5.0,
+                 controller: str = "fixed", min_green: float = PLANT["min_green_s"], max_green: float = PLANT["max_green_s"],
+                 decision_s: float = PLANT["decision_s"],
                  lateral_mode: str = "centre", centre_hold_s: float = 3.0, sensors: bool = False, record_from: float = 0.0,
                  store_rows: bool = True, vtypes: str = VTYPES, extra_args: tuple = ()):
         if lateral_mode not in ("centre", "off"):
@@ -89,22 +92,22 @@ class FatmawatiWorld:
                "--time-to-teleport", "300", "--no-step-log", "true", "--no-warnings", "true", "--ignore-route-errors", "true",
                "--seed", str(seed)] + list(extra_args)
         ts.start(cmd)
-        ts.trafficlight.setProgram(TLS_ID, "dishub")
+        ts.trafficlight.setProgram(TLS_ID, PROGRAM_ID)
         self.x0, self.y0 = ts.simulation.convertGeo(JUNCTION_LON, JUNCTION_LAT, True)
         self.controller = controller
         self.min_green, self.max_green, self.decision_s = min_green, max_green, decision_s
         self.t = 0.0
-        logic = [p for p in ts.trafficlight.getAllProgramLogics(TLS_ID) if p.programID == "dishub"][0]
+        logic = [p for p in ts.trafficlight.getAllProgramLogics(TLS_ID) if p.programID == PROGRAM_ID][0]
         self.phase_names = [ph.name for ph in logic.phases]
         self.green_idx = {st: self.phase_names.index(f"{st} green") for st in STAGES}
         self.trans_idx = {(a, b): (self.phase_names.index(f"{a}>{b} amber"), self.phase_names.index(f"{a}>{b} all-red"))
                           for a in STAGES for b in STAGES if a != b}
-        self.green_stage = "S1"
+        self.green_stage = STAGES[0]
         self.green_since = 0.0
         self.red_since = {st: 0.0 for st in STAGES}
         self.next_decision = min_green
         self.transition = None                     # (target stage, 0 amber / 1 all-red, start time)
-        self._set(self.green_idx["S1"])
+        self._set(self.green_idx[STAGES[0]])
         self.n_lane_collisions = 0
         self.n_junction_overlaps = 0
         self.n_lane_collisions_study = 0               # within STUDY_M of the junction centre (the sensors' area)
@@ -291,7 +294,7 @@ class FatmawatiWorld:
         if self.controller == "longest_queue":
             return self._best(self.stage_queues(), 3.0)
         if self.t - self.green_since >= DISHUB_GREEN_S[self.green_stage] - 1e-9:
-            return STAGES[(STAGES.index(self.green_stage) + 1) % 4]
+            return STAGES[(STAGES.index(self.green_stage) + 1) % len(STAGES)]
         return self.green_stage
 
     def _set(self, idx: int) -> None:
@@ -324,7 +327,7 @@ class FatmawatiWorld:
             if starving:
                 want = min(starving, key=lambda st: self.red_since[st])
             elif want == self.green_stage and self.t - self.green_since >= self.max_green - 1e-9:
-                want = STAGES[(STAGES.index(self.green_stage) + 1) % 4]
+                want = STAGES[(STAGES.index(self.green_stage) + 1) % len(STAGES)]
         if want != self.green_stage and self.t - self.green_since >= self.min_green - 1e-9:
             self.red_since[self.green_stage] = self.t
             self.transition = (want, 0, self.t)
@@ -385,7 +388,7 @@ class FatmawatiWorld:
                 self.ev_depart[vid] = self.t
                 if self.sensors is not None:
                     self.sensors.ev_departed(vid, self.t)
-                self.log(f"ambulance {vid} on its way to RSUP Fatmawati")
+                self.log(f"ambulance {vid} on its way to {HOSPITAL_NAME}")
         for vid in ts.simulation.getArrivedIDList():
             self.motos.pop(vid, None)
             self.n_arrived += 1
@@ -395,7 +398,7 @@ class FatmawatiWorld:
                 self.n_ev_arrived += 1
                 tt = self.t - self.ev_depart.pop(vid)
                 self.ev_travel.append(tt)
-                self.log(f"ambulance {vid} reached RSUP Fatmawati after {tt:.0f} s")
+                self.log(f"ambulance {vid} reached {HOSPITAL_NAME} after {tt:.0f} s")
         for c in ts.simulation.getCollisions():
             key = (c.collider, c.victim)
             if key in self._coll_seen:
