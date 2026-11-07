@@ -20,8 +20,11 @@ Equilibrium     Nash bargaining over the methods that pass: players are the ambu
                 approach; walk-away points are today's ambulance delay, 1.10 x max-pressure's R and 1.20; the winner
                 maximises the product of the gains.  Bootstrap over seeds gives each method's share of wins.
 
-  python3 -m traffic_twin.fatmawati.kpi summary --eval data/fatmawati_eval --out reports/a3/kpi
+  python3 -m traffic_twin.fatmawati.kpi summary --eval data/fatmawati_eval --out reports/a3/kpi [--site <slug>]
   python3 -m traffic_twin.fatmawati.kpi hand-check --out reports/a3/kpi
+
+The leg set, the pre-registered gates, the release legs and the hand-check stage map come from
+data/sites/<slug>.json (site.py); the KPI statistics need no SUMO.
 """
 from __future__ import annotations
 
@@ -34,10 +37,14 @@ import sys
 import numpy as np
 import pandas as pd
 
-LEGS = ("N", "E", "S", "W")
-GEN_GATE, APPROACH_GATE = 1.10, 1.20
+from .site import SITE, add_site_argument
+
+LEGS = SITE.legs
+GEN_GATE, APPROACH_GATE = SITE.gen_gate, SITE.approach_gate     # pre-registered acceptance margins (evaluation.gates)
+EV_MOVES = SITE.ev_moves                                        # the ambulance movements of the grid
+EV_STAGE = SITE.ev_stage                                        # the stage each release leg waits for; None: unsignalised route
 TODAY, MP, TEACHER, RANDOM = "fixed", "max_pressure", "priority_mp", "random"
-RELEASES_PER_H = 6.0
+RELEASES_PER_H = 3600.0 / SITE.release_every_s
 T975 = {1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571, 6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
         15: 2.131, 20: 2.086, 23: 2.069, 30: 2.042, 47: 2.012, 60: 2.000}
 
@@ -89,7 +96,7 @@ def load(eval_dir: str) -> dict:
     return out
 
 
-EXTRA_S = 1800.0      # evaluate.py keeps a run going this long past its schedule while released ambulances travel
+EXTRA_S = SITE.extra_s      # evaluate.py keeps a run going this long past its schedule while released ambulances travel
 
 
 def censor(d: dict) -> dict:
@@ -402,7 +409,7 @@ def breakdown(d: dict, out: str) -> None:
         sub = {k: (v[v["level"] == lv] if isinstance(v, pd.DataFrame) and "level" in v.columns else v) for k, v in d.items()}
         kl = kpis(sub)
         cols = [c for c in ["A", "A_worst", "delay_median_s", "unfinished_share", "R", "R_worst", "R_worst_approach"]
-                + [f"D_{m}" for m in ("N", "E", "W")] + [f"R_{a}" for a in LEGS]
+                + [f"D_{m}" for m in EV_MOVES] + [f"R_{a}" for a in LEGS]
                 + [f"longest_red_{a}" for a in LEGS] + ["collision_ratio"] if c in kl.columns]
         rows.append(kl[cols].assign(level=lv))
     pd.concat(rows).reset_index().rename(columns={"index": "method"}).to_csv(os.path.join(out, "kpi_by_level.csv"), index=False)
@@ -510,8 +517,9 @@ def figures(k: pd.DataFrame, front: list, winner: str | None, out: str) -> None:
 # ---------------------------------------------------------------------------------------------------- hand check
 def hand_check(out: str, n: int = 48, tol: float = 5.0) -> dict:
     """An ambulance alone under the city's fixed plan: mean standing time before its stop line vs r^2 / (2C).
-    Arrivals are spread over n equal phases of the cycle (the evaluation grid's 8 slices sample it too coarsely
-    for this check); one ambulance per movement every 600 s, so passages never interact."""
+    Arrivals are spread over n equal phases of the cycle (the evaluation grid's slices sample it too coarsely
+    for this check); one ambulance per movement every 600 s, so passages never interact.  The stage each
+    movement waits for is the site file's evaluation.ev_stage (null: an unsignalised route, expected wait 0)."""
     import tempfile
     import libsumo as ts
     from .build_net import CROSSINGS, DISHUB_GREEN_S, STAGES, YELLOW_S, ALLRED_S
@@ -530,7 +538,7 @@ def hand_check(out: str, n: int = 48, tol: float = 5.0) -> dict:
     for j in range(n):
         base = 900.0 + j * 600.0
         t = base + (j * CYCLE_S / n - base) % CYCLE_S
-        sched += [(t, leg, j) for leg in ("N", "E", "W")]
+        sched += [(t, leg, j) for leg in EV_MOVES]
     meta, pending, crossing = {}, list(sched), tuple(f":{c}_" for c in CROSSINGS)
     end = sched[-1][0] + 900.0
     while w.t < end:
@@ -559,7 +567,7 @@ def hand_check(out: str, n: int = 48, tol: float = 5.0) -> dict:
     w.close() if hasattr(w, "close") else ts.close()
     os.unlink(f.name)
     df = pd.DataFrame(meta.values())
-    stage_of = {"N": "S3", "W": "S1"}
+    stage_of = {leg: st for leg, st in EV_STAGE.items() if st is not None}
     # exact check: a stopped ambulance moves off just after its stage's green starts in the fixed plan
     start, t0 = {}, 0.0
     for st in STAGES:
@@ -599,6 +607,7 @@ def hand_check(out: str, n: int = 48, tol: float = 5.0) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     sub = ap.add_subparsers(dest="cmd", required=True)
     s = sub.add_parser("summary"); s.add_argument("--eval", required=True); s.add_argument("--out", required=True)
     s.add_argument("--boot", type=int, default=1000)

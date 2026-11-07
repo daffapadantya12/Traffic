@@ -1,6 +1,6 @@
 {
-  "spec_version": "1.0",
-  "status": "verified: every value is copied from the module constants of traffic_twin/fatmawati and the released configs; tests/test_site_spec.py asserts the equality",
+  "spec_version": "1.1",
+  "status": "verified: the pipeline reads this file (traffic_twin/fatmawati/site.py); tests/test_site_spec.py asserts the loaded values equal the module constants and the released configs",
   "site": {
     "name": "Perempatan Fatmawati",
     "slug": "fatmawati",
@@ -31,7 +31,8 @@
     "exits": {"N": "759911874#0", "E": "698418844", "S": "531632715#0", "W": "1125239069#0"},
     "leg_source": {"N": "778513710#0", "E": "698048527#0", "S": "648964736#6", "W": "692766250#0"},
     "leg_sink": {"N": "1304381185#0", "E": "31806415#0", "S": "1069005555#0", "W": "827224286#8"},
-    "deleted_connections": ["W approach -> south median (RA Kartini right turn: no counts)", "median -> median U-turns between the two crossings"],
+    "deleted_connections": [["approach:W", "median:south"], ["median:south", "median:north"], ["median:north", "median:south"]],
+    "deleted_connections_note": "(from, to) links netconvert deletes: the RA Kartini right turn (no counts) and the U-turns between the two median segments",
     "rhk_depth_m": 8.0,
     "lanes_at_stop_line": {"N": 3, "E": 4, "S": 2, "W": 2}
   },
@@ -108,6 +109,8 @@
     "hospital_leg": "S",
     "ev_moves": ["N", "E", "W"],
     "ev_routes": {"N": "N through", "E": "E free-left slip (unsignalised)", "W": "W through, U-turn east over the toll ramps, back via the E free-left"},
+    "ev_stage": {"N": "S3", "E": null, "W": "S1"},
+    "ev_stage_note": "the stage an ambulance released on that leg waits for at its stop line (kpi hand-check); null where its route uses an unsignalised slip",
     "release_min_m": 400.0,
     "release_points": {"N": ["645192712#0", 127.0, 400.0], "E": ["689891709#0", 29.9, 400.0], "W": ["1220197925#0", 1045.7, 400.0]},
     "t_empty_s": {"N": 46.5, "E": 41.0, "W": 174.5},

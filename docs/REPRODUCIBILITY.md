@@ -10,9 +10,9 @@ and results, and the protocol for repeating the study at another junction. Bunda
 | Level | What is repeated | What to expect | How to check |
 |---|---|---|---|
 | 0 | the same checkout, the same machine, the same seeds | byte-identical CSV tables | `shasum -a 256 -c data/fatmawati_v3/SHA256SUMS.txt` after a regenerate into a fresh folder, then compare |
-| 1 | a fresh install from the pinned versions (Section 2) on another computer | the same numbers; wall times differ | `network_sha256` in the new `config.json` equals `d389d8d6ceea97b6b243957f2c742bc7e09f6bc05789e27ddaf6f195cb0d5eff`; `pytest tests/test_fatmawati.py` passes |
+| 1 | a fresh install from the pinned versions (Section 2) on another computer | the same numbers; wall times differ | the rebuilt `net/fatmawati.net.xml` without netconvert's header comment (`<!-- generated on ... -->`, which carries the build time and absolute paths) hashes to `646b3acc5bd6f28d2e71694ca30f63322a9bd65232170c4e1f164861ea65f50b`; the released file's full hash `d389d8d6ceea97b6b243957f2c742bc7e09f6bc05789e27ddaf6f195cb0d5eff` (stamped in `config.json`) is reproduced only by keeping that file; `pytest tests/test_fatmawati.py` passes |
 | 2 | a new OpenStreetMap extract (`build_net --force-download`) | a different network: edge ids, lane counts and geometry move with the map, so every raw id in `data/sites/fatmawati.json` must be re-found and the calibration refitted | the hash differs; treat it as a new release, not a reproduction |
-| 3 | a new site | the protocol in Section 5, and the code changes in Section 6 first | `tests/test_site_spec.py` for the new spec; the site's own smoke release |
+| 3 | a new site | the protocol in Section 5, and the remaining code changes in Section 6 (the stage model) first | `python3 -c "from traffic_twin.fatmawati import site; site.load_site('<slug>')"` names the first missing value; then the site's own smoke release |
 
 Level 2 is why the OSM extracts are committed (`data/fatmawati/osm/*.osm.xml`, Overpass `osm_base`
 2026-10-03T11:43:02Z) even though they are large: the study is reproducible from the pinned extract, not
@@ -44,7 +44,9 @@ thread limit for that reason). Record `pip freeze` with any new release; the pip
 
 All commands run from the project root. Steps 2 and 10 to 12 are not in `README.md`. Times are what this
 project measured on a 10-core Apple-silicon Mac that was also running other work, so plan with them, not with
-test-run speeds.
+test-run speeds. Every command takes `--site <slug>` (default `fatmawati`, or `$TWIN_SITE`); the site facts
+named below (`build_net.py` constants, `MOVEMENTS`, `TARGET_MAX_QUEUE_M`, ...) are read from
+`data/sites/<slug>.json` since 2026-11-07 (DECISIONS §13.13).
 
 | # | Step | Command | Reads | Writes | Seeds | Measured time |
 |---|---|---|---|---|---|---|
@@ -140,26 +142,37 @@ step from Section 3 it unblocks.
 
 ## 6. What must change in the code before a second site can run
 
-Today a second site cannot run: every site fact is a module constant and every module imports them at
-load time. The full ranked list, with file and line, is in `data/sites/README.md` ("Coupling points,
-hardest first"). In summary, in the order the work has to happen:
+Status 2026-11-07 (DECISIONS §13.13): items 1, 3 and 4 are done; items 2 and 5 remain. The pipeline reads
+`data/sites/<slug>.json` through `traffic_twin/fatmawati/site.py`; the site is chosen by `--site <slug>` on
+any CLI, else `$TWIN_SITE`, else `fatmawati`. The ranked list with file and line is in `data/sites/README.md`
+("Coupling points, hardest first"). In the order the work has to happen:
 
-1. A site loader: one `site.py` that reads `data/sites/<slug>.json` (chosen by an environment variable or
-   a `--site` flag) and exposes what `build_net.py:42-64`, `demand.py:35-53`, `calibrate.py:30-33`,
-   `sensors.py:28-30`, `evaluate.py:45-50`, `learn.py:29-33`, `jorr.py:22` and `mrt.py:26-27` define now;
-   `DATA` becomes `data/<slug>`. Acceptance test: with `fatmawati.json` loaded, the built network hash and
-   a smoke release are unchanged.
-2. A general stage model: stages as sets of signal groups (tls link indices) with per-pair amber and all-red
-   rules, replacing the two-crossing "approach / median" construction and the `% 4` cycle order. A ring with
-   N signalised nodes is then one controller with N stop lines.
-3. The leg set read from the spec everywhere the tuple `("N","E","S","W")` is written, including column
-   names and the data dictionary; `fairness_ratio` and `turn_prior` sized by the number of legs.
-4. The ambulance study per site: hospital, release legs, routes, hand-check stages.
-5. The viewer's flyover and MRT models made optional (they already are at run time via `--toll-vph 0` and
-   `--no-mrt`, but `geometry3d` and the tests still assume them).
+1. **Done.** A site loader: `site.py` reads `data/sites/<slug>.json` and exposes what `build_net`, `demand`,
+   `calibrate`, `sensors`, `evaluate`, `learn`, `kpi`, `jorr` and `mrt` used to define as literals; the module
+   constants keep their names. `DATA` is `data/<slug>` and generated files take the slug prefix. A required
+   field that is `null` fails the load with the field name and its `*_todo` note (`bundaran_hi.json` stops at
+   `junction.crossings`). Acceptance met: with `fatmawati.json` the rebuilt network body is byte-identical
+   (sha256 of the file without netconvert's header comment: `646b3acc…`; the header carries the build
+   timestamp and absolute paths, so the full-file hash `d389d8d6…` is a property of the released file, not of
+   any rebuild) and the smoke release runs.
+2. **Open.** A general stage model: stages as sets of signal groups (tls link indices) with per-pair amber and
+   all-red rules, replacing the two-crossing "approach / median" construction. A ring with N signalised nodes
+   is then one controller with N stop lines. (The `% 4` cycle order is already `% len(STAGES)`.)
+3. **Done.** The leg set comes from the spec everywhere the tuple `("N","E","S","W")` was written, including
+   column names and the data dictionary; `fairness_ratio` and `turn_prior` are sized by the number of legs.
+4. **Done.** The ambulance study per site: hospital (name, position, street), release legs, hospital side and
+   the hand-check stage map (`evaluation.ev_stage`) come from the spec; the Fatmawati routes remain prose
+   (`ev_routes`) because the routes are found by SUMO's router.
+5. **Open.** The viewer's flyover and MRT models made optional: `jorr.ENDS` and `mrt.RAIL_Z` are read from the
+   spec and may be `null`, and `--toll-vph 0` / `--no-mrt` skip them at run time, but `geometry3d` and the
+   viewer tests still assume them.
 
-Estimated effort: two to three days for items 1, 3 and 4; the stage model (item 2) is the real work and
-depends on how the second site's ring is signalled.
+To run the protocol of Section 5 at a new site, step 3 (the raw network before the ids are known) needs the
+loader relaxed for `build_raw` alone; today `build_net --site <slug>` stops at the first `null`, so fill the
+centre and run the raw pass by hand (`build_net.build_raw`) until that flag exists.
+
+Remaining effort: the stage model (item 2) is the real work and depends on how the second site's ring is
+signalled; item 5 is a day.
 
 ## 7. Transfer case: Bundaran HI
 
@@ -201,9 +214,9 @@ about 2 h, grid about 21 h, closed loop and stress about 15 h, on eight workers.
 
 ## 8. Known issues found while writing this runbook (not fixed)
 
-- `learn.py:40-45` imports `sensor_layout` from `.sensors`, but it is defined in `sumo_world.py:43`. The
-  import always fails and the bare `except` falls back to `SAT_FLOW_DEFAULT`, the Fatmawati saturation
-  flows. At a second site the label validation would silently use Fatmawati's values.
+- Fixed 2026-11-07 (DECISIONS §13.13): `learn.py` `_sat_flow()` imported `sensor_layout` from `.sensors`
+  instead of `sumo_world`, so the label validation always fell back to Fatmawati's saturation flows. It now
+  reads the network's values and falls back to the site file's `sat_flow_pcu_h` only without SUMO.
 - `evaluation_config.json` carries no generator version, network hash, SUMO version or git commit
   (`evaluate.py:341-343`); the release `config.json` does.
 - `data/fatmawati/osm/buildings_1600m.json` has no downloader; the Overpass query is not recorded.

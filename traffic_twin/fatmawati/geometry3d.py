@@ -21,7 +21,8 @@ import math
 import os
 
 from .build_net import APPROACHES, JUNCTION_LAT, JUNCTION_LON, TLS_ID, RHK_DEPTH_M
-from .demand import DATA, HOSPITAL_LONLAT, NET
+from .demand import DATA, HOSPITAL_LONLAT, HOSPITAL_NAME, NET
+from .site import SITE
 
 DEFAULT_HEIGHT = {"house": 7.0, "residential": 7.0, "detached": 7.0, "terrace": 8.0, "apartments": 36.0, "commercial": 14.0,
                   "retail": 10.0, "office": 30.0, "hotel": 30.0, "hospital": 22.0, "school": 12.0, "university": 16.0,
@@ -381,7 +382,7 @@ def build(out_path: str | None = None, buildings_path: str | None = None, radius
             heads.append(dict(x=_r(end[0] - nx * (hw + 0.8)), y=_r(end[1] - ny * (hw + 0.8)), edge=ln.getEdge().getID(),
                               links=sorted(i for l2 in ln.getEdge().getLanes() for i in by_lane.get(l2.getID(), []))))
     buildings = []
-    bpath = buildings_path or os.path.join(DATA, "osm", "buildings_1600m.json")
+    bpath = buildings_path or SITE.buildings_file
     if os.path.exists(bpath):
         with open(bpath) as f:
             elements = json.load(f)["elements"]
@@ -422,7 +423,7 @@ def build(out_path: str | None = None, buildings_path: str | None = None, radius
         print("MRT not drawn:", err)
     fly = flyover(lanes, junctions, avoid=tuple(t["p"] for t in line["tracks"].values()) if line else ())
     data = dict(origin=dict(lat=JUNCTION_LAT, lon=JUNCTION_LON), lanes=lanes, junctions=junctions, stoplines=stoplines, heads=heads,
-                flyover=fly, mrt=metro(lanes, junctions, fly["decks"], line) if line else None, buildings=buildings, hospital=dict(name="RSUP Fatmawati", x=_r(hx - x0), y=_r(hy - y0)),
+                flyover=fly, mrt=metro(lanes, junctions, fly["decks"], line) if line else None, buildings=buildings, hospital=dict(name=HOSPITAL_NAME, x=_r(hx - x0), y=_r(hy - y0)),
                 attribution="Road and building data (c) OpenStreetMap contributors, ODbL")
     out_path = out_path or os.path.join(DATA, "viewer", "geometry.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

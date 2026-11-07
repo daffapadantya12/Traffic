@@ -1,5 +1,5 @@
 {
-  "spec_version": "1.0",
+  "spec_version": "1.1",
   "status": "unverified skeleton (2026-11-07): nothing here has been run; every null field needs a survey or an OSM lookup, named in the matching *_todo entry",
   "site": {
     "name": "Bundaran Hotel Indonesia (Bundaran HI)",
@@ -70,7 +70,7 @@
     "leg_sink": null,
     "leg_sink_todo": "far end of each exit inside the box",
     "deleted_connections": null,
-    "deleted_connections_todo": "movements that are banned or uncounted (e.g. Sudirman -> Imam Bonjol in the evening programme)",
+    "deleted_connections_todo": "(from, to) link pairs netconvert deletes, written symbolically like stage_links (approach:S, exit:E, median:<name>, *): movements that are banned or uncounted (e.g. Sudirman -> Imam Bonjol in the evening programme)",
     "rhk_depth_m": 8.0,
     "lanes_at_stop_line": null,
     "lanes_at_stop_line_todo": "count from the raw network; Thamrin/Sudirman carry 4-5 general lanes plus the busway per direction"
@@ -192,6 +192,8 @@
     "hospital_leg_todo": "the leg whose exit gate ends an ambulance passage (the hospital side)",
     "ev_moves": null,
     "ev_moves_todo": "release legs with a route to the hospital through the ring; the Fatmawati routes (free-left slip, toll-ramp U-turn) do not exist here",
+    "ev_stage": null,
+    "ev_stage_todo": "per release leg, the stage its ambulance waits for at the stop line (null for an unsignalised slip); needs the stage plan",
     "release_min_m": 400.0,
     "release_points": null,
     "release_points_todo": "written by evaluate.py: edge, position and 400 m distance per release leg",

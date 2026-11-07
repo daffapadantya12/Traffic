@@ -1,10 +1,12 @@
 # Site specifications
 
 One JSON file per junction, holding every site fact the Fatmawati pipeline (`traffic_twin/fatmawati/`)
-needs. Today the pipeline reads none of these files: the values live in Python module constants, and
-`tests/test_site_spec.py` asserts that `fatmawati.json` equals those constants, so the spec cannot drift from
-the code. The spec exists so that a second site can be described completely before any code is changed, and
-so that the transfer protocol in `docs/REPRODUCIBILITY.md` has a checklist to point at.
+needs. The pipeline reads the file through `traffic_twin/fatmawati/site.py` (DECISIONS §13.13): every module
+binds its constants from `site.SITE` when it is imported, and the site is chosen by `--site <slug>` on any CLI,
+else the `TWIN_SITE` environment variable, else `fatmawati`. `tests/test_site_spec.py` asserts that the loaded
+`fatmawati.json` equals the module constants and the released configs, so the spec cannot drift from the code.
+A required field that is `null` stops the load with a message naming the field and its `*_todo` note
+(`site.REQUIRED` lists them, in the order the transfer protocol fills them), so a skeleton fails at once.
 
 | File | What it is |
 |---|---|
@@ -12,13 +14,15 @@ so that the transfer protocol in `docs/REPRODUCIBILITY.md` has a checklist to po
 | `bundaran_hi.json` | a skeleton for Bundaran Hotel Indonesia: public facts filled in, every unknown `null` with a `*_todo` note |
 
 Conventions: `"status"` says how much of a file is verified. A `null` value always has a sibling
-`<field>_todo` string saying how to obtain it. Stage links are written symbolically (`"approach:W"`,
-`"exit:N"`, `"median:south"`, `"*"`) and resolved through `approaches` / `exits` / `median`, so the signal
-plan reads without raw OpenStreetMap ids. Movements are keyed `"<entry>><exit>"`.
+`<field>_todo` string saying how to obtain it. Stage links and deleted connections are written symbolically
+(`"approach:W"`, `"exit:N"`, `"median:south"`, `"*"`) and resolved through `approaches` / `exits` / `median`,
+so the signal plan reads without raw OpenStreetMap ids. Movements are keyed `"<entry>><exit>"`. Paths are
+relative to the project root; `data/<slug>/` is the site's data folder and generated files take the slug as
+prefix (`<slug>_raw.net.xml`, `<slug>_program.tll.xml`, ...).
 
 ## Field reference
 
-"Where used" names the constant that holds the value today. R = required for a run, O = optional
+"Where used" names the module constant bound from the field (`site.py` reads the file; the constants keep their names). R = required for a run, O = optional
 (validation text, data card), A = an assumption carried from Fatmawati that a new site may keep.
 
 ### `site`
@@ -44,7 +48,7 @@ plan reads without raw OpenStreetMap ids. Movements are keyed `"<entry>><exit>"`
 | `legs`, `street_names` | the arms | R | `sensors.py:28` `LEGS`, `sumo_world.py:31` `ARMS`, `kpi.py:37`, `learn.py:29`; column names in every table |
 | `approaches`, `exits`, `median` | raw edge ids at the stop lines, leaving the junction, between the crossings | R | `build_net.py:48-50`; sensors walk from them (`sensors.py:100` `build_layout`) |
 | `leg_source`, `leg_sink` | where movement trips start and end | R | `demand.py:46-47` |
-| `deleted_connections` | banned or uncounted turns | R | `build_net.py:155-157` connection deletes |
+| `deleted_connections` | banned or uncounted turns, as symbolic (from, to) pairs | R | `build_net.py` `DELETED_CONNECTIONS`, written to `<slug>_turns.con.xml` |
 | `rhk_depth_m` | motorcycle box depth | A | `build_net.py:65`, CLI `--rhk-depth-m` |
 
 ### `signal`
@@ -88,14 +92,15 @@ plan reads without raw OpenStreetMap ids. Movements are keyed `"<entry>><exit>"`
 | `camera_m`, `exit_camera_m`, `loop_setback_m` | zone lengths | m | A | `sensors.py:30-32` |
 | `study_m` | safety-count radius | m | A | `sumo_world.py:37` `STUDY_M` |
 | `pcu` | passenger-car units | | A | `sensors.py:35` (PKJI 2023) |
-| `sat_flow_pcu_h` | per-approach saturation flow | pcu/h | derived | `sensors.py:154` (600 x width); `learn.py:33` `SAT_FLOW_DEFAULT` |
+| `sat_flow_pcu_h` | per-approach saturation flow | pcu/h | derived | `sensors.py` (600 x width); `learn.py` `SAT_FLOW_DEFAULT`, the fallback when the network is not at hand (`null`: no fallback) |
 
 ### `evaluation`
 
 | Field | Meaning | R/O/A | Where used |
 |---|---|---|---|
 | `hospital_name`, `hospital_lonlat`, `hospital_street_name`, `hospital_leg` | the ambulance destination | R | `demand.py:40` `HOSPITAL_LONLAT`, `demand.py:138` street-name filter, `evaluate.py:46` `HOSPITAL_LEG` |
-| `ev_moves`, `ev_routes` | release legs and their paths | R | `evaluate.py:45` `EV_MOVES`; `kpi.py:562` hand-check stages |
+| `ev_moves`, `ev_routes` | release legs and their paths (prose) | R | `evaluate.py` `EV_MOVES` |
+| `ev_stage` | per release leg, the stage its ambulance waits for at the stop line; `null` for an unsignalised slip | R | `kpi.py` `EV_STAGE` (hand check) |
 | `release_min_m`, `release_points`, `t_empty_s` | release geometry and empty-road times | derived | `evaluate.py:48`; written to `evaluation_config.json` (`evaluate.py:341`) |
 | `slices`, `release_every_s`, `warm_s`, `tail_s`, `extra_s` | the schedule | A | `evaluate.py:47-53` |
 | `methods` | controllers compared | A | `evaluate.py:54` `METHODS` |
@@ -110,7 +115,11 @@ the MRT viaduct (`mrt.py:27` `RAIL_Z`), building footprints (`geometry3d.py` rea
 
 ## Coupling points, hardest first
 
-What has to change in the code before a site other than Fatmawati can run. Ranked by effort.
+What has to change in the code before a site other than Fatmawati can run. Ranked by effort. Items 3, 4, 5, 7, 8
+and 9 were done on 2026-11-07 (DECISIONS §13.13: the loader, the leg set, the raw ids, the observed data, the
+sensor geometry, centre and paths all come from the site file; the ambulance study of item 2 reads
+`evaluation.*`). What remains is the stage model (item 1), the Fatmawati-specific prose in docstrings and the
+DATACARD citations, and the viewer structures (item 6).
 
 1. **The signal and stage model.** `build_net.py:43-64` and `:163-224` define stages as (from-edge, to-edge)
    pairs over exactly two crossings and two median links; the amber/all-red builder treats only "approach"

@@ -13,8 +13,8 @@ import pytest
 sumolib = pytest.importorskip("sumolib")
 pytest.importorskip("libsumo")
 
-from traffic_twin.fatmawati.build_net import APPROACHES, RHK_DEPTH_M, TLS_ID  # noqa: E402
-from traffic_twin.fatmawati.demand import DATA, NET, reachable, routes_xml, vtypes_xml  # noqa: E402
+from traffic_twin.fatmawati.build_net import APPROACHES, PROGRAM_ID, RHK_DEPTH_M, TLS_ID  # noqa: E402
+from traffic_twin.fatmawati.demand import DATA, LEGS, NET, reachable, routes_xml, vtypes_xml  # noqa: E402
 
 pytestmark = pytest.mark.skipif(not os.path.exists(NET), reason="Fatmawati network not built")
 
@@ -35,7 +35,7 @@ def routes(tmp_path_factory):
 def test_dishub_stage_program(net):
     from traffic_twin.fatmawati.build_net import stage_link_sets
     tl = net.getTLS(TLS_ID)
-    phases = tl.getPrograms()["dishub"].getPhases()
+    phases = tl.getPrograms()[PROGRAM_ID].getPhases()
     assert len(phases) == 4 + 12 * 2             # stage greens + amber and all-red for every ordered stage pair
     assert [round(p.duration) for p in phases[:12]] == [80, 2, 2, 12, 2, 2, 78, 2, 2, 45, 2, 2]   # the Dishub cycle
     assert [p.name for p in phases[:3]] == ["S1 green", "S1>S2 amber", "S1>S2 all-red"]
@@ -82,7 +82,7 @@ def test_trips_only_between_connected_ends(net, routes):
 def test_junction_demand_follows_the_observed_movements(tmp_path):
     from traffic_twin.fatmawati.demand import LEG_SINK, LEG_SOURCE, MOVEMENTS
     path = str(tmp_path / "peak.rou.xml")
-    routes_xml(path, "design", seed=5, duration_s=3600.0, peak=True, scale={g: 0.25 for g in "NESW"}, ev_per_hour=0)
+    routes_xml(path, "design", seed=5, duration_s=3600.0, peak=True, scale={g: 0.25 for g in LEGS}, ev_per_hour=0)
     leg_of_src = {v: k for k, v in LEG_SOURCE.items()}
     leg_of_snk = {v: k for k, v in LEG_SINK.items()}
     counts = collections.Counter((leg_of_src[t.get("from")], leg_of_snk[t.get("to")]) for _, t in ET.iterparse(path)
@@ -153,6 +153,10 @@ def test_short_run_no_lane_collisions_and_cars_respect_the_box(routes):
 def test_sensor_layout_matches_the_design(net):
     from traffic_twin.fatmawati.sensors import CAMERA_M, GATE_R, build_layout
     lay = build_layout()
+    # learn.py reads the teacher's saturation flows off this layout (not the site file's fallback)
+    from traffic_twin.fatmawati import learn
+    assert learn._sat_flow() == {c["leg"]: c["sat_flow_pcu_h"] for c in lay["cameras"] if c["kind"] == "queue_camera"}
+    assert set(learn._sat_flow()) == set(LEGS)
     kinds = collections.Counter(s["kind"] for s in lay["loops"])
     assert kinds["stopline_loop"] == sum(net.getEdge(e).getLaneNumber() for e in APPROACHES.values())
     assert kinds["entry_gate"] > 0 and kinds["exit_gate"] > 0

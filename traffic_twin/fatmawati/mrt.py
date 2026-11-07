@@ -20,11 +20,11 @@ import urllib.parse
 import urllib.request
 
 from .build_net import bbox
-from .demand import DATA
+from .site import SITE
 
-OSM = os.path.join(DATA, "osm", "mrt.json")
-RADIUS_KM = 2.7                          # the road network's box (build_net --radius-km)
-RAIL_Z = 14.0                            # rail level above the street
+OSM = SITE.mrt_osm_file
+RADIUS_KM = SITE.radius_km               # the road network's box (build_net --radius-km)
+RAIL_Z = SITE.mrt_rail_z_m               # rail level above the street; None at a site whose line is underground
 CAR_M, N_CARS, COUPLING_M = 20.0, 6, 0.5
 TRAIN_M = N_CARS * CAR_M + (N_CARS - 1) * COUPLING_M
 V_MAX, ACC = 80.0 / 3.6, 0.9

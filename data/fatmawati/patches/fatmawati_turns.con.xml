@@ -1,5 +1,5 @@
-<!-- Movements not used at Perempatan Fatmawati (none in the observed counts, Sumabrata et al. 2026):
-     the RA Kartini right turn and U-turns between the two median segments. -->
+<!-- Movements not used at Perempatan Fatmawati (banned, or absent from the observed counts): the
+     deleted_connections of the site file (data/sites). -->
 <connections>
     <delete from="1069005554#0" to="638194767"/>
     <delete from="638194767" to="759911875"/>

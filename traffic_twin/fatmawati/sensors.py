@@ -22,17 +22,18 @@ from collections import defaultdict
 
 import numpy as np
 
-from .build_net import APPROACHES, EXITS, JUNCTION_LAT, JUNCTION_LON, TLS_ID
+from .build_net import APPROACHES, EXITS, JUNCTION_LAT, JUNCTION_LON, RHK_DEPTH_M, TLS_ID
 from .demand import DATA, NET
+from .site import SITE
 
-LEGS = ("N", "E", "S", "W")
-GATE_R = {"N": 150.0, "E": 150.0, "S": 150.0, "W": 185.0}     # W: outside the U-turn loop that leaves RA Kartini 169 m out
-CAMERA_M = 300.0
-EXIT_CAMERA_M = 150.0
-LOOP_SETBACK_M = 1.0
+LEGS = SITE.legs
+GATE_R = SITE.gate_r_m                           # gate distance per leg (Fatmawati W 185 m: outside the U-turn loop 169 m out)
+CAMERA_M = SITE.camera_m
+EXIT_CAMERA_M = SITE.exit_camera_m
+LOOP_SETBACK_M = SITE.loop_setback_m
 CLASSES = ("motorcycle", "car", "bus", "truck", "emergency")
 VCLASS = {"motorcycle": "motorcycle", "passenger": "car", "bus": "bus", "truck": "truck", "emergency": "emergency"}
-PCU = {"motorcycle": 0.15, "car": 1.0, "bus": 1.3, "truck": 1.3, "emergency": 1.0}   # PKJI 2023 emp, protected phase
+PCU = SITE.pcu                                   # passenger-car units (PKJI 2023 emp, protected phase)
 HALT_MS = 0.1                                                  # standing: slower than 0.1 m/s (SUMO's halting threshold)
 QUEUE_MS, QUEUE_GAP_M = 5.0 / 3.6, 20.0                        # queue length as VISSIM's queue counter: < 5 km/h, gaps <= 20 m
 EV_ETA_MIN_MS = 5.0                                            # ETA uses at least 5 m/s (a stopped ambulance still needs serving)
@@ -150,7 +151,7 @@ def build_layout(net_path: str = NET) -> dict:
         lat, lon, d = lonlat(e.getLanes()[0], e.getLanes()[0].getLength())
         width = sum(ln.getWidth() for ln in e.getLanes())
         cameras.append(dict(sensor_id=f"QC_{leg}", kind="queue_camera", leg=leg, segments=segs, length_m=CAMERA_M,
-                            lat=lat, lon=lon, dist_centre_m=d, street=e.getName(), box_m=8.0, width_m=round(width, 2),
+                            lat=lat, lon=lon, dist_centre_m=d, street=e.getName(), box_m=RHK_DEPTH_M, width_m=round(width, 2),
                             sat_flow_pcu_h=round(600.0 * width),        # PKJI 2023 (Bina Marga 09/P/BM/2023) base S0 = 600 W_e
                             group_of=group_of, groups=sorted(set(app_groups))))
         segs = []                                                # exit camera: first 150 m of the exit leg
@@ -168,7 +169,7 @@ def write_additional(layout: dict, path: str = ADDITIONAL) -> str:
     """SUMO induction loops for the point sensors; their own XML output is discarded (readings go to CSV)."""
     os.makedirs(os.path.dirname(path), exist_ok=True)
     with open(path, "w") as f:
-        f.write("<!-- Virtual sensors of the Fatmawati twin (traffic_twin/fatmawati/sensors.py); read through libsumo. -->\n<additional>\n")
+        f.write(f"<!-- Virtual sensors of the {SITE.name} twin (traffic_twin/fatmawati/sensors.py); read through libsumo. -->\n<additional>\n")
         for s in layout["loops"]:
             f.write(f'    <inductionLoop id="{s["sensor_id"]}" lane="{s["lane_id"]}" pos="{s["pos"]}" period="86400" file="{os.devnull}"/>\n')
         f.write("</additional>\n")
@@ -216,7 +217,7 @@ class SensorBank:
         self.n_unmatched_exit = 0
         self.ev = {}                               # ambulance -> AVL-style trip record
         self.ev_done = []
-        self.turn_prior = np.ones((4, 4))          # turning counts so far (for the max-pressure teacher)
+        self.turn_prior = np.ones((len(LEGS), len(LEGS)))   # turning counts so far (for the max-pressure teacher)
 
     # -- helpers
     def vclass(self, vid: str) -> str:

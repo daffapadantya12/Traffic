@@ -1,6 +1,6 @@
 """Generate the Fatmawati sensor release (DECISIONS §13.7): CSV tables of what the virtual sensors recorded.
 
-  python3 -m traffic_twin.fatmawati.generate --plan pilot --out data/fatmawati_pilot --workers 2
+  python3 -m traffic_twin.fatmawati.generate --plan pilot --out data/fatmawati_pilot --workers 2 [--site <slug>]
 
 Tables (CSV only; no vehicle trajectories, internal model states or driver parameters):
   sensors.csv               sensor inventory: stop-line loops, entry/exit gates, queue and exit cameras
@@ -32,17 +32,19 @@ from concurrent.futures import ProcessPoolExecutor
 import numpy as np
 import pandas as pd
 
-from .demand import CALIBRATION, DATA, LEVEL_FACTOR, MIX, NET, load_calibration, routes_xml, vtypes_xml
-from .sensors import CAMERA_M, CLASSES, EXIT_CAMERA_M, GATE_R, LEGS, PCU, sensor_rows
+from .build_net import DISHUB_GREEN_S, STAGE_LABEL, STAGES
+from .demand import CALIBRATION, DATA, HOSPITAL_NAME, LEVEL_FACTOR, MIX, MOVEMENTS, NET, load_calibration, routes_xml, vtypes_xml
+from .sensors import CAMERA_M, CLASSES, EXIT_CAMERA_M, GATE_R, LEGS, LOOP_SETBACK_M, PCU, sensor_rows
+from .site import SITE, add_site_argument
 
 GENERATOR_VERSION = "traffic_twin_fatmawati_v3.0"
-WINDOWS = {"am_peak": 7.0, "midday": 12.0, "pm_peak": 17.0}
+WINDOWS = SITE.windows_h
 PLANS = {
     "pilot": dict(windows=["am_peak"], levels=["design"], controllers=["fixed", "priority_mp"], seeds=[1],
                   warmup_min=15, main_min=30),
     "smoke": dict(windows=["am_peak"], levels=["design"], controllers=["priority_mp"], seeds=[1], warmup_min=2, main_min=3),
     "release": dict(windows=list(WINDOWS), levels=["low", "design", "high"],
-                    controllers=["fixed", "longest_queue", "max_pressure", "priority_mp"], seeds=[1, 2, 3],
+                    controllers=["fixed", "longest_queue", "max_pressure", "priority_mp"], seeds=list(SITE.release_seeds),
                     warmup_min=15, main_min=60),                    # 108 episodes, 108 recorded hours
 }
 LABEL_HORIZON_S = 30.0
@@ -142,7 +144,7 @@ def run_episode(spec: dict, tmp: str) -> dict:
     total_n = sum(stopline.values())
     out["stopped_delay_s"] = round(total_q / total_n, 1) if total_n else None
     d = [v for v in delays.values() if v is not None]
-    out["fairness_ratio"] = round(max(d) / min(d), 2) if len(d) == 4 and min(d) > 0 else None
+    out["fairness_ratio"] = round(max(d) / min(d), 2) if len(d) == len(LEGS) and min(d) > 0 else None
     entries = [r for r in loops if r["kind"] == "entry_gate"]
     n_in = sum(r["n_total"] for r in entries)
     out["entry_veh_h"] = round(n_in * 3600.0 / main, 0)
@@ -176,20 +178,21 @@ def dictionary_rows() -> list:
 
     add("sensors", "sensor_id", "", "key", "SL_<leg><lane> stop-line loop, EN_/EX_<leg><lane> entry/exit gate loop, QC_<leg> queue camera, XC_<leg> exit camera")
     add("sensors", "kind", "", "metadata", "stopline_loop, entry_gate, exit_gate, queue_camera or exit_camera")
-    add("sensors", "leg", "", "metadata", "N/S = Jl. RS Fatmawati, E = Jl. TB Simatupang, W = Jl. RA Kartini")
+    add("sensors", "leg", "", "metadata", ", ".join(f"{g} = {SITE.street_names.get(g, '?')}" for g in LEGS))
     add("sensors", "lane", "", "metadata", "lane index from the kerb (0) outwards; -1 for cameras (all lanes)")
     add("sensors", "street", "", "metadata", "street name (OpenStreetMap)")
     add("sensors", "lat", "deg", "metadata", "WGS84 latitude of the loop, or of the camera's stop line / exit")
     add("sensors", "lon", "deg", "metadata", "WGS84 longitude")
-    add("sensors", "dist_centre_m", "m", "metadata", "straight-line distance from the junction centre (-6.29250, 106.79522)")
+    add("sensors", "dist_centre_m", "m", "metadata", f"straight-line distance from the junction centre ({SITE.centre_lat:.5f}, {SITE.centre_lon:.5f})")
     add("sensors", "zone_length_m", "m", "metadata", f"camera zone length along the road ({CAMERA_M:g} m approach, {EXIT_CAMERA_M:g} m exit); 0 for loops")
     add("sensors", "n_lane_segments", "", "metadata", "number of lane segments the camera zone covers")
     add("episodes", "episode_id", "", "key", "episode number")
-    add("episodes", "window", "", "scenario", "am_peak (07:00), midday (12:00) or pm_peak (17:00): start of the recorded hour")
+    wins = [f"{w} ({int(h):02d}:{int(60 * (h % 1)):02d})" for w, h in WINDOWS.items()]
+    add("episodes", "window", "", "scenario", " or ".join([", ".join(wins[:-1]), wins[-1]] if len(wins) > 1 else wins) + ": start of the recorded hour")
     add("episodes", "start_hour", "h", "scenario", "clock time at which recording starts")
     add("episodes", "level", "", "scenario", "demand level: low / design / high = " + " / ".join(f"{LEVEL_FACTOR[k]:g}" for k in ("low", "design", "high")) + " x the calibrated peak-hour volumes (calibration.json), times the hour's share of the daily-profile peak")
     add("episodes", "seed", "", "scenario", "random seed of the demand and the simulation; the same seed gives the same trips for every controller")
-    add("episodes", "controller", "", "scenario", "fixed (Dishub greens S1 80 / S2 12 / S3 78 / S4 45 s in order), longest_queue (stage with the most standing vehicles), max_pressure (stage with the largest pressure) or priority_mp (max_pressure that serves an ambulance in time: the teacher)")
+    add("episodes", "controller", "", "scenario", "fixed (the city's greens " + " / ".join(f"{st} {DISHUB_GREEN_S[st]:g}" for st in STAGES) + " s in order), longest_queue (stage with the most standing vehicles), max_pressure (stage with the largest pressure) or priority_mp (max_pressure that serves an ambulance in time: the teacher)")
     add("episodes", "warmup_s", "s", "scenario", "simulated time before recording starts (network filling); nothing is recorded in it")
     add("episodes", "main_s", "s", "scenario", "recorded duration")
     for g in LEGS:
@@ -198,12 +201,12 @@ def dictionary_rows() -> list:
         add("episodes", f"stopped_delay_s_{g}", "s/veh", "outcome", f"stopped delay on {g}: sum over seconds of standing vehicles in QC_{g} divided by stop-line count")
     add("episodes", "stopped_delay_s", "s/veh", "outcome", "junction stopped delay: all approaches' standing vehicle-seconds / all stop-line counts")
     add("episodes", "fairness_ratio", "", "outcome", "largest / smallest approach stopped delay (empty if an approach served nobody)")
-    add("episodes", "entry_veh_h", "veh/h", "outcome", "vehicles entering through the four entry gates per hour")
+    add("episodes", "entry_veh_h", "veh/h", "outcome", f"vehicles entering through the {len(LEGS)} entry gates per hour")
     add("episodes", "motorcycle_share_entry", "", "outcome", "motorcycle share of the entry-gate counts")
     add("episodes", "cordon_tt_mean_s", "s", "outcome", "mean entry-gate to exit-gate travel time (re-identified vehicles)")
     add("episodes", "cordon_tt_p85_s", "s", "outcome", "85th percentile of the cordon travel time")
     add("episodes", "ambulance_trips", "", "outcome", "ambulance trips that departed in the recorded period")
-    add("episodes", "ambulance_tt_mean_s", "s", "outcome", "mean ambulance travel time from departure to RSUP Fatmawati (AVL)")
+    add("episodes", "ambulance_tt_mean_s", "s", "outcome", f"mean ambulance travel time from departure to {HOSPITAL_NAME} (AVL)")
     add("episodes", "ambulance_recovery_mean_s", "s", "outcome", "mean queue recovery time after an ambulance crossed the stop line (see ambulance_trips)")
     for tab, kind in (("loops_1min", "loop"), ("cameras_1min", "camera")):
         add(tab, "episode_id", "", "key", "episode number")
@@ -226,7 +229,7 @@ def dictionary_rows() -> list:
     add("cameras_1min", "queue_m_max", "m", "reading", "maximum of that distance in the minute")
     add("cameras_1min", "vehicles_mean", "veh", "reading", "mean vehicles in the zone, moving or not")
     add("cameras_1min", "speed_kmh_mean", "km/h", "reading", "space-mean speed of the vehicles in the zone")
-    add("cameras_1min", "moto_in_box_mean", "veh", "reading", "mean motorcycles within 8 m of the stop line (the motorcycle box); approach cameras only")
+    add("cameras_1min", "moto_in_box_mean", "veh", "reading", f"mean motorcycles within {SITE.rhk_depth_m:g} m of the stop line (the motorcycle box); approach cameras only")
     add("cameras_1min", "ambulance_present_s", "s", "reading", "seconds in the minute with an ambulance in the zone")
     add("ticks_5s", "episode_id", "", "key", "episode number")
     add("ticks_5s", "t", "s", "key", "simulated seconds since the episode started (multiple of 5)")
@@ -247,13 +250,15 @@ def dictionary_rows() -> list:
         add("ticks_5s", f"ev_q_ahead_pcu_{g}", "pcu", "feature", f"standing vehicles ahead of it in QC_{g}, PCU")
         add("ticks_5s", f"ev_needs_signal_{g}", "", "feature", f"1 if its priority request says its route crosses the {g} stop line (0: free-left slip or U-turn loop)")
         add("ticks_5s", f"pressure_{g}", "pcu", "feature", f"max-pressure of {g}: q_pcu_{g} minus the exit queues weighted by the turning shares counted so far")
-    add("ticks_5s", "q_veh_E_S1S2", "veh", "feature", "standing vehicles in QC_E on the lanes that lead to the through lanes (green in S1 and S2)")
-    add("ticks_5s", "q_veh_E_S2", "veh", "feature", "standing vehicles in QC_E on the lanes that lead to the right-turn lanes (green in S2 only)")
-    for st in ("S1", "S2", "S3", "S4"):
+    for leg, groups in split_groups().items():                 # an approach whose lanes are served by different stages
+        for grp in groups:
+            add("ticks_5s", f"q_veh_{leg}_{grp.replace('+', '')}", "veh", "feature",
+                f"standing vehicles in QC_{leg} on the lanes green in " + " and ".join(grp.split("+")) + " only")
+    for st in STAGES:
         add("ticks_5s", f"stage_q_{st}", "veh", "feature", f"standing vehicles stage {st} would serve (camera lane groups it gives green)")
         add("ticks_5s", f"stage_pressure_{st}", "pcu", "feature", f"max-pressure of stage {st}: approach pressures shared over lane groups by standing PCU")
     add("ticks_5s", "controller", "", "metadata", "controller running the signal in this episode")
-    add("ticks_5s", "stage", "", "feature", "stage that has (or, during a transition, last had) green: S1 RA Kartini + TB Simatupang through, S2 TB Simatupang through + right, S3 north, S4 south")
+    add("ticks_5s", "stage", "", "feature", "stage that has (or, during a transition, last had) green: " + ", ".join(f"{st} {STAGE_LABEL[st]}" for st in STAGES))
     add("ticks_5s", "phase_state", "", "feature", "green, amber or all-red")
     add("ticks_5s", "transition_to", "", "feature", "stage the signal is changing to (empty when green)")
     add("ticks_5s", "t_in_phase_s", "s", "feature", "time since the current phase started")
@@ -265,8 +270,8 @@ def dictionary_rows() -> list:
     add("signal_log", "episode_id", "", "key", "episode number")
     add("signal_log", "t", "s", "key", "simulated seconds when the phase started")
     add("signal_log", "clock", "hh:mm:ss", "key", "clock time")
-    add("signal_log", "phase", "", "reading", "phase index of program dishub")
-    add("signal_log", "stage", "", "reading", "stage (S1-S4) when green, or the change 'S1>S2' during amber and all-red")
+    add("signal_log", "phase", "", "reading", f"phase index of program {SITE.program_id}")
+    add("signal_log", "stage", "", "reading", f"stage ({STAGES[0]}-{STAGES[-1]}) when green, or the change '{STAGES[0]}>{STAGES[1]}' during amber and all-red")
     add("signal_log", "state", "", "reading", "green, amber or all-red")
     add("signal_log", "controller", "", "metadata", "controller running the signal")
     add("turning_counts_15min", "episode_id", "", "key", "episode number")
@@ -284,22 +289,23 @@ def dictionary_rows() -> list:
                             ("detect_leg", "", "approach where the priority-request detector first saw it"),
                             ("t_detect", "s", "first detection inside an approach camera zone (300 m)"),
                             ("detect_dist_m", "m", "distance to the stop line at detection"),
-                            ("queue_at_detect", "veh", "standing vehicles on all four approach cameras at detection"),
+                            ("queue_at_detect", "veh", "standing vehicles on all approach cameras at detection"),
                             ("entry_leg", "", "leg of the entry gate passed"), ("t_entry_gate", "s", "entry gate time"),
                             ("stopline_leg", "", "approach whose stop-line loop it crossed"), ("t_stopline", "s", "stop-line crossing time"),
                             ("exit_leg", "", "leg of the exit gate passed"), ("t_exit_gate", "s", "exit gate time"),
-                            ("t_recovered", "s", "first time after the stop-line crossing that the four approach queues are back within 10% (or 1 vehicle) of queue_at_detect"),
-                            ("t_arrive", "s", "arrival at RSUP Fatmawati (AVL); empty if still travelling at the end"),
+                            ("t_recovered", "s", "first time after the stop-line crossing that the approach queues are back within 10% (or 1 vehicle) of queue_at_detect"),
+                            ("t_arrive", "s", f"arrival at {HOSPITAL_NAME} (AVL); empty if still travelling at the end"),
                             ("arrived", "", "reached the hospital within the episode"),
                             ("travel_time_s", "s", "t_arrive - t_depart"), ("cordon_time_s", "s", "t_exit_gate - t_entry_gate"),
                             ("recovery_s", "s", "t_recovered - t_stopline")):
         add("ambulance_trips", col, unit, "key" if col in ("episode_id", "trip") else "reading", desc)
-    for col, desc in (("episode_id", "episode number"), ("lane_collisions", "overlapping vehicles on a lane anywhere in the 2.5 km network in the recorded period (rare, between motorcycles at walking pace: a limitation of SUMO's sublane model)"),
+    study = f"{SITE.study_m:g} m"
+    for col, desc in (("episode_id", "episode number"), ("lane_collisions", f"overlapping vehicles on a lane anywhere in the {2 * SITE.radius_km:g} km network in the recorded period (rare, between motorcycles at walking pace: a limitation of SUMO's sublane model)"),
                       ("junction_overlaps", "overlapping vehicle shapes inside junction areas anywhere in the network (SUMO sublane limitation)"),
-                      ("lane_collisions_study", "lane collisions within 300 m of the Fatmawati junction centre, where the sensors are"),
-                      ("junction_overlaps_study", "junction overlaps within 300 m of the Fatmawati junction centre"),
+                      ("lane_collisions_study", f"lane collisions within {study} of the junction centre, where the sensors are"),
+                      ("junction_overlaps_study", f"junction overlaps within {study} of the junction centre"),
                       ("veh_km", "vehicle-km travelled in the whole network in the recorded period (sampled every 10 s)"),
-                      ("veh_km_study", "vehicle-km travelled on roads within 300 m of the junction centre"),
+                      ("veh_km_study", f"vehicle-km travelled on roads within {study} of the junction centre"),
                       ("teleports", "vehicles removed after being stuck for 300 s"), ("departed", "vehicles inserted at the network edge"),
                       ("arrived", "vehicles that reached their destination"),
                       ("waiting_to_enter", "vehicles waiting at the network edge at the end (inflow blocked)"),
@@ -309,6 +315,13 @@ def dictionary_rows() -> list:
     return rows
 
 
+def split_groups() -> dict:
+    """leg -> the stage groups of its queue camera, for approaches whose lanes are served by different stages (these
+    get the extra q_veh_<leg>_<stages> columns; Fatmawati: E, green in S1+S2 on the through lanes and S2 on the rest)."""
+    from .sumo_world import sensor_layout
+    return {c["leg"]: c["groups"] for c in sensor_layout()["cameras"] if c["kind"] == "queue_camera" and len(c["groups"]) > 1}
+
+
 def _calibration_text() -> str:
     try:
         with open(CALIBRATION) as f:
@@ -316,33 +329,37 @@ def _calibration_text() -> str:
     except (OSError, ValueError):
         return "Demand is NOT calibrated (no calibration.json): volumes are 0.3 x the observed counts, so queues are indicative."
     v = c["verification"]
-    legs = ("N", "E", "S", "W")
+    legs = LEGS
     sd = v.get("max_queue_sd_m", {})
+    cite = c.get("sources") or SITE.sources
 
     def status(g):
         if c.get("capacity_limited", {}).get(g):
             return "capacity-limited (its demand backs up upstream before the camera queue reaches the target)"
         err = c.get("rel_error", {}).get(g)
         return f"{err:+.0%} of target" if err is not None else ""
-    return ("Demand is the 13 movements counted at the junction in a weekday peak hour (Sumabrata, Haqueline & Mauramdha 2026), "
-            "scaled per approach so that, under the Dishub fixed plan, the peak-hour maximum queue approaches that study's "
-            "VISSIM maximum queue. Scales " + ", ".join(f"{g} {c['scale'][g]:.3f}" for g in legs) + ". Check over "
+    return (f"Demand is the {len(MOVEMENTS)} movements counted at the junction in a weekday peak hour (source: "
+            f"{cite[0] if cite else 'see the site file'}), "
+            "scaled per approach so that, under the city's fixed plan, the peak-hour maximum queue approaches the observed "
+            "maximum queue. Scales " + ", ".join(f"{g} {c['scale'][g]:.3f}" for g in legs) + ". Check over "
             f"{len(v.get('seeds', [])) or 2} seeds, maximum queue: "
             + "; ".join(f"{g} {v['max_queue_m'][g]:.0f} m" + (f" (SD {sd[g]:.0f})" if g in sd else "")
                         + f" vs {c['target_max_queue_m'][g]:.0f} m, {status(g)}" for g in legs)
-            + ". Near capacity an approach's hourly maximum queue tips from a short queue to spill-back past the 300 m camera and "
+            + f". Near capacity an approach's hourly maximum queue tips from a short queue to spill-back past the {CAMERA_M:g} m camera and "
             "varies strongly between seeds, so a closer fit was not possible. Stopped delay "
-            + ", ".join(f"{g} {v['stopped_delay_s'][g]:.0f} s (PKJI control delay {v['pkji_delay_s'][g]:.0f} s)" for g in legs)
+            + ", ".join(f"{g} {v['stopped_delay_s'][g]:.0f} s" + (f" (PKJI control delay {v['pkji_delay_s'][g]:.0f} s)" if v.get("pkji_delay_s") else "")
+                        for g in legs)
             + ". The twin carries " + ", ".join(f"{g} {100 * v['volume_share_of_observed'][g]:.0f}%" for g in legs)
             + " of the observed volumes at these queues: SUMO's motorcycles discharge far less densely than Jakarta's, so the "
-            "twin reproduces the congestion, not the absolute counts. Vehicle mix 80% motorcycles (Yusuf & Isradi 2025).")
+            f"twin reproduces the congestion, not the absolute counts. Vehicle mix {100 * MIX['motorcycle']:.0f}% motorcycles"
+            + (f" ({cite[1]})" if len(cite) > 1 else "") + ".")
 
 
 def datacard(out: str, plan_name: str, plan: dict, tables: dict, episodes: pd.DataFrame, qc: pd.DataFrame) -> str:
     n = {k: len(v) for k, v in tables.items()}
     lines = [
-        f"# Fatmawati twin sensor dataset ({GENERATOR_VERSION}, plan '{plan_name}')", "",
-        "Virtual-sensor readings from a SUMO digital twin of Perempatan Fatmawati (Cilandak, South Jakarta): what a roadside "
+        f"# {SITE.name} twin sensor dataset ({GENERATOR_VERSION}, plan '{plan_name}', site '{SITE.slug}')", "",
+        f"Virtual-sensor readings from a SUMO digital twin of {SITE.name} ({SITE.city}): what a roadside "
         "installation of loops, counting gates and queue cameras would record. The tables hold sensor readings only; no "
         "vehicle trajectories, model states or driver parameters. Vehicle identities were used inside the simulator to match "
         "entries with exits (as video or ANPR re-identification does) and are not written out.", "",
@@ -350,7 +367,7 @@ def datacard(out: str, plan_name: str, plan: dict, tables: dict, episodes: pd.Da
         _calibration_text(), "",
         "Sensors are exact (no detection errors).", "",
         "## Sensors", "",
-        f"- Stop-line loops: one per approach lane, 1 m before the stop line ({sum(1 for _ in LEGS)} approaches).",
+        f"- Stop-line loops: one per approach lane, {LOOP_SETBACK_M:g} m before the stop line ({len(LEGS)} approaches).",
         "- Entry and exit gates: a loop on every lane of each leg, " + ", ".join(f"{g} {GATE_R[g]:g} m" for g in LEGS) +
         " from the junction centre, outside the free-left slips and the median U-turn loops.",
         f"- Queue cameras: {CAMERA_M:g} m upstream of each stop line; exit cameras: first {EXIT_CAMERA_M:g} m of each exit.",
@@ -362,8 +379,8 @@ def datacard(out: str, plan_name: str, plan: dict, tables: dict, episodes: pd.Da
     ]
     lines += [f"- {k}.csv: {v} rows" for k, v in n.items()]
     lines += ["", "## Simulation quality (simulation_qc.csv)", "",
-              f"- whole 2.5 km network: lane collisions {int(qc['lane_collisions'].sum())}, junction overlaps "
-              f"{int(qc['junction_overlaps'].sum())}, teleports {int(qc['teleports'].sum())}; within 300 m of the junction (the "
+              f"- whole {2 * SITE.radius_km:g} km network: lane collisions {int(qc['lane_collisions'].sum())}, junction overlaps "
+              f"{int(qc['junction_overlaps'].sum())}, teleports {int(qc['teleports'].sum())}; within {SITE.study_m:g} m of the junction (the "
               f"sensors' area): lane collisions {int(qc['lane_collisions_study'].sum())}, junction overlaps "
               f"{int(qc['junction_overlaps_study'].sum())}; unmatched exits {int(qc['unmatched_exits'].sum())}. Lane collisions "
               "are rare overlaps between motorcycles at walking pace, a limitation of SUMO's sublane model with filtering "
@@ -392,7 +409,7 @@ def generate(out: str, plan_name: str = "pilot", workers: int = 2) -> dict:
     specs = episode_specs(plan)
     os.makedirs(out, exist_ok=True)
     vtypes_xml(os.path.join(DATA, "demand", "vtypes.add.xml"))
-    with tempfile.TemporaryDirectory(prefix="fatmawati_trips_") as tmp:
+    with tempfile.TemporaryDirectory(prefix=f"{SITE.slug}_trips_") as tmp:
         for spec in specs:                                     # one trip file per window, level and seed
             path = routes_path(tmp, spec)
             if not os.path.exists(path):
@@ -432,7 +449,7 @@ def generate(out: str, plan_name: str = "pilot", workers: int = 2) -> dict:
         df.to_csv(os.path.join(out, f"{name}.csv"), index=False)
     pd.DataFrame(dictionary_rows()).to_csv(os.path.join(out, "data_dictionary.csv"), index=False)
     datacard(out, plan_name, plan, tables, tables["episodes"], tables["simulation_qc"])
-    cfg = dict(generator=GENERATOR_VERSION, plan=plan_name, plan_spec=plan, windows=WINDOWS, level_factor=LEVEL_FACTOR,
+    cfg = dict(generator=GENERATOR_VERSION, site=SITE.slug, plan=plan_name, plan_spec=plan, windows=WINDOWS, level_factor=LEVEL_FACTOR,
                calibration_scale=load_calibration(),
                vehicle_mix=MIX, pcu=PCU, gate_radius_m=GATE_R, camera_m=CAMERA_M, exit_camera_m=EXIT_CAMERA_M,
                label_horizon_s=LABEL_HORIZON_S, network_sha256=sha256(NET), python=sys.version.split()[0])
@@ -447,8 +464,9 @@ def generate(out: str, plan_name: str = "pilot", workers: int = 2) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     ap.add_argument("--plan", default="pilot", choices=sorted(PLANS))
-    ap.add_argument("--out", default=os.path.join("data", "fatmawati_pilot"))
+    ap.add_argument("--out", default=os.path.join("data", f"{SITE.slug}_pilot"))
     ap.add_argument("--workers", type=int, default=2)
     args = ap.parse_args(argv)
     counts = generate(args.out, args.plan, args.workers)

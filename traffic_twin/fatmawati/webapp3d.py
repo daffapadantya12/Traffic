@@ -28,6 +28,7 @@ from urllib.parse import parse_qs, urlparse
 from .demand import DATA, routes_xml, vtypes_xml
 from .jorr import PEAK_VPH as TOLL_PEAK_VPH, routes_xml as toll_routes_xml
 from .mrt import Trains
+from .site import SITE, add_site_argument
 from .sumo_world import CONTROLLERS
 
 # trained controllers the viewer can run (the closed-loop winner of the evaluation; reports/a3)
@@ -218,6 +219,7 @@ def make_handler(sim: Sim, viewers: Viewers | None = None, tomtom=None):
 
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    add_site_argument(ap)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8770)
     ap.add_argument("--start-hour", type=float, default=7.0)
@@ -228,7 +230,7 @@ def main(argv=None):
     ap.add_argument("--seed", type=int, default=1)
     ap.add_argument("--warmup-min", type=float, default=10.0, help="simulated minutes run before the first live frame")
     ap.add_argument("--toll-vph", type=float, default=TOLL_PEAK_VPH,
-                    help="JORR through-traffic per direction at the daily peak, live view only (0: none)")
+                    help="toll through-traffic per direction at the daily peak, live view only (0: none; the default at a site without a toll road)")
     ap.add_argument("--no-mrt", action="store_true", help="no MRT trains")
     args = ap.parse_args(argv)
     if not os.path.exists(GEOMETRY):
@@ -255,7 +257,7 @@ def main(argv=None):
     tomtom.start()
     httpd = ThreadingHTTPServer((args.host, args.port), make_handler(sim, viewers, tomtom))
     httpd.daemon_threads = True
-    print(f"Fatmawati 3D twin on http://{args.host}:{args.port}/  ({info['n_vehicles']} vehicles, {info['n_ambulances']} ambulances "
+    print(f"{SITE.name} 3D twin on http://{args.host}:{args.port}/  ({info['n_vehicles']} vehicles, {info['n_ambulances']} ambulances "
           f"over {args.hours:g} h from {args.start_hour:g}:00, {args.level} demand)", flush=True)
     try:
         httpd.serve_forever(poll_interval=0.2)

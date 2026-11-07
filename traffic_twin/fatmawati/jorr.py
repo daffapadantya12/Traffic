@@ -17,11 +17,13 @@ import math
 import os
 
 from .demand import DAILY_PROFILE, NET
+from .site import SITE
 
-# boundary edge where the mainline enters the network -> edge where it leaves (both ends of the 2.5 km box)
-ENDS = {"westbound": ("354001305", "1188795207#1"), "eastbound": ("511963837", "1188226881")}
-PEAK_VPH = 3000.0                        # per direction at the profile peak
-MIX = {"car": 0.82, "bus": 0.03, "truck": 0.15}
+# boundary edge where the mainline enters the network -> edge where it leaves (both ends of the box); None at a site
+# without a toll road (site file, viewer_only.jorr_ends)
+ENDS = SITE.jorr_ends
+PEAK_VPH = SITE.jorr_peak_vph or 0.0     # per direction at the profile peak
+MIX = SITE.jorr_mix or {"car": 0.82, "bus": 0.03, "truck": 0.15}
 CAR_TYPES = ("car_a1", "car_a3", "car_a5", "car_a7", "car_a9")     # the driver profiles of vtypes.add.xml
 
 
@@ -50,6 +52,8 @@ def routes_xml(path: str, start_hour: float, duration_s: float, peak_vph: float 
                profile=DAILY_PROFILE) -> dict:
     """Hourly through-flows in both directions for `duration_s` simulated seconds from `start_hour`."""
     import sumolib
+    if not ENDS:
+        raise ValueError(f"site {SITE.slug!r} has no toll mainline (viewer_only.jorr_ends is null)")
     net = sumolib.net.readNet(NET, withInternal=False)
     car = MIX["car"] / len(CAR_TYPES)
     lines = ['<routes>',

@@ -4,15 +4,13 @@ import pytest
 
 pytest.importorskip("sumolib")
 
-from traffic_twin.fatmawati.evaluate import CYCLE_S, RELEASE_EVERY_S, SLICES, schedule, passage_rows  # noqa: E402
-
-LEGS = ("N", "E", "S", "W")
+from traffic_twin.fatmawati.evaluate import CYCLE_S, EV_MOVES, LEGS, RELEASE_EVERY_S, SLICES, schedule, passage_rows  # noqa: E402
 
 
 def test_schedule_covers_every_slice_of_the_cycle():
     s = schedule()
-    assert len(s) == 3 * SLICES
-    for leg in ("N", "E", "W"):
+    assert len(s) == len(EV_MOVES) * SLICES
+    for leg in EV_MOVES:
         slices = sorted(k for _, g, k in s if g == leg)
         assert slices == list(range(SLICES))
     for t, _, k in s:                                    # release at the slice's offset in the fixed-time cycle
