@@ -8,6 +8,7 @@ footprints ((c) OpenStreetMap contributors, ODbL):
   stoplines  the Fatmawati stop lines and motorcycle boxes (Ruang Henti Khusus)
   heads      signal heads of the Fatmawati controller: position + the link indices they show
   flyover    the JORR toll viaduct over the junction: decks, piers and lamp posts
+  mrt        the MRT Jakarta viaduct, its stations and the two tracks the trains run on (mrt.py)
   buildings  footprints with a height (OSM height / levels x 3.2 m, else a default by building type)
   hospital   RSUP Fatmawati
 """
@@ -43,6 +44,16 @@ PIER_SPAN_M = 30.0               # usual span; longer where a street passes belo
 PIER_HALF_M = 1.2                # half the column, across the road
 PIER_CLEAR_M = 1.0               # kept free between a column and any lane or junction below
 LAMP_EVERY_M = 45.0
+MRT_LAMP_CLEAR_M = 10.0          # no toll lamp post under the MRT viaduct
+# MRT viaduct (mrt.py has the line, the stations and the timetable)
+MRT_DECK_DROP_M = 0.5            # deck top below the rail
+MRT_GIRDER_M = 1.8
+MRT_HALF_M = 2.7                 # deck half width per track (car 2.95 m, walkway, parapet)
+MRT_PARTED_M = 12.0              # tracks further apart than this get separate decks and piers
+MRT_SPAN_M = 30.0
+MRT_PIER_PAD_M = 1.4             # column half width (1.0 m) + clearance: MRT piers stand in road medians
+MAST_EVERY_M = 50.0
+STATION_FLOOR_M, STATION_ROOF_M = 7.5, 21.0     # concourse underside; roof (the platform floor is 1 m above the rail)
 
 
 def _r(v, k=2):
@@ -126,42 +137,60 @@ def _inside(px, py, poly) -> bool:
     return inside
 
 
-def flyover(lanes: list, junctions: list, cell: float = 25.0) -> dict:
-    """Decks, piers and lamp posts of the raised toll road, from the exported lanes (metres from the junction).
+class _Clearance:
+    """What a pier column must keep clear of: the lanes of other roads (by their half width), ground-level
+    junctions and extra strips (polyline, half width), hashed by grid cell."""
 
-    A deck follows each raised motorway edge between its outer lanes plus shoulders.  Piers stand every
-    PIER_SPAN_M under it, but never in a lane of another road or in a ground-level junction: there the span
-    grows until the column is clear, as over Jl. RS Fatmawati.
-    """
-    grid = {}                    # what a column must keep clear of, hashed by cell: (edge, half width, segment) or polygon
+    def __init__(self, lanes: list, junctions: list, strips: tuple = (), pad_max: float = PIER_HALF_M + PIER_CLEAR_M,
+                 cell: float = 25.0):
+        self.cell, self.grid = cell, {}
+        for ln in lanes:
+            e, hw = ln["id"].rsplit("_", 1)[0], ln["w"] / 2
+            self._strip(e, ln["p"], hw, pad_max)
+        for k, (pts, hw) in enumerate(strips):
+            self._strip(f"strip{k}", pts, hw, pad_max)
+        for j in junctions:
+            if j["z"] < RAISED_M:
+                xs, ys = [p[0] for p in j["p"]], [p[1] for p in j["p"]]
+                for c in self._cells(min(xs) - pad_max, min(ys) - pad_max, max(xs) + pad_max, max(ys) + pad_max):
+                    self.grid.setdefault(c, []).append(("", j["p"]))
 
-    def cells(x0, y0, x1, y1):
-        for i in range(math.floor(x0 / cell), math.floor(x1 / cell) + 1):
-            for j in range(math.floor(y0 / cell), math.floor(y1 / cell) + 1):
+    def _cells(self, x0, y0, x1, y1):
+        for i in range(math.floor(x0 / self.cell), math.floor(x1 / self.cell) + 1):
+            for j in range(math.floor(y0 / self.cell), math.floor(y1 / self.cell) + 1):
                 yield i, j
 
-    pad = PIER_HALF_M + PIER_CLEAR_M
-    for ln in lanes:
-        e, hw = ln["id"].rsplit("_", 1)[0], ln["w"] / 2
-        for a, b in zip(ln["p"], ln["p"][1:]):
-            r = hw + pad
-            for c in cells(min(a[0], b[0]) - r, min(a[1], b[1]) - r, max(a[0], b[0]) + r, max(a[1], b[1]) + r):
-                grid.setdefault(c, []).append((e, hw, a[0], a[1], b[0], b[1]))
-    for j in junctions:
-        if j["z"] < RAISED_M:
-            xs, ys = [p[0] for p in j["p"]], [p[1] for p in j["p"]]
-            for c in cells(min(xs) - pad, min(ys) - pad, max(xs) + pad, max(ys) + pad):
-                grid.setdefault(c, []).append(("", j["p"]))
+    def _strip(self, key, pts, hw, pad_max):
+        for a, b in zip(pts, pts[1:]):
+            r = hw + pad_max
+            for c in self._cells(min(a[0], b[0]) - r, min(a[1], b[1]) - r, max(a[0], b[0]) + r, max(a[1], b[1]) + r):
+                self.grid.setdefault(c, []).append((key, hw, a[0], a[1], b[0], b[1]))
 
-    def clear(edge, x, y) -> bool:
-        for item in grid.get((math.floor(x / cell), math.floor(y / cell)), ()):
+    def clear(self, x, y, pad: float = PIER_HALF_M + PIER_CLEAR_M, own: str = "") -> bool:
+        for item in self.grid.get((math.floor(x / self.cell), math.floor(y / self.cell)), ()):
             if len(item) == 2:
                 poly = item[1]
                 if _inside(x, y, poly) or any(_seg_dist(x, y, *a, *b) < pad for a, b in zip(poly, poly[1:] + poly[:1])):
                     return False
-            elif item[0] != edge and _seg_dist(x, y, *item[2:]) < item[1] + pad:
+            elif item[0] != own and _seg_dist(x, y, *item[2:]) < item[1] + pad:
                 return False
         return True
+
+
+def _near(x, y, lines: tuple, d: float) -> bool:
+    return any(_seg_dist(x, y, a[0], a[1], b[0], b[1]) < d for pts in lines for a, b in zip(pts, pts[1:]))
+
+
+def flyover(lanes: list, junctions: list, avoid: tuple = ()) -> dict:
+    """Decks, piers and lamp posts of the raised toll road, from the exported lanes (metres from the junction).
+
+    A deck follows each raised motorway edge between its outer lanes plus shoulders.  Piers stand every
+    PIER_SPAN_M under it, but never in a lane of another road or in a ground-level junction: there the span
+    grows until the column is clear, as over Jl. RS Fatmawati.  No lamp post stands under the `avoid`
+    polylines (the MRT viaduct, which crosses above the deck).
+    """
+    room = _Clearance(lanes, junctions)
+    clear = lambda edge, x, y: room.clear(x, y, own=edge)
 
     by_edge = {}
     for ln in lanes:
@@ -197,11 +226,113 @@ def flyover(lanes: list, junctions: list, cell: float = 25.0) -> dict:
                 last = s
         if side:
             for s, x, y, z, ux, uy in _walk(centre, LAMP_EVERY_M)[1:]:
-                if z > 2.0:
-                    o = side * (hw - PARAPET_W_M / 2)
-                    lamps.append([_r(x - uy * o), _r(y + ux * o), _r(z + PARAPET_M), _r(uy * side, 3), _r(-ux * side, 3)])
+                o = side * (hw - PARAPET_W_M / 2)
+                lx, ly = x - uy * o, y + ux * o
+                if z > 2.0 and not _near(lx, ly, avoid, MRT_LAMP_CLEAR_M):
+                    lamps.append([_r(lx), _r(ly), _r(z + PARAPET_M), _r(uy * side, 3), _r(-ux * side, 3)])
     return dict(depth=DECK_DEPTH_M, parapet=PARAPET_M, parapet_w=PARAPET_W_M, decks=decks, piers=piers, lamps=lamps,
                 name="Jalan Tol Lingkar Luar Jakarta (JORR)")
+
+
+def _nearest(pts: list, q) -> tuple:
+    """(distance, nearest point) of a polyline to q."""
+    best = (math.inf, q)
+    for a, b in zip(pts, pts[1:]):
+        dx, dy = b[0] - a[0], b[1] - a[1]
+        L2 = dx * dx + dy * dy
+        t = 0.0 if L2 == 0 else max(0.0, min(1.0, ((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / L2))
+        c = (a[0] + t * dx, a[1] + t * dy)
+        d = math.hypot(q[0] - c[0], q[1] - c[1])
+        if d < best[0]:
+            best = (d, c)
+    return best
+
+
+def metro(lanes: list, junctions: list, toll_decks: list, line: dict) -> dict:
+    """The MRT viaduct along the two tracks of mrt.lines().
+
+    - A deck per track, joined where the tracks run side by side.
+    - Piers between the tracks every MRT_SPAN_M, clear of the streets and of the toll deck.
+    - Catenary masts, and the stations: concourse, glazed platform level, roof.
+    """
+    from .mrt import RAIL_Z
+    tracks = line["tracks"]
+    names = sorted(tracks)
+    top = RAIL_Z - MRT_DECK_DROP_M
+    under = top - MRT_GIRDER_M
+    room = _Clearance(lanes, junctions, strips=tuple((d["p"], d["hw"] + 0.3) for d in toll_decks))
+    stations = [st["p"] for st in line["stations"]]
+    decks, piers, masts = [], [], []
+    for name in names:
+        pts = tracks[name]["p"]
+        other = next((tracks[n]["p"] for n in names if n != name), None)
+        sides, inner = [], []
+        for i, (x, y) in enumerate(pts):
+            a, b = pts[max(i - 1, 0)], pts[min(i + 1, len(pts) - 1)]
+            L = math.hypot(b[0] - a[0], b[1] - a[1]) or 1.0
+            nx, ny = -(b[1] - a[1]) / L, (b[0] - a[0]) / L          # left normal of the direction of travel
+            d, q = _nearest(other, (x, y)) if other else (math.inf, (x, y))
+            sides.append(1 if nx * (q[0] - x) + ny * (q[1] - y) > 0 else -1)   # side the other track is on
+            inner.append(_r(min(MRT_HALF_M, d / 2) if d < MRT_PARTED_M else MRT_HALF_M))
+        decks.append(dict(track=name, p=pts, side=sides, inner=inner))
+        for _, x, y, _, ux, uy in _walk([[*q, 0.0] for q in pts], MAST_EVERY_M)[1:]:   # masts on the outer edge
+            d, q = _nearest(other, (x, y)) if other else (math.inf, (x, y))
+            sg = 1 if -uy * (q[0] - x) + ux * (q[1] - y) > 0 else -1
+            mx, my = x + uy * sg * (MRT_HALF_M - 0.3), y - ux * sg * (MRT_HALF_M - 0.3)
+            if not any(_inside(mx, my, st) for st in stations):
+                masts.append([_r(mx), _r(my), _r(top), _r(-uy * sg, 3), _r(ux * sg, 3)])
+    main = tracks.get("northbound") and "northbound" or names[0]
+    other = next((tracks[n]["p"] for n in names if n != main), None)
+    last = -math.inf
+    for s, x, y, _, ux, uy in _walk([[*q, 0.0] for q in tracks[main]["p"]], 2.0):
+        d, q = _nearest(other, (x, y)) if other else (math.inf, (x, y))
+        cx, cy, half = ((x + q[0]) / 2, (y + q[1]) / 2, d / 2 + MRT_HALF_M) if d < MRT_PARTED_M else (x, y, MRT_HALF_M)
+        if s - last >= MRT_SPAN_M and room.clear(cx, cy, pad=MRT_PIER_PAD_M):
+            piers.append([_r(cx), _r(cy), _r(under), _r(ux, 3), _r(uy, 3), _r(half - 0.5)])
+            last = s
+    halls = []
+    for st in line["stations"]:
+        poly = st["p"]
+        cx, cy = sum(p[0] for p in poly) / len(poly), sum(p[1] for p in poly) / len(poly)
+        for a, b in zip(poly, poly[1:] + poly[:1]):                  # columns under the concourse, inset 1.5 m
+            n = max(1, round(math.dist(a, b) / 25.0))
+            for k in range(n):
+                px, py = a[0] + (b[0] - a[0]) * k / n, a[1] + (b[1] - a[1]) * k / n
+                L = math.hypot(cx - px, cy - py) or 1.0
+                px, py = px + (cx - px) / L * 1.5, py + (cy - py) / L * 1.5
+                if room.clear(px, py, pad=0.9):
+                    piers.append([_r(px), _r(py), STATION_FLOOR_M, 1.0, 0.0, 0.0])
+        halls.append(dict(name=st["name"], p=poly, roof_p=_grow(poly, 1.5), floor=STATION_FLOOR_M, platform=_r(RAIL_Z + 1.0),
+                          roof=STATION_ROOF_M))
+    return dict(rail=RAIL_Z, top=_r(top), under=_r(under), half=MRT_HALF_M, tracks=tracks, decks=decks, piers=piers,
+                masts=masts, stations=halls, name="MRT Jakarta, North-South Line")
+
+
+def _grow(poly: list, d: float) -> list:
+    """The polygon moved outward by d metres (mitred corners; for the station roofs' overhang)."""
+    area = sum(a[0] * b[1] - b[0] * a[1] for a, b in zip(poly, poly[1:] + poly[:1]))
+    sgn = 1.0 if area > 0 else -1.0                              # counter-clockwise: the outward normal is on the right
+    out, n = [], len(poly)
+    for i in range(n):
+        a, b, c = poly[i - 1], poly[i], poly[(i + 1) % n]
+        normals = []
+        for p, q in ((a, b), (b, c)):
+            L = math.hypot(q[0] - p[0], q[1] - p[1]) or 1.0
+            normals.append((sgn * (q[1] - p[1]) / L, -sgn * (q[0] - p[0]) / L))
+        mx, my = normals[0][0] + normals[1][0], normals[0][1] + normals[1][1]
+        k = mx * normals[0][0] + my * normals[0][1]
+        k = d / k if abs(k) > 0.2 else d
+        out.append([_r(b[0] + mx * k), _r(b[1] + my * k)])
+    return out
+
+
+def _box(net, x0: float, y0: float, radius_km: float) -> tuple:
+    """The road network's download box in local metres (x0, y0, x1, y1)."""
+    from .build_net import bbox
+    s, w, n, e = bbox(radius_km)
+    c = [tuple(v - o for v, o in zip(net.convertLonLat2XY(lon, lat), (x0, y0))) for lon in (w, e) for lat in (s, n)]
+    return (max(p[0] for p in c if p[0] < 0), max(p[1] for p in c if p[1] < 0),
+            min(p[0] for p in c if p[0] > 0), min(p[1] for p in c if p[1] > 0))
 
 
 def build(out_path: str | None = None, buildings_path: str | None = None, radius_m: float = 1600.0) -> str:
@@ -282,8 +413,16 @@ def build(out_path: str | None = None, buildings_path: str | None = None, radius
             buildings.append(dict(h=_r(h, 1), p=pts[:-1] if pts[0] == pts[-1] else pts,
                                   hosp=tags.get("amenity") == "hospital" or tags.get("building") == "hospital"))
     hx, hy = net.convertLonLat2XY(*HOSPITAL_LONLAT)
+    line = None
+    try:                                                         # the MRT line (OpenStreetMap, cached)
+        from . import mrt
+        mrt.download()
+        line = mrt.lines(lambda lon, lat: rel(*net.convertLonLat2XY(lon, lat)), _box(net, x0, y0, mrt.RADIUS_KM))
+    except (OSError, ValueError, KeyError) as err:               # offline with nothing cached: no MRT in the view
+        print("MRT not drawn:", err)
+    fly = flyover(lanes, junctions, avoid=tuple(t["p"] for t in line["tracks"].values()) if line else ())
     data = dict(origin=dict(lat=JUNCTION_LAT, lon=JUNCTION_LON), lanes=lanes, junctions=junctions, stoplines=stoplines, heads=heads,
-                flyover=flyover(lanes, junctions), buildings=buildings, hospital=dict(name="RSUP Fatmawati", x=_r(hx - x0), y=_r(hy - y0)),
+                flyover=fly, mrt=metro(lanes, junctions, fly["decks"], line) if line else None, buildings=buildings, hospital=dict(name="RSUP Fatmawati", x=_r(hx - x0), y=_r(hy - y0)),
                 attribution="Road and building data (c) OpenStreetMap contributors, ODbL")
     out_path = out_path or os.path.join(DATA, "viewer", "geometry.json")
     os.makedirs(os.path.dirname(out_path), exist_ok=True)

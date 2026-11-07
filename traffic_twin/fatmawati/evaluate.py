@@ -33,7 +33,7 @@ import os
 import sys
 import tempfile
 import time
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
 import numpy as np
 import pandas as pd
@@ -320,8 +320,15 @@ def evaluate(out: str, methods: list, levels: list, seeds: list, workers: int = 
             for sd in seeds:
                 routes_xml(os.path.join(tmp, f"eval_{lv}_s{sd}.rou.xml"), lv, seed=sd, start_hour=7.0,
                            duration_s=schedule(n_releases)[-1][0] + TAIL_S, peak=True, ev_per_hour=0.0)
-        with ProcessPoolExecutor(max_workers=workers) as pool:
-            results = list(pool.map(run_episode, *zip(*[(lv, sd, m, ev, tmp, n_releases, vt) for lv, sd, m, ev in jobs])))
+        with ProcessPoolExecutor(max_workers=workers) as pool:          # a progress line per finished run (long grids)
+            futs = {pool.submit(run_episode, lv, sd, m, ev, tmp, n_releases, vt): i for i, (lv, sd, m, ev) in enumerate(jobs)}
+            results, t0 = [None] * len(jobs), time.time()
+            for n, fut in enumerate(as_completed(futs), 1):
+                i = futs[fut]
+                results[i] = fut.result()
+                lv, sd, m, ev = jobs[i]
+                print(f"[{time.strftime('%Y-%m-%d %H:%M')}] run {n}/{len(jobs)} done: {lv} seed {sd} {m}"
+                      f"{'' if ev else ' (no ambulances)'}, {(time.time() - t0) / 3600:.1f} h elapsed", file=sys.stderr, flush=True)
     by = {(r["level"], r["seed"], r["method"], r["with_ev"]): r for r in results}
     rows = []
     for lv in levels:

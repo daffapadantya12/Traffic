@@ -1,0 +1,259 @@
+{
+  "spec_version": "1.0",
+  "status": "unverified skeleton (2026-11-07): nothing here has been run; every null field needs a survey or an OSM lookup, named in the matching *_todo entry",
+  "site": {
+    "name": "Bundaran Hotel Indonesia (Bundaran HI)",
+    "slug": "bundaran_hi",
+    "city": "Jakarta Pusat (Menteng / Tanah Abang), DKI Jakarta",
+    "centre_lat": -6.195,
+    "centre_lon": 106.823,
+    "centre_note": "approximate map centre of the roundabout; move it to the signal nodes once the raw network is built",
+    "radius_km": 2.7,
+    "osm_bbox_s_w_n_e": null,
+    "osm_bbox_s_w_n_e_todo": "written by build_net.bbox(radius_km) around the centre; record it after the first download",
+    "osm_extract_timestamp": null,
+    "osm_extract_timestamp_todo": "copy osm_base from the downloaded .osm.xml header and pin the file",
+    "osm_extract_file": "data/bundaran_hi/osm/bundaran_hi_roads.osm.xml",
+    "osm_road_types": [
+      "motorway",
+      "motorway_link",
+      "trunk",
+      "trunk_link",
+      "primary",
+      "primary_link",
+      "secondary",
+      "secondary_link",
+      "tertiary",
+      "tertiary_link"
+    ],
+    "driving_side": "left",
+    "typemap": "data/fatmawati/patches/jakarta.typ.xml",
+    "network_file": "data/bundaran_hi/net/bundaran_hi.net.xml",
+    "network_sha256": null,
+    "network_sha256_todo": "sha256 of the final .net.xml, stamped by generate.py into config.json",
+    "junction_type": "signalised roundabout (to confirm on site: APILL heads on each approach under Dishub DKI's ATCS); the ring itself carries the conflicts",
+    "context": {
+      "mrt": "MRT Jakarta Bundaran HI station is underground, so the viewer's viaduct model (mrt.py RAIL_Z 14 m) does not apply; disable --no-mrt or model nothing",
+      "busway": "TransJakarta Corridor 1 runs in the median of Thamrin/Sudirman through the roundabout with its own signal heads; not modelled at Fatmawati, needs a bus-lane edge class and a signal group",
+      "odd_even": "odd-even plate restriction on Thamrin/Sudirman on weekday peaks (check the current hours before counting)",
+      "car_free_day": "Sunday mornings the roundabout is closed to motor traffic; do not count on Sundays",
+      "traffic_engineering_2022": "since 19 July 2022 Dishub DKI closes the Sudirman -> Imam Bonjol movement every day 16:00-21:00 (TransJakarta and VVIP exempt); the pm peak therefore has a different movement set from the am peak",
+      "toll_road": "none; the Fatmawati viewer's JORR flyover code (jorr.py, geometry3d.flyover) is unused here"
+    }
+  },
+  "junction": {
+    "tls_id": "bundaran_hi",
+    "program_id": "dishub",
+    "crossings": null,
+    "crossings_todo": "cluster/node ids of every signalised ring node, read from the raw network after build_net at the new centre; the Fatmawati code holds exactly two (CROSSINGS) and a two-entry MEDIAN dict, so this is where the stage model must be generalised",
+    "legs": [
+      "N",
+      "S",
+      "E",
+      "W"
+    ],
+    "legs_note": "provisional: N = Jl. MH Thamrin toward Monas, S = Jl. MH Thamrin / Jl. Jend. Sudirman, E = Jl. Imam Bonjol (east-south-east), W = Jl. Kebon Kacang Raya; confirm from the OSM extract, and check whether the ring has more than four stop lines",
+    "street_names": {
+      "N": "Jalan Mohammad Husni Thamrin",
+      "S": "Jalan Mohammad Husni Thamrin",
+      "E": "Jalan Imam Bonjol",
+      "W": "Jalan Kebon Kacang Raya"
+    },
+    "approaches": null,
+    "approaches_todo": "first edge of each leg that ends at a ring stop line (raw ids)",
+    "median": null,
+    "median_todo": "ring segments between consecutive stop lines play the role of Fatmawati's median links; there are as many as there are signalised ring nodes",
+    "exits": null,
+    "exits_todo": "first edge leaving the ring on each leg",
+    "leg_source": null,
+    "leg_source_todo": "upstream end of each leg inside the 2.7 km box",
+    "leg_sink": null,
+    "leg_sink_todo": "far end of each exit inside the box",
+    "deleted_connections": null,
+    "deleted_connections_todo": "movements that are banned or uncounted (e.g. Sudirman -> Imam Bonjol in the evening programme)",
+    "rhk_depth_m": 8.0,
+    "lanes_at_stop_line": null,
+    "lanes_at_stop_line_todo": "count from the raw network; Thamrin/Sudirman carry 4-5 general lanes plus the busway per direction"
+  },
+  "signal": {
+    "stages": null,
+    "stages_todo": "stage list from a Dishub ATCS plan or a stopwatch survey (3+ cycles per period, am peak, midday, pm peak); the 2022 evening programme is a separate plan",
+    "green_s": null,
+    "green_s_todo": "per stage, seconds",
+    "yellow_s": null,
+    "yellow_s_todo": "amber per stage change, from the survey or the ATCS plan (Fatmawati's plan uses 2 s)",
+    "allred_s": null,
+    "allred_s_todo": "all-red per stage change, from the survey or the ATCS plan (Fatmawati's plan uses 2 s)",
+    "cycle_s": null,
+    "cycle_s_todo": "sum of greens + stages x (amber + all-red); check against the stopwatch cycle",
+    "stage_links": null,
+    "stage_links_todo": "(from edge, to edge or *) pairs per stage, including the ring segments; Fatmawati's amber/all-red builder only knows approach and median links",
+    "stage_approaches": null,
+    "stage_approaches_todo": "approaches served in each stage, from stage_links",
+    "stage_of_approach": null,
+    "stage_of_approach_todo": "Fatmawati assumes one stage serves all of an approach's signalised traffic; a ring may serve one approach in two stages (then follow the E-leg q_veh_E_S1S2 pattern)",
+    "stage_label": null,
+    "stage_label_todo": "plain-language stage names for the data dictionary and the DATACARD",
+    "plant": {
+      "min_green_s": 5.0,
+      "max_green_s": 90.0,
+      "decision_s": 5.0,
+      "starvation_s": 240.0,
+      "step_s": 0.5
+    },
+    "plant_note": "the adaptive plant limits are design choices, kept from Fatmawati unless the surveyed plan exceeds them"
+  },
+  "demand": {
+    "movements_veh_h": null,
+    "movements_veh_h_todo": "classified turning count, one weekday peak hour in 15-min bins, every entry leg x exit leg pair including U-turns round the ring (16 with four legs); Dishub's only public figure (ANTARA, June 2022: about 98 thousand vehicles two-way, period not stated) is not a movement count",
+    "mix": null,
+    "mix_todo": "from the same count by class; fallback 0.70 motorcycle (Jakarta-wide, Yusuf & Isradi 2025), which Fatmawati already uses as a sensitivity level; expect fewer motorcycles and more buses than Fatmawati on Thamrin",
+    "mix_sensitivity": {
+      "motorcycle": 0.7
+    },
+    "level_factor": {
+      "low": 0.75,
+      "design": 1.0,
+      "high": 1.15
+    },
+    "base_inflow_vph_at_design": 3000.0,
+    "cordon_m": 200.0,
+    "daily_profile": "traffic_twin/config.py DAILY_PROFILE (24 hourly multipliers, assumed)",
+    "windows_h": {
+      "am_peak": 7.0,
+      "midday": 12.0,
+      "pm_peak": 17.0
+    },
+    "windows_note": "the pm window falls inside the 16:00-21:00 movement ban",
+    "ev_per_hour": 6.0,
+    "ev_legs": null,
+    "ev_legs_todo": "legs with a route to the chosen hospital"
+  },
+  "calibration": {
+    "controller": "fixed",
+    "target_max_queue_m": null,
+    "target_max_queue_m_todo": "per approach, the longest queue in the peak hour, measured the VISSIM way (speed < 5 km/h, gaps <= 20 m, from the stop line); no published value exists for Bundaran HI",
+    "queue_definition": "VISSIM queue counter: speed < 5 km/h, contiguous from the stop line with gaps <= 20 m",
+    "pkji_delay_s": null,
+    "pkji_delay_s_todo": "optional: PKJI 2023 control delay per approach from the count and plan, used for validation text only",
+    "pkji_ds": null,
+    "pkji_ds_todo": "optional: PKJI 2023 degree of saturation per approach, validation text only",
+    "vissim_junction_delay_s": null,
+    "vissim_junction_delay_s_todo": "optional: a published junction mean delay to validate against; none exists for Bundaran HI",
+    "grid": [
+      0.15,
+      0.25,
+      0.35,
+      0.5,
+      0.7
+    ],
+    "fit_seeds": [
+      11,
+      12
+    ],
+    "verify_seeds": [
+      11,
+      12,
+      13,
+      14
+    ],
+    "warm_s": 900.0,
+    "main_s": 3600.0,
+    "fitted_scale": null,
+    "fitted_scale_todo": "written by calibrate.py into calibration.json once queue targets exist",
+    "result_file": "data/bundaran_hi/calibration.json"
+  },
+  "sensors": {
+    "gate_r_m": null,
+    "gate_r_m_todo": "150 m from the centre unless a slip road or U-turn loop leaves the leg earlier; the ring is roughly 100 m across, so check that 150 m is outside it",
+    "camera_m": 300.0,
+    "camera_note": "sensors.build_layout walks same-street-name chains; Thamrin has side streets and frontage roads, so confirm the walk reaches 300 m on every leg (tests/test_fatmawati.py asserts it)",
+    "exit_camera_m": 150.0,
+    "loop_setback_m": 1.0,
+    "study_m": 300.0,
+    "pcu": {
+      "motorcycle": 0.15,
+      "car": 1.0,
+      "bus": 1.3,
+      "truck": 1.3,
+      "emergency": 1.0
+    },
+    "sat_flow_pcu_h": null,
+    "sat_flow_pcu_h_todo": "600 x approach width per PKJI 2023, computed by sensors.py from the network; note learn.py falls back to Fatmawati's values (see docs/REPRODUCIBILITY.md known issues)"
+  },
+  "evaluation": {
+    "hospital_name": null,
+    "hospital_name_todo": "pick from OSM amenity=hospital inside the box; candidates to check: RSPAD Gatot Soebroto (north-east), RS Bunda Menteng and RS Abdi Waluyo (east via Imam Bonjol); demand.hospital_edge filters on a street name, so record the street too",
+    "hospital_lonlat": null,
+    "hospital_lonlat_todo": "OSM amenity=hospital coordinates of the chosen hospital",
+    "hospital_street_name": null,
+    "hospital_street_name_todo": "OSM street name of the hospital's edge (demand.hospital_edge filters on it)",
+    "hospital_leg": null,
+    "hospital_leg_todo": "the leg whose exit gate ends an ambulance passage (the hospital side)",
+    "ev_moves": null,
+    "ev_moves_todo": "release legs with a route to the hospital through the ring; the Fatmawati routes (free-left slip, toll-ramp U-turn) do not exist here",
+    "release_min_m": 400.0,
+    "release_points": null,
+    "release_points_todo": "written by evaluate.py: edge, position and 400 m distance per release leg",
+    "t_empty_s": null,
+    "t_empty_s_todo": "measured by evaluate.py with the signal off",
+    "slices": 8,
+    "release_every_s": 600.0,
+    "warm_s": 900.0,
+    "tail_s": 600.0,
+    "extra_s": 1800.0,
+    "methods": [
+      "random",
+      "still",
+      "fixed",
+      "longest_queue",
+      "max_pressure",
+      "priority_mp",
+      "preempt_naive"
+    ],
+    "gates": {
+      "general_delay_vs_max_pressure": 1.1,
+      "approach_vs_fixed": 1.2,
+      "safety": "no significant rise in lane collisions per veh-km above the fixed plan"
+    },
+    "gates_note": "pre-register before any Bundaran HI result is seen, as the Fatmawati gates were",
+    "grid_seeds": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "release_seeds": [
+      1,
+      2,
+      3
+    ]
+  },
+  "viewer_only": {
+    "not_in_dataset": true,
+    "jorr_ends": null,
+    "jorr_ends_todo": "not applicable: no toll road crosses Bundaran HI",
+    "mrt_rail_z_m": null,
+    "mrt_rail_z_m_todo": "not applicable: the MRT is underground here",
+    "mrt_note": "underground station; no viaduct",
+    "buildings_file": "data/bundaran_hi/osm/buildings_1600m.json",
+    "buildings_file_todo": "no downloader exists in the code; fetch building footprints within 1600 m by hand from Overpass",
+    "buildings_radius_m": 1600.0,
+    "tomtom": "display only, key from TOMTOM_API_KEY, nothing stored"
+  },
+  "known_differences_from_fatmawati": [
+    "a signalised ring instead of two crossings 51 m apart: the stage model (build_net.STAGE_LINKS, MEDIAN, the amber/all-red builder, the % 4 cycle order) must be generalised before anything runs",
+    "possibly more than four stop lines on the ring; the N/E/S/W leg set is fixed in sensors, sumo_world, kpi, learn, generate and the tests",
+    "a median busway with its own signal heads",
+    "no toll flyover, an underground MRT",
+    "no published movement counts, signal plan or queue lengths: a field survey comes first",
+    "an evening movement ban that makes the pm peak a different network from the am peak"
+  ],
+  "public_sources_checked_2026_11_07": [
+    "ANTARA (2022), Volume kendaraan di Bundaran HI naik 9 persen per minggu: https://www.antaranews.com/berita/2978073/volume-kendaraan-di-bundaran-hi-naik-9-persen-per-minggu",
+    "detik (19 Jul 2022), Rekayasa Lalin di Bundaran HI Permanen, Diterapkan Setiap Sore: https://news.detik.com/berita/d-6186783/rekayasa-lalin-di-bundaran-hi-permanen-diterapkan-setiap-sore",
+    "VIVA (2022), Traffic Engineering Policy at the HI Roundabout Becomes Permanent: https://www.viva.co.id/english/1499271-traffic-engineering-policy-at-the-hi-roundabout-becomes-permanent",
+    "Kompas TV (2022), Mulai hari ini Dishub DKI terapkan rekayasa lalu lintas di Bundaran HI: https://www.kompas.tv/article/305522/mulai-hari-ini-dishub-dki-terapkan-rekayasa-lalu-lintas-di-bundaran-hi",
+    "no journal, thesis or Dishub document with per-movement counts, a stage plan or queue lengths for Bundaran HI was found"
+  ]
+}

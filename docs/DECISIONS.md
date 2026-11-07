@@ -193,7 +193,7 @@ User decisions (2026-10-03):
   - Known limitation: SUMO's sublane model gives rare lane collisions between motorcycles at walking pace (centimetre overlaps), more at high density. They are reported per episode, not hidden.
 - **13.5 3D viewer** (`webapp3d.py`, `static/index.html`).
   - Three.js with OSM buildings and lanes from the network; instanced multi-part vehicles: a car with glass and wheels, a motorcycle with its rider, a yellow ambulance with a flashing bar, a bus and a truck.
-  - Camera presets (overview, junction, motorcycle box, toll flyover, hospital, follow a vehicle type) and `?cam=`.
+  - Camera presets (overview, junction, motorcycle box, toll flyover, MRT, hospital, follow a vehicle type or an MRT train) and `?cam=`.
   - A 10-minute warm-up before the first frame; panels show camera readings; compact layout on narrow windows.
   - The JORR toll road (Jalan Tol Lingkar Luar Jakarta) crosses between the two Fatmawati crossings on a viaduct.
     - In the network this was already so: the toll edges share no node with the streets below, so toll traffic never conflicts with the junction.
@@ -207,6 +207,21 @@ User decisions (2026-10-03):
     - A toll ramp that lands on such a lifted street junction comes down to the ground over its last 60 m.
     - The network itself is unchanged, so the released data and the evaluation still match it.
   - The deck height is netconvert's 6 m, not a surveyed value. The real JORR deck is probably higher (5.1 m minimum clearance plus the girder).
+  - The live view adds two things the dataset leaves out (`webapp3d.py`). Neither is in the release, the evaluation or the calibration.
+    - JORR through-traffic (`jorr.py`): hourly flows in both directions on the mainline only (motorway edges, no ramps), so it crosses the junction on the deck and never meets the junction's traffic.
+      - No counts are published for this section, so the volume is an assumption: 3,000 veh/h per direction at the daily-profile peak. That is about half the base freeway capacity (MKJI 1997 / PKJI 2023: 2,300 pcu/h per lane × 3 lanes).
+      - Mix: 82% cars, 3% buses, 15% trucks; no motorcycles (the JORR has no motorcycle lanes).
+      - `--toll-vph 0` turns it off.
+    - MRT Jakarta North–South Line (`mrt.py`, drawn by `geometry3d.metro`):
+      - Tracks, the stations (Lebak Bulus, Fatmawati, Cipete Raya) and stop positions come from OpenStreetMap (`data/fatmawati/osm/mrt.json`, ODbL).
+      - The viaduct gets a deck per track, piers between the tracks clear of the streets and the toll deck, catenary masts and wire, and stations with a concourse, a glazed platform level and a roof.
+      - Trains are not simulated in SUMO, since the line meets no road traffic. They run to MRT Jakarta's published pattern:
+        - 05:00–24:00, every 5 min in the peaks (07–09, 17–19) and every 10 min otherwise;
+        - 6 cars of 20 m, up to 80 km/h, 0.9 m/s² acceleration and braking;
+        - 30 s at Fatmawati and Cipete Raya;
+        - northbound trains start at Lebak Bulus, southbound trains end there.
+      - They are sent with the vehicles (type code 5), so the follow camera can ride along.
+      - The rail level of 14 m is an assumption chosen to clear the toll deck and its traffic. Toll lamp posts under the viaduct are left out.
 - **13.6 Sensors** (`sensors.py`). The dataset is what a roadside installation would record. Sensors are exact.
   - Stop-line loops: one per approach lane, 1 m before the stop line.
   - Entry and exit gates: every lane of each leg at 150 m (185 m on RA Kartini, outside its U-turn loop). Re-identification of entry and exit gives turning counts and cordon travel times.
@@ -252,3 +267,10 @@ User decisions (2026-10-03):
   - **Volumes:** the twin carries 22–35% of the counted volumes at these queues, so it reproduces the congestion, not the counts.
   - **Stopped delay:** N 191, E 98, S 86, W 42 s (PKJI control delay 80 / 79 / 106 / 78 s).
   - **Safety per 75 min at this density:** 7 lane collisions (2.5 within 300 m of the junction), about 280 junction overlaps (about 180 within 300 m), about 38 teleports. All are reported in `simulation_qc.csv` and the data card.
+- **13.12 Reproducibility and a second site (2026-11-07).**
+  - The user asked whether the study could be repeated at Bundaran HI (Central Jakarta) and chose, with the Assignment 3 report due the next day: a documented transfer protocol and a machine-readable site description, no pipeline code changes and no Bundaran HI run.
+  - `docs/REPRODUCIBILITY.md` is the runbook: four levels of reproduction, the pinned environment, the full command sequence (README omits `learn` and `kpi`), what each output stamps, determinism notes, the nine-step transfer protocol, the ranked code changes a second site needs, and the Bundaran HI case. Methodology Section 16 is its condensation.
+  - `data/sites/fatmawati.json` lists every site constant the pipeline uses; `tests/test_site_spec.py` asserts it equals the module constants and the released configs. `data/sites/bundaran_hi.json` is a skeleton: public facts filled in, every unknown `null` with a `*_todo` note.
+  - Finding: the machinery is site-independent, but all site knowledge is module constants, and the stage model assumes two crossings, two median links, four legs and one stage per approach. A signalised ring needs a general stage model before it can run.
+  - Finding: no per-movement counts, stage plan or queue lengths are published for Bundaran HI (search 2026-11-07); Dishub's evening movement ban (16:00-21:00 since 19 July 2022) makes the pm window a different network. A survey comes first.
+  - Known issues recorded, not fixed: `learn.py` `_sat_flow()` imports `sensor_layout` from the wrong module and always falls back to Fatmawati's saturation flows; `evaluation_config.json` has no version stamps; the buildings extract has no downloader; 13.2 still prints the 0.2/0.3 m gaps.

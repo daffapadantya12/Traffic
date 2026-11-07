@@ -2,7 +2,7 @@
 title: "Perempatan Fatmawati Digital Twin: Methodology for an Open Ambulance-Priority Dataset"
 subtitle: "Technical companion to the ITI5145 proposal *Green for the Ambulance at Perempatan Fatmawati: A Digital Twin for Learning Emergency-Vehicle Signal Priority in Motorcycle-Dominated Traffic* (business scenario: healthcare, emergency medical services)"
 author: "Group members: [Name, Student ID]; [Name, Student ID]; [Name, Student ID]. ITI5145 Foundations of Data Science, Monash University, Term 4 2026"
-date: "Model as built on 2026-10-05. Values marked as measured are read from the model when this document is compiled."
+date: "Model as built on 2026-11-07. Values marked as measured are read from the model when this document is compiled."
 lang: en-AU
 toc: true
 toc-depth: 2
@@ -806,11 +806,56 @@ The report carries the statement used in the proposal, extended to cover the sim
 - **Live link.** TomTom's terms allow display only, so the twin is not synchronised with live traffic.
 - **Future work.** A peak-then-shoulder evaluation with more seeds; a bounded pre-emption baseline; DAgger retraining; calibration against counts; real signal programmes; a measurement-error layer for the sensors; Task D labels at scale; a live link through the city's own detectors and ambulance vehicle-location data under data agreements; reinforcement learning.
 
+# 16. Reproducibility and transfer to a second site
+
+Section 14.5 claims that the configuration and seeds make any row reproducible. This section says what that claim covers, what it does not, and what repeating the study at another junction would take. The full runbook is `docs/REPRODUCIBILITY.md` in the repository; the site description that the protocol fills in is `data/sites/`.
+
+## 16.1 Four levels of reproduction
+
+The study can be repeated at four levels, each weaker than the last. At the first, the same checkout on the same machine with the same seeds returns byte-identical tables, checked against the SHA-256 sums shipped with the release. At the second, a fresh installation from the pinned versions (Python 3.13, SUMO 1.27.1 with its Python bindings, numpy and pandas) returns the same numbers on any computer; the test is that the hash of the built network stamped in the release's `config.json` matches. At the third, a fresh OpenStreetMap download is a different network: edge identifiers, lane counts and geometry move with the map, so every identifier in the site description must be found again and the calibration refitted. The map extract is therefore committed with the code and pinned by its Overpass timestamp, and the study is reproducible from that extract, not from the live map. At the fourth level the site itself changes, which is the subject of Sections 16.3 to 16.5.
+
+Three things limit the claim. The evaluation folders record their methods, seeds, release points and empty-road times but not the generator version, the network hash or the simulator version, which the release's own configuration does record; a repeat should note them beside the folder. The hindsight ceiling relies on forked replays because the simulator's own state saving is not exact in this version, and the forked processes must load every trip at start. Finally, the motorcycle overlap and teleport counters are deterministic for a seed but sensitive to any change in vehicle types, network or simulator build, so they are re-measured after every such change rather than assumed.
+
+## 16.2 What a site is, in data
+
+Every fact about Fatmawati that the pipeline uses is listed in one machine-readable description, `data/sites/fatmawati.json`, grouped by the stage that consumes it: the map box and its pinned extract; the junction's signal nodes, approach and exit edges and legs; the city's stage plan; the counted movements and vehicle mix; the calibration targets and their definition; the sensor geometry; and the evaluation design, including the hospital, the ambulance movements and the pre-registered gates. A test asserts that this description equals the constants in the code, so it cannot drift. The description exists because the code today reads none of it: the values are constants in the modules, and a second site cannot be run by editing a file. Writing the description first makes the missing data visible before any code changes, and it is the checklist of Section 16.3.
+
+## 16.3 The transfer protocol
+
+Repeating the study at another junction follows nine steps. (1) Describe the site: centre, radius, legs, junction type, and the context that changes the study, such as bus lanes, plate restrictions or time-of-day movement bans. (2) Collect the field data of Table 16.1. (3) Build the raw network at the new centre and read the signal nodes, approach, exit and leg-end edges into the description, then pin the extract. (4) Encode the stage plan and check the compiled program as the Fatmawati tests do: phase count, greens, and no signal link left out of every stage. (5) Check the sensor layout: each queue camera reaches 300 m up its own street, gates lie outside slip lanes and U-turn loops, lane groups match the stages. (6) Calibrate the per-approach scales to the observed queues under the fixed plan, verify over four seeds, and report which approaches are capacity-limited and what share of the counted volume the twin carries. (7) Pre-register the acceptance gates, seeds, primary regime, ambulance movements and hospital before any result, as this study fixed its 10% and 20% margins before results were seen (Section 8.6). (8) Run the smoke release, the release, the label validators and training, the evaluation grid, the closed loop and the KPI summary at the same plan sizes. (9) Publish a data card with sources, licences, survey dates and the version stamps, and record the commit and installed packages beside the release.
+
+**Table 16.1.** Field data a new site needs, and the step each unblocks.
+
+| Datum | Survey | Definition | Unblocks |
+|---|---|---|---|
+| Turning-movement counts | one weekday peak hour in 15-min bins, every entry-to-exit pair including U-turns, by class; CCTV with the operator's consent or manual counts | classified count (Direktorat Jenderal Bina Marga, 2023) | calibration, release |
+| Signal plan | the operator's plan or a stopwatch survey of at least three cycles per period: stage sequence, green, amber, all-red, movements per stage; one plan per period if they differ | the stage model of Section 5.1 | the network |
+| Queue lengths | the longest queue per cycle on each approach during the counted hour, from the stop line, vehicles slower than 5 km/h with gaps up to 20 m | the queue counter the twin's cameras imitate (Section 8.1) | calibration |
+| Delay and degree of saturation (optional) | the manual's worksheet from the count and plan, or a published study | Direktorat Jenderal Bina Marga (2023) | validation text only |
+
+Fatmawati took all of these from one published simulation study (Sumabrata et al., 2026) and the mix from a second (Yusuf & Isradi, 2025). A site without such a study needs the survey: one weekday peak with four to six counters and two observers for timings and queues, repeated if the plan changes by period.
+
+## 16.4 What must change in the code
+
+The pipeline's machinery is site-independent: the map conversion, the virtual sensors, trip generation, the calibration loop, the dataset writer, the validators and models, the KPI statistics and the equilibrium rule. Its site knowledge is not. Before a second site runs, five changes are needed, in this order. First, a loader that reads the site description and replaces the module constants, with the acceptance test that Fatmawati's network hash and a smoke release are unchanged. Second, a general stage model: Fatmawati's stages are defined over exactly two crossings and the two median links between them, with amber and all-red rules written for those two kinds of link and a cycle order of four; a junction with another layout needs stages defined as sets of signal groups with their own clearance rules. Third, the set of legs read from the description wherever the four names N, E, S and W are written, including the column names of every table. Fourth, the ambulance study per site: hospital, release legs, routes and the hand-check stages. Fifth, the viewer's flyover and metro models made optional. The first, third and fourth are two to three days of work; the stage model is the real effort and depends on how the second site is signalled.
+
+## 16.5 The transfer case: Bundaran HI
+
+Bundaran Hotel Indonesia, the roundabout where Jl. MH Thamrin meets Jl. Imam Bonjol and Jl. Kebon Kacang Raya in Central Jakarta, is a natural second site: it is the city's best-known junction, it is signalised, and its signals are the kind the city's area traffic control list covers (Dinas Perhubungan Provinsi DKI Jakarta, 2026). Applying the protocol gives a clear verdict. The method transfers; the data does not yet exist; and the roundabout needs the stage-model change before anything runs.
+
+No published study gives per-movement counts, a stage plan or queue lengths for the roundabout. The transport agency has reported only a two-way volume, "nearly 98 thousand vehicles" in late June 2022, whose period is not stated (Antara, 2022), and since 19 July 2022 it has closed the movement from Jl. Sudirman into Jl. Imam Bonjol every day from 16:00 to 21:00, with TransJakarta and official vehicles excepted (detikNews, 2022). Steps 1 and 2 of the protocol therefore begin with a survey, and the evening programme makes the afternoon window a different network from the morning one: either both periods are counted or the afternoon window is dropped.
+
+Three features of the site exceed what the Fatmawati code expresses. The junction is a ring with a signalised node on each approach rather than two crossings 51 m apart, so the ring segments, not two median links, carry the conflicts, and the ring may have more stop lines than legs. TransJakarta's first corridor runs in the median of Thamrin and Sudirman through the roundabout with its own signal heads, which the twin never modelled. The MRT station is underground and there is no toll flyover, so the viewer's elevated structures do not apply. The hospital must also be re-chosen: RSUP Fatmawati lies 326 m from its junction, whereas the nearest hospitals to the roundabout are 1.5 to 2.5 km away, so an ambulance passage would end at the exit gate rather than at the hospital, and the release legs follow from the hospital chosen.
+
+The cost is bounded. The survey is one weekday with a small team, repeated for the evening programme; the code changes are those of Section 16.4; and the computation at this study's plan sizes is about two hours for the release, a day for the evaluation grid and most of another for the closed loop on eight workers. A skeleton of the site description, `data/sites/bundaran_hi.json`, holds what is known and names the survey item behind every value that is not.
+
 # References
 
 Alvarez Lopez, P., Banse, A., Behrisch, M., Erdmann, J., Flötteröd, Y.-P., Hilbrich, R., Nippold, R., & Wagner, P. (2026). *Simulation of Urban Mobility (SUMO)* (Version 1.27.1) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.20836073
 
 Alvarez Lopez, P., Behrisch, M., Bieker-Walz, L., Erdmann, J., Flötteröd, Y.-P., Hilbrich, R., Lücken, L., Rummel, J., Wagner, P., & Wießner, E. (2018). Microscopic traffic simulation using SUMO. In *2018 21st International Conference on Intelligent Transportation Systems (ITSC)* (pp. 2575–2582). IEEE. https://doi.org/10.1109/ITSC.2018.8569938
+
+Antara. (2022, June 30). *Volume kendaraan di Bundaran HI naik 9 persen per minggu* [Vehicle volume at the HI roundabout rises 9 percent a week]. Antara News. https://www.antaranews.com/berita/2978073/volume-kendaraan-di-bundaran-hi-naik-9-persen-per-minggu
 
 Apiratwarakul, K., Artpru, R., Ienghong, K., Rattanaseeha, W., Piwhom, T., & Phungoen, P. (2018). [The study of driving behavior when encountering the light and siren on ambulance]. *Srinagarind Medical Journal, 33*(5), 404–407. https://li01.tci-thaijo.org/index.php/SRIMEDJ/article/view/141408
 
@@ -825,6 +870,8 @@ Cesme, B., Stevanovic, A., Day, C., Schroeder, B., Bonneson, J., & Hale, D. (202
 Chapman, P., Clinton, J., Kerber, R., Khabaza, T., Reinartz, T., Shearer, C., & Wirth, R. (2000). *CRISP-DM 1.0: Step-by-step data mining guide*. SPSS.
 
 Department for Transport. (2026). *TAG unit M3.1: Highway assignment modelling*. GOV.UK. https://www.gov.uk/government/publications/tag-unit-m3-1-highway-assignment-modelling
+
+detikNews. (2022, July 19). *Rekayasa lalin di Bundaran HI permanen, diterapkan setiap sore* [Traffic engineering at the HI roundabout made permanent, applied every afternoon]. detik.com. https://news.detik.com/berita/d-6186783/rekayasa-lalin-di-bundaran-hi-permanen-diterapkan-setiap-sore
 
 Dey, P. P., Nandal, S., & Kalyan, R. (2013). Queue discharge characteristics at signalised intersections under mixed traffic conditions. *European Transport \\ Trasporti Europei, 55*, Article 8. http://www.istiee.unict.it/europeantransport/papers/N55/ET_2013_55_8_Partha%20et%20al.pdf
 

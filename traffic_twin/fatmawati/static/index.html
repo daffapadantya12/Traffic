@@ -75,16 +75,17 @@
     <button data-cam="junction" class="on">Junction</button>
     <button data-cam="closeup">Motorcycle box</button>
     <button data-cam="flyover">Toll flyover</button>
+    <button data-cam="mrt">MRT</button>
     <button data-cam="hospital">RSUP Fatmawati</button>
     <button data-cam="follow">Follow</button>
-    <select id="followType" title="Vehicle type to follow"><option value="1">ambulance</option><option value="3">bus</option><option value="4">truck</option><option value="0">car</option><option value="2">motorcycle</option></select>
+    <select id="followType" title="Vehicle type to follow"><option value="1">ambulance</option><option value="3">bus</option><option value="4">truck</option><option value="0">car</option><option value="2">motorcycle</option><option value="5">MRT train</option></select>
     <select class="camsel" id="camsel" title="Camera">
       <option value="overview">Overview</option><option value="junction">Junction</option><option value="closeup">Motorcycle box</option>
-      <option value="flyover">Toll flyover</option><option value="hospital">RSUP Fatmawati</option><option value="follow">Follow vehicle</option>
+      <option value="flyover">Toll flyover</option><option value="mrt">MRT Fatmawati</option><option value="hospital">RSUP Fatmawati</option><option value="follow">Follow vehicle</option>
     </select>
     <label><span class="lbl">speed </span><select id="speed"><option>1</option><option selected>5</option><option>20</option><option>60</option></select>×</label>
     <select id="ctrl" title="Signal controller"><option value="fixed">Dishub fixed plan</option><option value="longest_queue">longest queue</option><option value="max_pressure">max pressure</option><option value="priority_mp">ambulance priority</option><option value="preempt_naive">naive pre-emption</option><option value="learned_gb">learned (gradient boosting)</option></select>
-    <button id="xray" title="Make the toll flyover see-through to watch the junction underneath">See-through<span class="lbl"> flyover</span></button>
+    <button id="xray" title="Make the toll flyover and the MRT viaduct see-through to watch the junction underneath">See-through<span class="lbl"> flyover</span></button>
     <button id="pause">Pause</button>
     <button id="stats" title="Show or hide the live-state panel">Stats</button>
   </div>
@@ -113,6 +114,7 @@
     <span><b style="background:var(--ev)"></b>ambulance</span><span><b style="background:#2a6fd6"></b>bus</span><span><b style="background:#8b8f96"></b>truck</span>
     <span><b style="background:rgba(217,60,60,.6)"></b>motorcycle box (RHK)</span>
     <span><b style="background:#c9ccd0;border:1px solid #8f9399"></b>JORR toll flyover, deck 6 m up</span>
+    <span><b style="background:linear-gradient(180deg,#dfe3e8 55%,#1d3f8c 55%)"></b>MRT Jakarta train, rails 14 m up</span>
   </div>
   <h2>Events</h2>
   <ul class="ev" id="events"></ul>
@@ -206,6 +208,21 @@ function junctionMeshes(js) {
   }
   return new THREE.Mesh(mergeGeometries(geos), new THREE.MeshLambertMaterial({ color: dark() ? 0x34373e : 0x41454d, side: THREE.DoubleSide }));
 }
+function pierMeshes(piers, color) {                    // [x, y, underside, ux, uy, cap half-length]; 0: a plain column
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const colGeo = new THREE.CylinderGeometry(1, 1, 1, 16).translate(0, 0.5, 0);    // unit column standing on the ground
+  const capGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0);           // unit cap beam hanging under the deck
+  const mat = new THREE.MeshLambertMaterial({ color });
+  const cols = new THREE.InstancedMesh(colGeo, mat, piers.length), caps = new THREE.InstancedMesh(capGeo, mat, piers.length);
+  piers.forEach(([x, y, under, ux, uy, half], i) => {
+    q.setFromAxisAngle(Y, Math.atan2(ux, -uy));                                  // local z along the deck, local x across it
+    const capH = half > 0 ? Math.min(1.2, Math.max(0.01, under - 0.6)) : 0.01;
+    const [rx, rz] = half > 0 ? [1.2, 0.8] : [0.5, 0.5];
+    m.compose(new THREE.Vector3(x, under, -y), q, new THREE.Vector3(Math.max(2 * half, 0.01), capH, 1.8)); caps.setMatrixAt(i, m);
+    m.compose(new THREE.Vector3(x, -0.25, -y), q, new THREE.Vector3(rx, under - capH + 0.25, rz)); cols.setMatrixAt(i, m);
+  });
+  return { mat, meshes: [cols, caps] };
+}
 // the JORR toll flyover: deck (road surface, parapets, girder sides, underside), hammerhead piers, lamp posts.
 // Heights come from the simulator's network; geometry3d.py places the piers clear of the streets below.
 const flyMats = [];
@@ -246,18 +263,9 @@ function flyover(F) {
   g.computeVertexNormals();
   const deckMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
   grp.add(new THREE.Mesh(g, deckMat));
+  const piers = pierMeshes(F.piers, dark() ? 0x8a8f96 : 0xc3c6ca);
+  grp.add(...piers.meshes);
   const m = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
-  const colGeo = new THREE.CylinderGeometry(1, 1, 1, 16).translate(0, 0.5, 0);    // unit column standing on the ground
-  const capGeo = new THREE.BoxGeometry(1, 1, 1).translate(0, -0.5, 0);           // unit cap beam hanging under the deck
-  const pierMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x8a8f96 : 0xc3c6ca });
-  const cols = new THREE.InstancedMesh(colGeo, pierMat, F.piers.length), caps = new THREE.InstancedMesh(capGeo, pierMat, F.piers.length);
-  F.piers.forEach(([x, y, under, ux, uy, half], i) => {
-    q.setFromAxisAngle(Y, Math.atan2(ux, -uy));                                  // local z along the road, local x across it
-    const capH = Math.min(1.2, Math.max(0.01, under - 0.6));
-    m.compose(new THREE.Vector3(x, under, -y), q, new THREE.Vector3(2 * half, capH, 1.8)); caps.setMatrixAt(i, m);
-    m.compose(new THREE.Vector3(x, -0.25, -y), q, new THREE.Vector3(1.2, under - capH + 0.25, 0.8)); cols.setMatrixAt(i, m);
-  });
-  grp.add(cols, caps);
   const lampGeo = mergeGeometries([new THREE.CylinderGeometry(0.09, 0.14, 9, 6).translate(0, 4.5, 0),
     new THREE.BoxGeometry(2.4, 0.12, 0.12).translate(1.2, 9, 0), new THREE.BoxGeometry(0.8, 0.2, 0.35).translate(2.3, 8.9, 0)]);
   const lampMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x6f747b : 0x9a9fa6 });
@@ -266,13 +274,89 @@ function flyover(F) {
     q.setFromAxisAngle(Y, Math.atan2(dy, dx)); m.compose(new THREE.Vector3(x, z, -y), q, new THREE.Vector3(1, 1, 1)); lamps.setMatrixAt(i, m);
   });
   grp.add(lamps);
-  flyMats.push(deckMat, pierMat, lampMat);
+  flyMats.push(deckMat, piers.mat, lampMat);
+  return grp;
+}
+// the MRT Jakarta viaduct: a deck per track (joined where the tracks run side by side), piers, catenary masts and
+// wire, rails, and the stations (concourse, glazed platform level, roof); geometry3d.metro, trains from mrt.py
+function metro(M) {
+  const grp = new THREE.Group();
+  if (!M) return grp;
+  const pos = [], col = [];
+  const cTop = new THREE.Color(dark() ? 0x55585f : 0x9a9ea5), cWall = new THREE.Color(dark() ? 0x8a8f96 : 0xe3e5e8),
+    cUnder = new THREE.Color(dark() ? 0x5d6168 : 0xa3a7ad), cBed = new THREE.Color(0x3a3c41);
+  const P = (x, y, z) => [x, z, -y];
+  const tri = (a, b, c, k) => { pos.push(...a, ...b, ...c); for (let j = 0; j < 3; j++) col.push(k.r, k.g, k.b); };
+  const quad = (a, b, c, d, k) => { tri(a, b, c, k); tri(a, c, d, k); };
+  const rails = [], wire = [];
+  for (const d of M.decks) {
+    const c = d.p, n = c.length; if (n < 2) continue;
+    const nrm = c.map((p, i) => {
+      const a = c[Math.max(i - 1, 0)], b = c[Math.min(i + 1, n - 1)];
+      const tx = b[0] - a[0], ty = b[1] - a[1], L = Math.hypot(tx, ty) || 1; return [-ty / L, tx / L];
+    });
+    const at = (i, o, z) => P(c[i][0] + nrm[i][0] * o, c[i][1] + nrm[i][1] * o, z);
+    const top = M.top, und = M.under, H = 1.1, t = 0.3;
+    for (let i = 0; i < n - 1; i++) {
+      const j = i + 1;
+      const inA = d.side[i] * d.inner[i], inB = d.side[j] * d.inner[j], outA = -d.side[i] * M.half, outB = -d.side[j] * M.half;
+      const pA = outA + d.side[i] * t, pB = outB + d.side[j] * t;
+      quad(at(i, inA, top), at(j, inB, top), at(j, outB, top), at(i, outA, top), cTop);                       // deck
+      quad(at(i, inA, und), at(i, outA, und), at(j, outB, und), at(j, inB, und), cUnder);                     // underside
+      quad(at(i, outA, und), at(j, outB, und), at(j, outB, top + H), at(i, outA, top + H), cWall);             // girder side + parapet back
+      quad(at(i, pA, top), at(j, pB, top), at(j, pB, top + H), at(i, pA, top + H), cWall);                     // parapet face
+      quad(at(i, pA, top + H), at(j, pB, top + H), at(j, outB, top + H), at(i, outA, top + H), cWall);         // parapet top
+      if (d.inner[i] >= M.half - 0.01) quad(at(i, inA, und), at(j, inB, und), at(j, inB, top), at(i, inA, top), cWall);  // parted deck
+      quad(at(i, -1.3, top + 0.12), at(j, -1.3, top + 0.12), at(j, 1.3, top + 0.12), at(i, 1.3, top + 0.12), cBed);     // track slab
+      for (const o of [-0.53, 0.53]) rails.push(...at(i, o, M.rail - 0.04), ...at(j, o, M.rail - 0.04));
+      wire.push(...at(i, 0, M.rail + 5.1), ...at(j, 0, M.rail + 5.1));
+    }
+  }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  const deckMat = new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+  grp.add(new THREE.Mesh(g, deckMat));
+  const lines = (arr, color) => { const lg = new THREE.BufferGeometry(); lg.setAttribute('position', new THREE.Float32BufferAttribute(arr, 3));
+    return new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color })); };
+  grp.add(lines(rails, 0xa4aab2), lines(wire, 0x2b2d31));
+  const piers = pierMeshes(M.piers, dark() ? 0x8f949b : 0xd0d3d7);
+  grp.add(...piers.meshes);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), Y = new THREE.Vector3(0, 1, 0);
+  const mastGeo = mergeGeometries([new THREE.CylinderGeometry(0.12, 0.16, 6.6, 6).translate(0, 3.3, 0),
+    new THREE.BoxGeometry(2.7, 0.12, 0.12).translate(1.35, 6.2, 0), new THREE.BoxGeometry(0.06, 0.9, 0.06).translate(2.6, 5.75, 0)]);
+  const mastMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x6f747b : 0x7d838b });
+  const masts = new THREE.InstancedMesh(mastGeo, mastMat, M.masts.length);
+  M.masts.forEach(([x, y, z, dx, dy], i) => {                    // arm reaches over the track
+    q.setFromAxisAngle(Y, Math.atan2(dy, dx)); m.compose(new THREE.Vector3(x, z, -y), q, new THREE.Vector3(1, 1, 1)); masts.setMatrixAt(i, m);
+  });
+  grp.add(masts);
+  const hallMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x9aa0a8 : 0xeceef0, side: THREE.DoubleSide });
+  const windowMat = new THREE.MeshLambertMaterial({ color: dark() ? 0x3c4a55 : 0x5f7686, side: THREE.DoubleSide });
+  const glassMat = new THREE.MeshLambertMaterial({ color: 0x9cc6dc, transparent: true, opacity: 0.3, depthWrite: false, side: THREE.DoubleSide });
+  const roofMat = new THREE.MeshLambertMaterial({ color: dark() ? 0xaab0b8 : 0xf3f4f6, side: THREE.DoubleSide });
+  for (const st of M.stations) {
+    const slab = (poly, z0, z1, mat) => {
+      const sg = new THREE.ExtrudeGeometry(new THREE.Shape(poly.map(p => new THREE.Vector2(p[0], p[1]))), { depth: z1 - z0, bevelEnabled: false });
+      sg.rotateX(-Math.PI / 2); sg.translate(0, z0, 0); grp.add(new THREE.Mesh(sg, mat));
+    };
+    slab(st.p, st.floor, st.floor + 1.2, hallMat);               // concourse floor
+    slab(st.p, st.floor + 1.2, st.platform - 1.4, windowMat);     // concourse windows
+    slab(st.p, st.platform - 1.4, st.platform, hallMat);          // platform floor
+    slab(st.p, st.platform + 0.02, st.roof, glassMat);            // platform level behind glass: trains show through
+    slab(st.roof_p || st.p, st.roof, st.roof + 0.7, roofMat);     // roof with an overhang
+  }
+  flyMats.push(deckMat, piers.mat, mastMat, hallMat, windowMat, glassMat, roofMat);
   return grp;
 }
 let seeThrough = false;
 function setSeeThrough(on) {                             // look through the flyover at the junction underneath
   seeThrough = on;
-  for (const mt of flyMats) { mt.transparent = on; mt.opacity = on ? 0.16 : 1; mt.depthWrite = !on; mt.needsUpdate = true; }
+  for (const mt of flyMats) {
+    const base = mt.userData.opacity ??= mt.opacity;
+    mt.transparent = on || base < 1; mt.opacity = on ? Math.min(0.16, base) : base; mt.depthWrite = !on && base >= 1; mt.needsUpdate = true;
+  }
   $('xray').classList.toggle('on', on);
 }
 function buildingMesh(blds) {
@@ -336,7 +420,7 @@ function junctionFurniture(stoplines, hs) {
 // ---------------------------------------------------------------- vehicles (instanced, several parts per type)
 const TYPES = {
   0: { name: 'car', L: 4.5, max: 6000 }, 1: { name: 'ambulance', L: 6.0, max: 64 }, 2: { name: 'moto', L: 2.0, max: 12000 },
-  3: { name: 'bus', L: 10.0, max: 600 }, 4: { name: 'truck', L: 8.0, max: 600 } };
+  3: { name: 'bus', L: 10.0, max: 600 }, 4: { name: 'truck', L: 8.0, max: 600 }, 5: { name: 'mrt', L: 20.0, max: 240 } };
 const box = (lx, ly, lz, x, y, z = 0) => { const g = new THREE.BoxGeometry(lx, ly, lz); g.translate(x, y, z); return g; };
 function wheels(xs, half, r, w) {                       // axles at xs; half = lateral offset of the wheels (0: single track)
   const gs = [];
@@ -368,6 +452,11 @@ const PARTS = {
   4: [ { geo: mergeGeometries([box(2.0, 2.15, 2.3, 2.9, 1.45), box(5.6, 2.6, 2.4, -1.0, 1.65)]), paint: true },
        { geo: box(0.06, 0.8, 2.0, 3.91, 1.95), mat: GLASS },
        { geo: wheels([2.9, -0.7, -2.7], 1.05, 0.45, 0.3), mat: DARK } ],
+  5: [ { geo: box(19.6, 2.95, 2.9, 0, 2.38), mat: new THREE.MeshLambertMaterial({ color: 0xdfe3e8 }) },          // MRT car body
+       { geo: box(19.64, 0.95, 2.94, 0, 2.75), mat: GLASS },                                                         // window band
+       { geo: box(19.64, 0.32, 2.94, 0, 1.78), mat: new THREE.MeshLambertMaterial({ color: 0x1d3f8c }) },            // navy band
+       { geo: box(19.64, 0.08, 2.94, 0, 2.06), mat: new THREE.MeshLambertMaterial({ color: 0x2aa7df }) },            // light-blue line
+       { geo: mergeGeometries([box(2.6, 0.75, 2.3, 6.4, 0.45), box(2.6, 0.75, 2.3, -6.4, 0.45), box(2.2, 0.3, 1.2, -3.5, 4.0)]), mat: DARK } ],  // bogies, roof gear
 };
 const meshes = {};                                       // code -> [InstancedMesh per part]
 for (const code in PARTS) {
@@ -391,7 +480,7 @@ function colorFor(code, id) {
 const veh = new Map();          // id -> { code, from:{x,y,z,a}, to:{x,y,z,a} }
 let frameWall = performance.now(), frameDur = 100, lastT = -1, latest = null, follow = false, followJump = false, paused = false;
 let followCode = 1, followId = null;                 // follow camera: vehicle type (TYPES code) and the vehicle it holds
-const FOLLOW_CODE = { ambulance: 1, bus: 3, truck: 4, car: 0, motorcycle: 2 };
+const FOLLOW_CODE = { ambulance: 1, bus: 3, truck: 4, car: 0, motorcycle: 2, mrt: 5 };
 window.__twin = { meshes, veh, camera, controls, scene };
 const lerpAng = (a, b, f) => { let d = ((b - a + 540) % 360) - 180; return a + d * f; };
 function onFrame(f) {
@@ -413,7 +502,7 @@ function onFrame(f) {
 const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), one = new THREE.Vector3(1, 1, 1), up = new THREE.Vector3(0, 1, 0);
 function updateVehicles() {
   const f = Math.min(1, (performance.now() - frameWall) / frameDur);
-  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0 };
+  const counts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 };
   let followTarget = null;
   if (follow && (followId === null || !veh.has(followId))) {    // hold on to one vehicle: the nearest of the chosen type
     let best = null, bd = Infinity;
@@ -510,6 +599,7 @@ const CAMS = {
   junction: () => ({ pos: V(-95, -110, 85), tgt: V(0, 15, 0) }),
   closeup: () => ({ pos: V(50, -18, 13), tgt: V(18, 4, 0) }),              // street level at the TB Simatupang (E) stop line
   flyover: () => ({ pos: V(95, -75, 38), tgt: V(-15, 30, 3) }),            // the JORR deck over the junction, from the south-east
+  mrt: () => ({ pos: V(-150, -120, 50), tgt: V(-300, 10, 12) }),           // MRT Fatmawati station and the viaduct to Lebak Bulus
   hospital: () => ({ pos: V((G?.hospital.x ?? 100) - 120, (G?.hospital.y ?? -300) - 140, 110), tgt: V(G?.hospital.x ?? 100, G?.hospital.y ?? -300, 0) }),
 };
 function setCam(name) {
@@ -556,6 +646,7 @@ fetch('/geometry', { cache: 'no-cache' }).then(r => r.json()).then(g => {
   scene.add(laneLines(g.lanes));
   scene.add(junctionMeshes(g.junctions));
   scene.add(flyover(g.flyover));
+  scene.add(metro(g.mrt));
   scene.add(buildingMesh(g.buildings));
   scene.add(junctionFurniture(g.stoplines, g.heads));
   const cross = new THREE.Group();                      // a red cross over RSUP Fatmawati
