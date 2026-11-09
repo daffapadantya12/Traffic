@@ -1,0 +1,276 @@
+---
+title: "Green for the Ambulance at Perempatan Fatmawati: Data Demonstration in R"
+subtitle: "ITI5145 Assignment 3, Section 4: Characterising and Analysing Data (Demonstration)"
+author: "Group members: [Name, Student ID]; [Name, Student ID]; [Name, Student ID]"
+date: "`r format(Sys.Date(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+params:
+  data_dir: "."
+  data_url: "[download link to be added by the group]"
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE, fig.width = 7, fig.height = 3.6)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(jsonlite)
+library(knitr)
+theme_set(theme_minimal(base_size = 11))
+path <- function(f) file.path(params$data_dir, f)
+ARMS <- c("N", "E", "S", "W")
+```
+
+This file sits in the dataset folder and reads the tables next to it. To run it, download the dataset from `r params$data_url`, open this file in RStudio and click **Knit**. The packages it needs are `dplyr`, `tidyr`, `ggplot2`, `jsonlite` and `knitr`.
+
+The demonstration answers one question: **is this dataset usable for the project?** It does so in six steps: where the data comes from, what it contains, how clean it is, what it shows about the junction, whether it can support the project's learning and evaluation, and a first model for the project's main task.
+
+# Where the data comes from: generated, but calibrated on real counts
+
+The dataset is **synthetic**. No row was measured on the road: every value is a reading from a virtual sensor (stop-line loop, counting gate or queue camera) inside a SUMO simulation of Perempatan Fatmawati. Ambulance passages cannot be recorded safely on live roads, so simulation is the only safe way to collect them.
+
+The simulation is **built from and calibrated on real data**:
+
+```{r real-inputs}
+real <- data.frame(
+  input  = c("Road network", "Signal plan", "Traffic demand", "Calibration target", "Vehicle mix", "Vehicle equivalents (PCU)"),
+  source = c("OpenStreetMap contributors (ODbL)",
+             "Dishub 4-stage plan, reported by Sumabrata, Haqueline & Mauramdha (2026)",
+             "13 turning movements counted by CCTV in a weekday peak hour (Sumabrata et al., 2026)",
+             "Maximum queue per approach from the same study's calibrated VISSIM model",
+             "77-82% motorcycles on Jl. RS Fatmawati (Yusuf & Isradi, 2025)",
+             "Indonesian Highway Capacity Guideline PKJI 2023"))
+kable(real, caption = "Real-world inputs behind the simulation")
+```
+
+Calibration turned one volume dial per approach until the simulated peak-hour queue matched the published queue. The release records the scales it used, and we compare the volumes it produced with the published counts:
+
+```{r calibration}
+cfg <- fromJSON(path("config.json"))
+ep  <- read.csv(path("episodes.csv"))
+lp  <- read.csv(path("loops_1min.csv"))
+
+observed <- c(N = 5456, E = 9455, S = 4632, W = 6334)        # counted veh/h, Sumabrata et al. (2026)
+peak_fixed <- ep %>% filter(controller == "fixed", level == "design", window == "pm_peak") %>% pull(episode_id)
+twin <- lp %>% filter(episode_id %in% peak_fixed, kind == "entry_gate") %>%
+  group_by(episode_id, leg) %>% summarise(veh_h = sum(n_total), .groups = "drop") %>%
+  group_by(leg) %>% summarise(twin_veh_h = round(mean(veh_h)))
+calib <- data.frame(leg = ARMS, scale = unlist(cfg$calibration_scale[ARMS]), observed_veh_h = observed[ARMS]) %>%
+  left_join(twin, by = "leg") %>% mutate(share_of_observed = round(twin_veh_h / observed_veh_h, 2))
+kable(calib, caption = "Calibration scales and the volumes the twin carries (fixed plan, design level, 17:00, mean of 3 seeds)")
+
+entry <- lp %>% filter(kind == "entry_gate") %>% summarise(across(c(n_motorcycle, n_car, n_bus, n_truck), sum))
+moto_share <- entry$n_motorcycle / sum(entry)
+```
+
+**What this means.** The twin reproduces the junction's **congestion** (its queues), not its absolute **counts**: it carries about `r round(100 * min(calib$share_of_observed))`% to `r round(100 * max(calib$share_of_observed))`% of the counted volumes, because SUMO's motorcycles queue less densely than Jakarta's. The vehicle mix does match reality: `r round(100 * moto_share, 1)`% of vehicles entering the junction are motorcycles, inside the published 77-82%. Results from this data therefore describe how signal controllers **compare** at this junction, not exact real-world delays.
+
+# What the dataset contains
+
+The release is nine CSV tables that share the key `episode_id`, plus a data dictionary, a data card and checksums.
+
+```{r tables}
+dd  <- read.csv(path("data_dictionary.csv"))
+tk  <- read.csv(path("ticks_5s.csv"))
+amb <- read.csv(path("ambulance_trips.csv"))
+cam <- read.csv(path("cameras_1min.csv"))
+qc  <- read.csv(path("simulation_qc.csv"))
+tables <- list(episodes = ep, ticks_5s = tk, ambulance_trips = amb, loops_1min = lp, cameras_1min = cam, simulation_qc = qc)
+grain  <- c("one simulated hour", "the junction every 5 s (learning table)", "one ambulance trip",
+            "one loop detector in one minute", "one camera in one minute", "engine diagnostics for one hour")
+kable(data.frame(table = names(tables), rows = sapply(tables, nrow), columns = sapply(tables, ncol),
+                 one_row_is = grain, row.names = NULL), format.args = list(big.mark = ","))
+```
+
+The episodes form a full factorial design: 3 times of day x 3 demand levels x 4 signal controllers x 3 random seeds. Within a time, level and seed, all four controllers face **identical traffic**, so their differences are paired.
+
+```{r design}
+ep %>% count(window, level, name = "episodes") %>% pivot_wider(names_from = level, values_from = episodes) %>% kable()
+```
+
+The learning table `ticks_5s` has `r ncol(tk)` columns. The data dictionary gives each one a role, so features and labels are chosen from the dictionary and not by hand:
+
+```{r roles}
+dd %>% filter(table == "ticks_5s") %>% count(role, name = "columns") %>% kable()
+```
+
+The features repeat for each approach (N, E, S, W): standing vehicles and queue length from the camera, motorcycles in the motorcycle box, recent counts from the loops, the ambulance detector (distance, arrival time, queue ahead of it), and the pressure that adaptive signals use. The labels are `y_teacher_stage`, the stage a priority-aware rule requests, and `y_q_veh_30s_*`, each queue 30 s later.
+
+# How clean the data is
+
+```{r quality}
+listed  <- dd %>% filter(table %in% names(tables))
+absent  <- sum(!mapply(function(t, c) c %in% names(tables[[t]]), listed$table, listed$column))
+na_cols <- sapply(tk, function(x) mean(is.na(x)))
+qc_rate <- 1000 * sum(qc$lane_collisions_study) / sum(qc$veh_km_study)
+```
+
+- Columns the dictionary lists but the tables lack: **`r absent`**.
+- Columns of `ticks_5s` with any missing value: **`r sum(na_cols > 0)`** of `r ncol(tk)`. All are structural, not errors: the ambulance columns are empty when no ambulance is on an approach, and camera speed is empty when its zone is empty.
+- The simulation itself is not perfect: `r sum(qc$lane_collisions_study)` lane collisions near the junction over 108 hours, or `r round(qc_rate, 2)` per 1,000 vehicle-km, which the data card describes as slow-speed overlaps between filtering motorcycles. They are reported in `simulation_qc.csv` rather than hidden.
+
+# What the data shows about the junction
+
+## Vehicle mix
+
+```{r mix, fig.height = 2.4}
+entry %>% pivot_longer(everything(), names_to = "class", values_to = "vehicles") %>%
+  mutate(class = sub("n_", "", class), share = vehicles / sum(vehicles)) %>%
+  ggplot(aes(reorder(class, share), share)) + geom_col(fill = "#2a78d6", width = 0.6) + coord_flip() +
+  scale_y_continuous(labels = scales::percent) + labs(x = NULL, y = "share of vehicles entering the junction")
+```
+
+## Queues through one recorded hour
+
+```{r queues}
+tk %>% filter(episode_id == peak_fixed[1]) %>% select(t, all_of(paste0("q_veh_", ARMS))) %>%
+  pivot_longer(-t, names_to = "approach", values_to = "standing") %>%
+  mutate(approach = sub("q_veh_", "", approach), minute = (t - min(t)) / 60) %>%
+  ggplot(aes(minute, standing, colour = approach)) + geom_line(linewidth = 0.4) +
+  labs(x = "minute of the recorded hour (fixed plan, design level, 17:00)", y = "standing vehicles")
+```
+
+Queues rise and fall with the 231 s signal cycle. The north approach (Jl. RS Fatmawati) builds the longest queues, as in the published study.
+
+## Delay by demand level and controller
+
+```{r delay}
+delay <- ep %>% mutate(level = factor(level, c("low", "design", "high"))) %>%
+  group_by(level, controller) %>% summarise(stopped_delay_s = round(mean(stopped_delay_s), 1), .groups = "drop")
+delay %>% pivot_wider(names_from = level, values_from = stopped_delay_s) %>% kable(caption = "Mean stopped delay per vehicle (s)")
+ggplot(delay, aes(level, stopped_delay_s, fill = controller)) + geom_col(position = "dodge") +
+  labs(x = "demand level", y = "stopped delay per vehicle (s)", fill = "controller")
+```
+
+## Ambulance trips
+
+```{r ambulance}
+amb <- amb %>% left_join(select(ep, episode_id, level, controller), by = "episode_id") %>%
+  mutate(meets_signal = !is.na(t_stopline), arrived = as.character(arrived) %in% c("True", "TRUE"))
+amb %>% count(detect_leg, meets_signal, name = "trips") %>% kable(caption = "Where ambulances were detected, and whether they had to cross a signal")
+```
+
+Of `r nrow(amb)` ambulance trips, `r sum(amb$arrived)` reached the hospital. Only `r sum(amb$meets_signal)` crossed a signalised stop line: ambulances detected on the east take a free-left slip road that has no signal, and no ambulance approaches from the south. Signal priority can only help the north and west trips, so the analysis below keeps those.
+
+```{r ambulance-plot}
+amb %>% filter(meets_signal, arrived) %>% mutate(level = factor(level, c("low", "design", "high"))) %>%
+  ggplot(aes(controller, travel_time_s)) + geom_boxplot(fill = "#eef3fb", outlier.size = 0.6) + facet_wrap(~level) +
+  labs(x = NULL, y = "ambulance travel time (s)") + theme(axis.text.x = element_text(angle = 30, hjust = 1))
+```
+
+# Is the data fit for the project?
+
+The project learns a signal controller from `ticks_5s` and evaluates it with paired comparisons. Three checks show the data can support both.
+
+**1. The label is balanced enough to learn.** Every stage appears, the smallest in about one tick in nine, and an ambulance is on some approach in a meaningful share of ticks.
+
+```{r labels}
+tk <- tk %>% mutate(ambulance = rowSums(across(all_of(paste0("ev_", ARMS)), ~ coalesce(.x, 0L))) > 0)
+tk %>% count(y_teacher_stage) %>% mutate(share = round(n / sum(n), 3)) %>% kable()
+ambulance_share <- mean(tk$ambulance)
+```
+
+An ambulance is on an approach in `r round(100 * ambulance_share, 1)`% of ticks.
+
+**2. The label is related to the features.** Without an ambulance, the teacher mostly requests the stage with the highest pressure; with an ambulance, it often overrides that choice. So the features carry the signal a model needs, and the ambulance columns matter.
+
+```{r agreement}
+pressure <- tk %>% select(all_of(paste0("stage_pressure_S", 1:4)))
+tk$max_pressure_stage <- paste0("S", max.col(as.matrix(pressure), ties.method = "first"))
+tk %>% group_by(ambulance) %>%
+  summarise(ticks = n(), label_is_max_pressure_stage = round(mean(y_teacher_stage == max_pressure_stage), 3),
+            label_is_current_stage = round(mean(y_teacher_stage == stage), 3)) %>% kable()
+```
+
+**3. Controllers can be compared fairly.** Because the four controllers saw identical traffic within each time and seed, we compare each with the city's fixed plan using a paired t-test on the 9 pairs per demand level.
+
+```{r paired}
+wide <- ep %>% select(level, window, seed, controller, stopped_delay_s) %>%
+  pivot_wider(names_from = controller, values_from = stopped_delay_s)
+tests <- expand.grid(level = c("low", "design", "high"), controller = c("longest_queue", "max_pressure", "priority_mp"),
+                     stringsAsFactors = FALSE)
+tests <- tests %>% rowwise() %>% mutate(
+  diff = list(wide[[controller]][wide$level == level] - wide$fixed[wide$level == level]),
+  mean_diff_s = round(mean(diff), 1),
+  p_value = round(t.test(diff)$p.value, 4)) %>% select(-diff) %>% ungroup()
+kable(tests, caption = "Stopped delay minus the fixed plan's, paired by time of day and seed (negative = better than today)")
+```
+
+At low demand every adaptive controller cuts delay significantly. At design and high demand the differences are not significant with nine pairs per level, which tells the project it needs more seeds, or the dedicated ambulance evaluation, before drawing conclusions there.
+
+# A first model for Task A: imitating the teacher
+
+The project's main task (Task A) is to predict, every 5 s, the stage the priority-aware teacher requests (`y_teacher_stage`) from the sensor features. To show it can be solved, we fit **linear discriminant analysis (LDA)**, a simple linear classifier that is not among the model families of the report's Section 4.3. It is trained on seeds 1 and 2 and tested on seed 3, so test rows come from simulations the model never saw.
+
+```{r taskA}
+tk <- tk %>% left_join(select(ep, episode_id, seed), by = "episode_id")
+model_data <- tk %>% transmute(
+  y = factor(y_teacher_stage), stage = factor(stage), phase_state = factor(phase_state),
+  t_in_phase_s, t_since_green_s, stage_pressure_S1, stage_pressure_S2, stage_pressure_S3, stage_pressure_S4,
+  ev_N, ev_E, ev_W,                                                     # no ambulance comes from the south
+  eta_N = coalesce(ev_eta_s_N, 300), eta_E = coalesce(ev_eta_s_E, 300), eta_W = coalesce(ev_eta_s_W, 300),
+  ahead_N = coalesce(ev_q_ahead_pcu_N, 0), ahead_E = coalesce(ev_q_ahead_pcu_E, 0), ahead_W = coalesce(ev_q_ahead_pcu_W, 0),
+  needs_N = coalesce(ev_needs_signal_N, 0L), needs_W = coalesce(ev_needs_signal_W, 0L),
+  seed, ambulance, max_pressure_stage)
+train <- filter(model_data, seed != 3)
+test  <- filter(model_data, seed == 3)
+fit   <- MASS::lda(y ~ . - seed - ambulance - max_pressure_stage, data = train)
+pred  <- predict(fit, test)$class
+```
+
+When no ambulance is present the distance and arrival-time fields are empty; they are filled with "no ambulance" values (an arrival time of 300 s, no queue ahead). The east `needs_signal` column is left out because it is always 0: east ambulances take the slip road.
+
+The model must beat three naive baselines, as in the report, and we also show the hand-written max-pressure rule for comparison. Macro-F1 averages the F1 score over the four stages, so the rare stage S2 counts as much as the common S3.
+
+```{r taskA-results}
+stages <- levels(test$y)
+macro_f1 <- function(truth, guess) mean(sapply(stages, function(k) {
+  tp <- sum(guess == k & truth == k)
+  if (tp == 0) 0 else 2 * tp / (sum(guess == k) + sum(truth == k))
+}))
+set.seed(1)
+guesses <- list(
+  "LDA (learned)"                     = pred,
+  "Baseline: keep the current stage"  = factor(test$stage, stages),
+  "Baseline: most common stage"       = factor(rep(names(which.max(table(train$y))), nrow(test)), stages),
+  "Baseline: random stage"            = factor(sample(stages, nrow(test), replace = TRUE), stages),
+  "Rule: highest-pressure stage"      = factor(test$max_pressure_stage, stages))
+taskA <- data.frame(
+  method = names(guesses),
+  accuracy = sapply(guesses, function(g) mean(g == test$y)),
+  macro_F1 = sapply(guesses, function(g) macro_f1(test$y, g)),
+  accuracy_with_ambulance = sapply(guesses, function(g) mean(g[test$ambulance] == test$y[test$ambulance])),
+  row.names = NULL)
+kable(taskA, digits = 3, caption = paste0("Task A on held-out seed 3 (", format(nrow(test), big.mark = ","),
+      " rows, ", format(sum(test$ambulance), big.mark = ","), " with an ambulance)"))
+kable(table(predicted = pred, true = test$y), caption = "LDA confusion matrix (rows: predicted, columns: true)")
+```
+
+**What the model shows.** LDA reaches a macro-F1 of `r round(taskA$macro_F1[1], 2)`, far above the best naive baseline (`r round(max(taskA$macro_F1[2:4]), 2)`), so the sensor features carry enough information to learn the teacher's rule. It is also more accurate than the hand-written max-pressure rule on rows with an ambulance (`r sprintf("%.2f", taskA$accuracy_with_ambulance[1])` against `r sprintf("%.2f", taskA$accuracy_with_ambulance[5])`), so it has learned part of the ambulance priority. Overall it stays below that rule, and it confuses S1 with S3 and rarely predicts the short stage S2: picking the stage with the highest pressure is not a straight-line boundary, which a linear model can only approximate. This is why the report's Section 4.3 compares non-linear models such as gradient boosting.
+
+# What the demonstration shows
+
+- **The data is usable.** The tables load as documented, every listed column exists, and missing values are structural.
+- **It is synthetic but grounded.** Roads, signal plan, demand pattern and vehicle mix come from real sources, and demand was calibrated on published queues. Absolute volumes are about a quarter of the real counts.
+- **It supports the project.** The teacher's label is balanced and related to the features, and the paired design allows fair controller comparisons.
+- **Task A is solvable.** A simple linear model (LDA) already beats every naive baseline on unseen data and learns part of the ambulance priority; the non-linear models of Section 4.3 are needed to go further.
+- **Limits to state.** No ambulance approaches from the south, east ambulances never meet a signal, the sensors are exact, and three seeds per cell give little statistical power at high demand.
+
+# Use of generative AI
+
+**Tool.** Claude (Anthropic), used through Claude Code, September to November 2026.
+
+**How it contributed.**
+
+- Explained digital twins, the SUMO simulation and the project's code and data.
+- Drafted and debugged simulation, analysis and figure code, including this R Markdown demonstration, which we reviewed, ran and tested.
+- Helped design the experiments and interpret the statistical results.
+- Drafted and revised report text from our decisions, and checked it against the brief and rubric.
+- Checked references by web search; we re-checked every reference.
+
+**Extent.** AI support was substantial for code and drafting. The problem, the topic, the decisions on methods and data, and the final interpretations and conclusions are the group's own. Every member reviewed the final report, slides and this R Markdown file.
+
+<!-- Before submitting: confirm each point matches what every group member actually did, and add any other AI tools the group used. -->
