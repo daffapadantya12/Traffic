@@ -1,0 +1,82 @@
+{
+ "scale": 1.0,
+ "signals": true,
+ "flows_vph": {
+  "N>S": 1415,
+  "N>E": 515,
+  "N>W": 515,
+  "N>N": 129,
+  "S>N": 1415,
+  "S>E": 643,
+  "S>W": 386,
+  "S>S": 129,
+  "E>N": 600,
+  "E>S": 600,
+  "E>W": 429,
+  "E>E": 86
+ },
+ "total_vph": 6862,
+ "loaded": 3437,
+ "inserted": 3339,
+ "running_end": 2008,
+ "waiting_insert_end": 98,
+ "teleports": 36,
+ "teleport_jam": 28,
+ "teleport_yield": 1,
+ "teleport_wrong_lane": 7,
+ "collisions": 74,
+ "emergency_stops": 1,
+ "after_warm": {
+  "finished": 151,
+  "unfinished": 1492,
+  "mean_duration_s": 507.1,
+  "mean_wait_s": 161.2,
+  "mean_time_loss_s": 262.9
+ },
+ "running_by_5min": [
+  8,
+  538,
+  816,
+  1115,
+  1325,
+  1752
+ ],
+ "halting_by_5min": [
+  0,
+  39,
+  342,
+  329,
+  716,
+  1054
+ ],
+ "per_movement": {
+  "E_N": {
+   "n": 64,
+   "duration_s": 503.7,
+   "wait_s": 177.9,
+   "time_loss_s": 277.9,
+   "route_m": 2698
+  },
+  "E_S": {
+   "n": 51,
+   "duration_s": 411.3,
+   "wait_s": 116.2,
+   "time_loss_s": 203.4,
+   "route_m": 2430
+  },
+  "E_W": {
+   "n": 33,
+   "duration_s": 641.5,
+   "wait_s": 188.9,
+   "time_loss_s": 317.0,
+   "route_m": 3468
+  },
+  "S_W": {
+   "n": 3,
+   "duration_s": 729.7,
+   "wait_s": 265.2,
+   "time_loss_s": 359.4,
+   "route_m": 3432
+  }
+ }
+}

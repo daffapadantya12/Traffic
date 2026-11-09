@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Replay Bundaran HI</title>
+<style>
+:root {
+  --bg: #f4f2ec; --panel: #fbfaf7; --ink: #1f2124; --muted: #686c70; --line: #d9d6cd;
+  --ground: #e9e6dd; --road: #c9c6bc; --road-line: #f4f2ec; --junction: #c9c6bc;
+  --moto: #15803d; --car: #2559b3; --bus: #c2410c; --truck: #57534e;
+  --green: #16a34a; --amber: #eab308; --red: #dc2626; --warn-bg: #fdf1dc; --warn-ink: #7a4a05;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #17181a; --panel: #1f2123; --ink: #ececea; --muted: #a0a3a6; --line: #34373a;
+    --ground: #1c1d1f; --road: #3b3e42; --road-line: #1c1d1f; --junction: #3b3e42;
+    --moto: #4ade80; --car: #7aa7f5; --bus: #fb923c; --truck: #c7c3bc;
+    --green: #22c55e; --amber: #facc15; --red: #f87171; --warn-bg: #3a2a10; --warn-ink: #f3cf94;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #17181a; --panel: #1f2123; --ink: #ececea; --muted: #a0a3a6; --line: #34373a;
+  --ground: #1c1d1f; --road: #3b3e42; --road-line: #1c1d1f; --junction: #3b3e42;
+  --moto: #4ade80; --car: #7aa7f5; --bus: #fb923c; --truck: #c7c3bc;
+  --green: #22c55e; --amber: #facc15; --red: #f87171; --warn-bg: #3a2a10; --warn-ink: #f3cf94;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.page { display: flex; flex-direction: column; height: 100vh; height: 100dvh; padding: 12px 16px; gap: 10px; }
+header h1 { font-size: 18px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+.warn { background: var(--warn-bg); color: var(--warn-ink); padding: 7px 10px; border-radius: 6px; font-size: 13px; margin-top: 6px; }
+.stage { position: relative; flex: 1 1 auto; min-height: 240px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--ground); }
+canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+canvas:active { cursor: grabbing; }
+.attr { position: absolute; right: 8px; bottom: 6px; font-size: 11px; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+button { font: inherit; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 11px; cursor: pointer; }
+button[aria-pressed="true"] { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--car); outline-offset: 1px; }
+input[type=range] { flex: 1 1 200px; min-width: 140px; accent-color: var(--ink); }
+.time, .count { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.count { color: var(--muted); }
+.group { display: flex; gap: 4px; }
+.foot { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--muted); font-size: 13px; align-items: center; }
+.chip { display: inline-flex; align-items: center; gap: 5px; }
+.chip i { display: inline-block; width: 12px; height: 7px; border-radius: 2px; }
+.stats { margin-left: auto; font-variant-numeric: tabular-nums; }
+@media (max-width: 640px) { .stats { margin-left: 0; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>Bundaran HI: replay simulasi demo</h1>
+    <div class="warn"><strong>Tanpa kalibrasi.</strong> Geometri jalan berasal dari OpenStreetMap. Volume, pembagian belok, komposisi kendaraan, lajur keluar, dan lampu adalah asumsi, jadi angkanya bukan hasil penelitian.</div>
+  </header>
+  <div class="stage">
+    <canvas id="c" aria-label="Animasi kendaraan di Bundaran HI"></canvas>
+    <div class="attr">Peta jalan © OpenStreetMap contributors (ODbL)</div>
+  </div>
+  <div class="controls">
+    <button id="play" aria-pressed="false">Putar</button>
+    <div class="group" role="group" aria-label="Kecepatan">
+      <button data-speed="1">1×</button><button data-speed="4" aria-pressed="true">4×</button><button data-speed="10">10×</button>
+    </div>
+    <input id="seek" type="range" step="0.5" aria-label="Waktu simulasi">
+    <span class="time" id="time"></span>
+    <span class="count" id="count"></span>
+    <div class="group" role="group" aria-label="Perbesaran">
+      <button id="zoomRing">Cincin</button><button id="zoomAll">Sekitar</button>
+    </div>
+  </div>
+  <div class="foot">
+    <span class="chip"><i style="background:var(--moto)"></i>Motor</span>
+    <span class="chip"><i style="background:var(--car)"></i>Mobil</span>
+    <span class="chip"><i style="background:var(--bus)"></i>Bus</span>
+    <span class="chip"><i style="background:var(--truck)"></i>Truk</span>
+    <span class="chip"><i style="background:var(--green)"></i><i style="background:var(--amber)"></i><i style="background:var(--red)"></i>Lampu</span>
+    <span class="stats" id="stats"></span>
+  </div>
+</div>
+<script>
+const D = /*DATA*/null;
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const $ = id => document.getElementById(id);
+const SIZE = [[2.0, 0.8], [4.5, 1.8], [10, 2.5], [8, 2.4]];
+const VIEW_RING = 125, VIEW_ALL = D.radius * 0.92;
+const view = { cx: 0, cy: 0, r: VIEW_RING };
+let W = 1, H = 1, dpr = 1, simT = D.t0, playing = false, speed = 4, last = 0, colors = {};
+
+const lanePaths = D.lanes.map(([w, p]) => { const q = new Path2D(); q.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) q.lineTo(p[i], p[i + 1]); return [w, q]; });
+const juncPaths = D.junctions.map(p => { const q = new Path2D(); q.moveTo(p[0], p[1]); for (let i = 2; i < p.length; i += 2) q.lineTo(p[i], p[i + 1]); q.closePath(); return q; });
+const frameMaps = new Array(D.frames.length);
+function frameMap(i) {
+  if (!frameMaps[i]) { const m = new Map(), f = D.frames[i]; for (let k = 0; k < f.length; k += 5) m.set(f[k], k); frameMaps[i] = m; }
+  return frameMaps[i];
+}
+function readColors() {
+  const s = getComputedStyle(document.documentElement), g = n => s.getPropertyValue('--' + n).trim();
+  colors = { ground: g('ground'), road: g('road'), line: g('road-line'), junction: g('junction'), ink: g('ink'), panel: g('panel'),
+    cls: [g('moto'), g('car'), g('bus'), g('truck')], green: g('green'), amber: g('amber'), red: g('red') };
+}
+function resize() {
+  const r = cv.getBoundingClientRect(); dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height; cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+}
+function scale() { return Math.min(W, H) / (2 * view.r); }
+function worldTransform() { const s = scale() * dpr; ctx.setTransform(s, 0, 0, -s, (W / 2 - view.cx * scale()) * dpr, (H / 2 + view.cy * scale()) * dpr); }
+function stateAt(tl, t) { let c = tl[0][1]; for (const [ct, st] of tl) { if (ct > t) break; c = st; } return c; }
+function headColor(st, idx) {
+  let seen = 'r';
+  for (const i of idx) { const c = st[i]; if (c === 'G' || c === 'g') return colors.green; if (c === 'y' || c === 'Y' || c === 'u') seen = 'y'; }
+  return seen === 'y' ? colors.amber : colors.red;
+}
+function drawVehicle(x, y, angDeg, c, s) {
+  const [L, Wd] = SIZE[c], a = angDeg * Math.PI / 180, ux = Math.sin(a), uy = Math.cos(a);
+  const minW = 1.6 / s, wid = Math.max(Wd, minW), len = Math.max(L, minW * 1.8);
+  ctx.strokeStyle = colors.cls[c]; ctx.lineWidth = wid; ctx.lineCap = 'butt';
+  ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - ux * len, y - uy * len); ctx.stroke();
+}
+function draw() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.fillStyle = colors.ground; ctx.fillRect(0, 0, cv.width, cv.height);
+  worldTransform();
+  const s = scale();
+  ctx.lineJoin = 'round'; ctx.lineCap = 'butt';
+  ctx.fillStyle = colors.junction; for (const p of juncPaths) ctx.fill(p);
+  ctx.strokeStyle = colors.road; for (const [w, p] of lanePaths) { ctx.lineWidth = w; ctx.stroke(p); }
+  if (s > 2.2) {
+    ctx.strokeStyle = colors.line; ctx.lineWidth = 0.14; ctx.setLineDash([2.4, 3.2]);
+    for (const [w, p] of lanePaths) ctx.stroke(p);
+    ctx.setLineDash([]);
+  }
+  // signal heads
+  const i0 = Math.floor(simT - D.t0), states = D.tls.map(tl => stateAt(tl, simT));
+  ctx.lineCap = 'butt'; ctx.lineWidth = 1.5;
+  for (const h of D.heads) {
+    ctx.strokeStyle = headColor(states[h[0]], h[1]);
+    ctx.beginPath(); ctx.moveTo(h[2], h[3]); ctx.lineTo(h[4], h[5]); ctx.stroke();
+  }
+  // vehicles, interpolated between the 1 s frames
+  const i = Math.min(Math.max(i0, 0), D.frames.length - 1), j = Math.min(i + 1, D.frames.length - 1), al = Math.min(1, Math.max(0, simT - D.t0 - i));
+  const f = D.frames[i], g = D.frames[j], m2 = frameMap(j);
+  for (let k = 0; k < f.length; k += 5) {
+    let x = f[k + 1], y = f[k + 2], a = f[k + 3];
+    const q = m2.get(f[k]);
+    if (q !== undefined) {
+      x += (g[q + 1] - x) * al; y += (g[q + 2] - y) * al;
+      const da = ((g[q + 3] - a + 540) % 360) - 180; a += da * al;
+    }
+    drawVehicle(x, y, a, f[k + 4], s);
+  }
+  // street names in screen space
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.font = '600 12px system-ui, -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const [text, x, y] of D.labels) {
+    let sx = W / 2 + (x - view.cx) * s; const sy = H / 2 - (y - view.cy) * s;
+    if (sx < 30 || sx > W - 30 || sy < 12 || sy > H - 12) continue;
+    const half = ctx.measureText(text).width / 2 + 6;
+    sx = Math.min(Math.max(sx, half), W - half);
+    ctx.lineWidth = 3.5; ctx.strokeStyle = colors.ground; ctx.lineJoin = 'round'; ctx.strokeText(text, sx, sy);
+    ctx.fillStyle = colors.ink; ctx.fillText(text, sx, sy);
+  }
+  $('time').textContent = `detik ${Math.floor(simT)} dari ${D.t1}`;
+  $('count').textContent = `${f.length / 5} kendaraan di area`;
+  $('seek').value = simT;
+}
+function tick(now) {
+  if (playing) {
+    simT += Math.min(0.1, (now - last) / 1000) * speed;
+    if (simT >= D.t1 - 1) simT = D.t0;
+  }
+  last = now; draw(); requestAnimationFrame(tick);
+}
+function setPlaying(p) { playing = p; $('play').textContent = p ? 'Jeda' : 'Putar'; $('play').setAttribute('aria-pressed', p); }
+$('play').onclick = () => setPlaying(!playing);
+$('seek').min = D.t0; $('seek').max = D.t1 - 1; $('seek').oninput = e => { simT = +e.target.value; };
+document.querySelectorAll('[data-speed]').forEach(b => b.onclick = () => {
+  speed = +b.dataset.speed; document.querySelectorAll('[data-speed]').forEach(x => x.setAttribute('aria-pressed', x === b));
+});
+$('zoomRing').onclick = () => { view.cx = 0; view.cy = 0; view.r = VIEW_RING; };
+$('zoomAll').onclick = () => { view.cx = 0; view.cy = 0; view.r = VIEW_ALL; };
+cv.addEventListener('wheel', e => { e.preventDefault(); view.r = Math.min(D.radius * 1.1, Math.max(25, view.r * Math.exp(e.deltaY * 0.0012))); }, { passive: false });
+let drag = null;
+cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY, view.cx, view.cy]; cv.setPointerCapture(e.pointerId); });
+cv.addEventListener('pointermove', e => { if (!drag) return; const s = scale(); view.cx = drag[2] - (e.clientX - drag[0]) / s; view.cy = drag[3] + (e.clientY - drag[1]) / s; });
+cv.addEventListener('pointerup', () => { drag = null; });
+window.addEventListener('keydown', e => { if (e.code === 'Space' && e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') { e.preventDefault(); setPlaying(!playing); } });
+window.addEventListener('resize', resize);
+if (window.matchMedia) window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readColors);
+$('stats').textContent = D.statsText;
+readColors(); resize(); simT = D.t0; setPlaying(true); requestAnimationFrame(t => { last = t; tick(t); });
+</script>
+</body>
+</html>

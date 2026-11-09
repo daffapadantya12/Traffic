@@ -1,0 +1,138 @@
+{
+ "scale": 0.4,
+ "signals": true,
+ "flows_vph": {
+  "N>S": 566,
+  "N>E": 206,
+  "N>W": 206,
+  "N>N": 51,
+  "S>N": 566,
+  "S>E": 257,
+  "S>W": 154,
+  "S>S": 51,
+  "E>N": 240,
+  "E>S": 240,
+  "E>W": 172,
+  "E>E": 34
+ },
+ "total_vph": 2743,
+ "loaded": 1377,
+ "inserted": 1377,
+ "running_end": 221,
+ "waiting_insert_end": 0,
+ "teleports": 1,
+ "teleport_jam": 0,
+ "teleport_yield": 0,
+ "teleport_wrong_lane": 1,
+ "collisions": 9,
+ "emergency_stops": 0,
+ "after_warm": {
+  "finished": 466,
+  "unfinished": 221,
+  "mean_duration_s": 287.5,
+  "mean_wait_s": 20.3,
+  "mean_time_loss_s": 49.1
+ },
+ "running_by_5min": [
+  8,
+  212,
+  274,
+  241,
+  230,
+  224
+ ],
+ "halting_by_5min": [
+  0,
+  23,
+  25,
+  40,
+  25,
+  15
+ ],
+ "per_movement": {
+  "E_E": {
+   "n": 5,
+   "duration_s": 347.1,
+   "wait_s": 42.0,
+   "time_loss_s": 73.4,
+   "route_m": 2870
+  },
+  "E_N": {
+   "n": 41,
+   "duration_s": 293.5,
+   "wait_s": 31.5,
+   "time_loss_s": 61.7,
+   "route_m": 2699
+  },
+  "E_S": {
+   "n": 44,
+   "duration_s": 225.8,
+   "wait_s": 12.5,
+   "time_loss_s": 29.1,
+   "route_m": 2430
+  },
+  "E_W": {
+   "n": 26,
+   "duration_s": 394.2,
+   "wait_s": 23.6,
+   "time_loss_s": 68.9,
+   "route_m": 3468
+  },
+  "N_E": {
+   "n": 37,
+   "duration_s": 249.3,
+   "wait_s": 13.9,
+   "time_loss_s": 33.9,
+   "route_m": 2562
+  },
+  "N_N": {
+   "n": 9,
+   "duration_s": 288.2,
+   "wait_s": 24.9,
+   "time_loss_s": 50.1,
+   "route_m": 2759
+  },
+  "N_S": {
+   "n": 98,
+   "duration_s": 269.7,
+   "wait_s": 26.1,
+   "time_loss_s": 58.7,
+   "route_m": 2493
+  },
+  "N_W": {
+   "n": 28,
+   "duration_s": 423.5,
+   "wait_s": 37.6,
+   "time_loss_s": 94.7,
+   "route_m": 3529
+  },
+  "S_E": {
+   "n": 44,
+   "duration_s": 305.5,
+   "wait_s": 23.2,
+   "time_loss_s": 59.7,
+   "route_m": 2832
+  },
+  "S_N": {
+   "n": 101,
+   "duration_s": 254.7,
+   "wait_s": 10.9,
+   "time_loss_s": 27.2,
+   "route_m": 2660
+  },
+  "S_S": {
+   "n": 9,
+   "duration_s": 289.4,
+   "wait_s": 14.0,
+   "time_loss_s": 54.6,
+   "route_m": 2763
+  },
+  "S_W": {
+   "n": 24,
+   "duration_s": 338.8,
+   "wait_s": 8.8,
+   "time_loss_s": 39.7,
+   "route_m": 3430
+  }
+ }
+}

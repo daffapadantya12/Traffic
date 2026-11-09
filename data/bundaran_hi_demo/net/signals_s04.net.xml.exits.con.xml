@@ -1,0 +1,28 @@
+<connections>
+  <delete from="1075646691#0" to="1378151564"/>
+  <delete from="1075646691#0" to="1075646691#2"/>
+  <connection from="1075646691#0" to="1378151564" fromLane="0" toLane="0"/>
+  <connection from="1075646691#0" to="1378151564" fromLane="0" toLane="1"/>
+  <connection from="1075646691#0" to="1075646691#2" fromLane="1" toLane="1"/>
+  <connection from="1075646691#0" to="1075646691#2" fromLane="2" toLane="2"/>
+  <connection from="1075646691#0" to="1075646691#2" fromLane="3" toLane="3"/>
+  <delete from="449551330#0" to="761831721#0"/>
+  <delete from="449551330#0" to="1135359162"/>
+  <connection from="449551330#0" to="761831721#0" fromLane="0" toLane="0"/>
+  <connection from="449551330#0" to="761831721#0" fromLane="0" toLane="1"/>
+  <connection from="449551330#0" to="1135359162" fromLane="1" toLane="1"/>
+  <connection from="449551330#0" to="1135359162" fromLane="2" toLane="2"/>
+  <connection from="449551330#0" to="1135359162" fromLane="3" toLane="3"/>
+  <delete from="1075646691#2" to="453439709"/>
+  <delete from="1075646691#2" to="1252888132"/>
+  <connection from="1075646691#2" to="453439709" fromLane="0" toLane="0"/>
+  <connection from="1075646691#2" to="453439709" fromLane="1" toLane="1"/>
+  <connection from="1075646691#2" to="453439709" fromLane="2" toLane="2"/>
+  <connection from="1075646691#2" to="1252888132" fromLane="3" toLane="3"/>
+  <delete from="1135359162" to="449551298#0"/>
+  <delete from="1135359162" to="1498070527#1"/>
+  <connection from="1135359162" to="449551298#0" fromLane="0" toLane="1"/>
+  <connection from="1135359162" to="449551298#0" fromLane="1" toLane="1"/>
+  <connection from="1135359162" to="449551298#0" fromLane="2" toLane="2"/>
+  <connection from="1135359162" to="1498070527#1" fromLane="3" toLane="3"/>
+</connections>

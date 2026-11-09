@@ -1,0 +1,124 @@
+{
+ "scale": 1.0,
+ "signals": false,
+ "flows_vph": {
+  "N>S": 1415,
+  "N>E": 515,
+  "N>W": 515,
+  "N>N": 129,
+  "S>N": 1415,
+  "S>E": 643,
+  "S>W": 386,
+  "S>S": 129,
+  "E>N": 600,
+  "E>S": 600,
+  "E>W": 429,
+  "E>E": 86
+ },
+ "total_vph": 6862,
+ "loaded": 3437,
+ "inserted": 3269,
+ "running_end": 1555,
+ "waiting_insert_end": 168,
+ "teleports": 20,
+ "teleport_jam": 18,
+ "teleport_yield": 1,
+ "teleport_wrong_lane": 1,
+ "collisions": 25,
+ "emergency_stops": 2,
+ "after_warm": {
+  "finished": 202,
+  "unfinished": 1376,
+  "mean_duration_s": 400.2,
+  "mean_wait_s": 65.5,
+  "mean_time_loss_s": 147.9
+ },
+ "running_by_5min": [
+  7,
+  512,
+  678,
+  921,
+  1046,
+  1327
+ ],
+ "halting_by_5min": [
+  0,
+  46,
+  108,
+  449,
+  302,
+  672
+ ],
+ "per_movement": {
+  "E_E": {
+   "n": 6,
+   "duration_s": 445.3,
+   "wait_s": 90.4,
+   "time_loss_s": 191.9,
+   "route_m": 3138
+  },
+  "E_N": {
+   "n": 44,
+   "duration_s": 341.6,
+   "wait_s": 42.5,
+   "time_loss_s": 94.8,
+   "route_m": 2933
+  },
+  "E_S": {
+   "n": 40,
+   "duration_s": 334.5,
+   "wait_s": 46.3,
+   "time_loss_s": 98.6,
+   "route_m": 2697
+  },
+  "E_W": {
+   "n": 22,
+   "duration_s": 420.2,
+   "wait_s": 34.1,
+   "time_loss_s": 91.5,
+   "route_m": 3551
+  },
+  "N_E": {
+   "n": 49,
+   "duration_s": 327.2,
+   "wait_s": 65.4,
+   "time_loss_s": 103.0,
+   "route_m": 2562
+  },
+  "N_S": {
+   "n": 1,
+   "duration_s": 663.0,
+   "wait_s": 301.0,
+   "time_loss_s": 426.2,
+   "route_m": 2494
+  },
+  "N_W": {
+   "n": 3,
+   "duration_s": 579.3,
+   "wait_s": 120.8,
+   "time_loss_s": 207.7,
+   "route_m": 3529
+  },
+  "S_E": {
+   "n": 4,
+   "duration_s": 832.6,
+   "wait_s": 267.4,
+   "time_loss_s": 592.4,
+   "route_m": 2833
+  },
+  "S_N": {
+   "n": 23,
+   "duration_s": 588.6,
+   "wait_s": 118.4,
+   "time_loss_s": 355.5,
+   "route_m": 2661
+  },
+  "S_W": {
+   "n": 10,
+   "duration_s": 521.3,
+   "wait_s": 55.5,
+   "time_loss_s": 195.3,
+   "route_m": 3431
+  }
+ }
+}
