@@ -45,6 +45,31 @@
         "5"
       ],
       "port": 8771
+    },
+    {
+      "name": "bundaran-demo",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8791",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "data/bundaran_hi_demo"
+      ],
+      "port": 8791
+    },
+    {
+      "name": "bundaran-3d",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-I",
+        "scripts/bundaran_hi_3d.py",
+        "--port",
+        "8792"
+      ],
+      "port": 8792
     }
   ]
 }

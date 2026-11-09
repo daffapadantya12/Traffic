@@ -1,0 +1,14 @@
+<routes>
+  <flow id="N_S" type="mix" begin="0" end="86400" from="521425771#0" via="449551312 449551298#0" to="1288769143#1" vehsPerHour="566.0" departLane="best" departSpeed="max"/>
+  <flow id="N_E" type="mix" begin="0" end="86400" from="521425771#0" via="449551312 761831721#0" to="1219442889" vehsPerHour="205.8" departLane="best" departSpeed="max"/>
+  <flow id="N_W" type="mix" begin="0" end="86400" from="521425771#0" via="449551312 1378151564" to="691987915" vehsPerHour="205.8" departLane="best" departSpeed="max"/>
+  <flow id="N_N" type="mix" begin="0" end="86400" from="521425771#0" via="449551312 453439709" to="521425772#0" vehsPerHour="51.5" departLane="best" departSpeed="max"/>
+  <flow id="S_N" type="mix" begin="0" end="86400" from="449551281#0" via="1263586499 453439709" to="521425772#0" vehsPerHour="566.0" departLane="best" departSpeed="max"/>
+  <flow id="S_E" type="mix" begin="0" end="86400" from="449551281#0" via="1263586499 761831721#0" to="1219442889" vehsPerHour="257.3" departLane="best" departSpeed="max"/>
+  <flow id="S_W" type="mix" begin="0" end="86400" from="449551281#0" via="1263586499 1378151564" to="691987915" vehsPerHour="154.4" departLane="best" departSpeed="max"/>
+  <flow id="S_S" type="mix" begin="0" end="86400" from="449551281#0" via="1263586499 449551298#0" to="1288769143#1" vehsPerHour="51.5" departLane="best" departSpeed="max"/>
+  <flow id="E_N" type="mix" begin="0" end="86400" from="1219442892#0" via="531422604#3 453439709" to="521425772#0" vehsPerHour="240.1" departLane="best" departSpeed="max"/>
+  <flow id="E_S" type="mix" begin="0" end="86400" from="1219442892#0" via="531422604#3 449551298#0" to="1288769143#1" vehsPerHour="240.1" departLane="best" departSpeed="max"/>
+  <flow id="E_W" type="mix" begin="0" end="86400" from="1219442892#0" via="531422604#3 1378151564" to="691987915" vehsPerHour="171.5" departLane="best" departSpeed="max"/>
+  <flow id="E_E" type="mix" begin="0" end="86400" from="1219442892#0" via="531422604#3 761831721#0" to="1219442889" vehsPerHour="34.3" departLane="best" departSpeed="max"/>
+</routes>

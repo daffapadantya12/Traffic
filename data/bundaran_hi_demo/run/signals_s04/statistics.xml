@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- generated on 2026-11-09T12:18:14.188271+07:00 by Eclipse SUMO sumo 1.27.1
+<sumoConfiguration xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/sumoConfiguration.xsd">
+
+    <input>
+        <net-file value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/net/signals_s04.net.xml"/>
+        <route-files value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/flows.rou.xml"/>
+        <additional-files value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/vtypes.add.xml,/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/tls_events.add.xml"/>
+    </input>
+
+    <output>
+        <fcd-output value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/fcd.xml"/>
+        <fcd-output.attributes value="x,y,angle,type,speed"/>
+        <summary-output value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/summary.xml"/>
+        <tripinfo-output value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/tripinfo.xml"/>
+        <tripinfo-output.write-unfinished value="true"/>
+        <statistic-output value="/Users/daffapadantya/Intro_to_DS/data/bundaran_hi_demo/run/signals_s04/statistics.xml"/>
+    </output>
+
+    <time>
+        <begin value="0"/>
+        <end value="1800"/>
+        <step-length value="0.5"/>
+    </time>
+
+    <processing>
+        <lateral-resolution value="0.8"/>
+        <ignore-route-errors value="true"/>
+        <collision.action value="warn"/>
+        <collision.check-junctions value="true"/>
+        <collision.mingap-factor value="0"/>
+        <time-to-teleport value="300"/>
+    </processing>
+
+    <report>
+        <no-warnings value="true"/>
+        <no-step-log value="true"/>
+    </report>
+
+    <fcd_device>
+        <device.fcd.begin value="1500"/>
+        <device.fcd.period value="1"/>
+    </fcd_device>
+
+    <random_number>
+        <seed value="42"/>
+    </random_number>
+
+</sumoConfiguration>
+-->
+
+<statistics xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/statistic_file.xsd">
+    <performance clockBegin="1794201494.20" clockEnd="1794201510.17" clockDuration="15.98" traciDuration="1.12" realTimeFactor="112.68" vehicleUpdatesPerSecond="48696.03" personUpdatesPerSecond="0.00" begin="0.00" end="1800.00" duration="1800.00"/>
+    <vehicles loaded="1377" inserted="1377" running="221" waiting="0"/>
+    <teleports total="1" jam="0" yield="0" wrongLane="1"/>
+    <safety collisions="9" emergencyStops="0" emergencyBraking="13"/>
+    <persons loaded="0" running="0" jammed="0"/>
+    <personTeleports total="0" abortWait="0" wrongDest="0"/>
+    <vehicleTripStatistics count="1377" routeLength="2553.72" speed="9.49" duration="282.47" waitingTime="28.15" timeLoss="59.33" departDelay="0.26" departDelayWaiting="0.00" totalTravelTime="388959.50" totalDepartDelay="352.04"/>
+    <pedestrianStatistics number="0" routeLength="0.00" duration="0.00" timeLoss="0.00"/>
+    <rideStatistics number="0"/>
+    <transportStatistics number="0"/>
+</statistics>
