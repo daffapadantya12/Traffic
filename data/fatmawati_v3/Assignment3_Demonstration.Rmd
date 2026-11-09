@@ -24,7 +24,7 @@ path <- function(f) file.path(params$data_dir, f)
 ARMS <- c("N", "E", "S", "W")
 ```
 
-This file sits in the dataset folder and reads the tables next to it. To run it, download the dataset from `r params$data_url`, open this file in RStudio and click **Knit**. The packages it needs are `dplyr`, `tidyr`, `ggplot2`, `jsonlite` and `knitr`.
+This file sits in the dataset folder and reads the tables next to it. To run it, download the dataset from `r params$data_url`, open this file in RStudio and click **Knit**. The packages it needs are `dplyr`, `tidyr`, `ggplot2`, `jsonlite`, `knitr` and `digest`.
 
 The demonstration answers one question: **is this dataset usable for the project?** It does so in six steps: where the data comes from, what it contains, how clean it is, what it shows about the junction, whether it can support the project's learning and evaluation, and a first model for the project's main task.
 
@@ -112,6 +112,35 @@ qc_rate <- 1000 * sum(qc$lane_collisions_study) / sum(qc$veh_km_study)
 - Columns of `ticks_5s` with any missing value: **`r sum(na_cols > 0)`** of `r ncol(tk)`. All are structural, not errors: the ambulance columns are empty when no ambulance is on an approach, and camera speed is empty when its zone is empty.
 - The simulation itself is not perfect: `r sum(qc$lane_collisions_study)` lane collisions near the junction over 108 hours, or `r round(qc_rate, 2)` per 1,000 vehicle-km, which the data card describes as slow-speed overlaps between filtering motorcycles. They are reported in `simulation_qc.csv` rather than hidden.
 
+## Integrity and reproducibility
+
+The release ships a SHA-256 checksum for every file, so anyone can confirm they hold exactly the published data. We recompute each checksum twice: on the file as stored, and after removing Windows line-ending characters, which Git adds when a repository is checked out on Windows (the content is otherwise unchanged).
+
+```{r integrity}
+sums <- read.table(path("SHA256SUMS.txt"), col.names = c("sha256", "file"), stringsAsFactors = FALSE)
+sha256 <- function(f, strip_cr = FALSE) {
+  bytes <- readBin(path(f), "raw", file.size(path(f)))
+  if (strip_cr) bytes <- bytes[bytes != as.raw(13)]           # 13 = carriage return
+  digest::digest(bytes, algo = "sha256", serialize = FALSE)
+}
+sums$matches_as_stored <- sapply(sums$file, sha256) == sums$sha256
+sums$matches_line_endings_normalised <- sapply(sums$file, sha256, strip_cr = TRUE) == sums$sha256
+kable(sums[, c("file", "matches_as_stored", "matches_line_endings_normalised")], row.names = FALSE)
+```
+
+`r sum(sums$matches_line_endings_normalised)` of `r nrow(sums)` files match the published checksums once line endings are normalised, and `r sum(sums$matches_as_stored)` match as stored. A file that matches only after normalising is the published data with Windows line endings; one that matches neither has been changed.
+
+The release also records what produced it, so a rerun can be checked against the same stamps:
+
+```{r stamps}
+kable(data.frame(
+  stamp = c("Generator", "Plan", "Network SHA-256 (first 16 characters)", "Python", "SUMO"),
+  value = c(cfg$generator, cfg$plan, substr(cfg$network_sha256, 1, 16), cfg$python,
+            paste(unique(qc$sumo_version), collapse = ", "))))
+```
+
+With the same versions, network and seeds, the generator reproduces these tables byte for byte; the project's runbook (`docs/REPRODUCIBILITY.md`) lists the commands and the four levels of reproduction.
+
 # What the data shows about the junction
 
 ## Vehicle mix
@@ -133,7 +162,7 @@ tk %>% filter(episode_id == peak_fixed[1]) %>% select(t, all_of(paste0("q_veh_",
   labs(x = "minute of the recorded hour (fixed plan, design level, 17:00)", y = "standing vehicles")
 ```
 
-Queues rise and fall with the 231 s signal cycle. The north approach (Jl. RS Fatmawati) builds the longest queues, as in the published study.
+Queues rise and fall with the 231 s signal cycle. In this hour the east approach (Jl. TB Simatupang), which has the most lanes, holds the most standing vehicles.
 
 ## Delay by demand level and controller
 
@@ -253,7 +282,7 @@ kable(table(predicted = pred, true = test$y), caption = "LDA confusion matrix (r
 
 # What the demonstration shows
 
-- **The data is usable.** The tables load as documented, every listed column exists, and missing values are structural.
+- **The data is usable and verifiable.** The tables load as documented, every listed column exists, missing values are structural, and every file matches its published checksum.
 - **It is synthetic but grounded.** Roads, signal plan, demand pattern and vehicle mix come from real sources, and demand was calibrated on published queues. Absolute volumes are about a quarter of the real counts.
 - **It supports the project.** The teacher's label is balanced and related to the features, and the paired design allows fair controller comparisons.
 - **Task A is solvable.** A simple linear model (LDA) already beats every naive baseline on unseen data and learns part of the ambulance priority; the non-linear models of Section 4.3 are needed to go further.
