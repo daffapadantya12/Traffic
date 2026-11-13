@@ -45,6 +45,20 @@
         "5"
       ],
       "port": 8771
+    },
+    {
+      "name": "presentation",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8795",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "reports/a3/presentation"
+      ],
+      "port": 8795
     }
   ]
 }

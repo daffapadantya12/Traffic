@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Green for the Ambulance</title>
+<style>
+/*@CSS*/
+</style>
+</head>
+<body>
+<div class="viewport">
+  <main class="stage" id="stage">
+<!--@SLIDES-->
+    <div class="chrome">
+      <div class="progress"><i id="progress"></i></div>
+      <div class="rail" id="rail"></div>
+      <button class="more" id="more" hidden></button>
+    </div>
+  </main>
+</div>
+
+<nav class="pad" aria-label="Slide navigation">
+  <button data-go="left" title="Previous slide (←)">◀</button>
+  <button data-go="up" title="Up (↑)">▲</button>
+  <button data-go="down" title="Deep dive (↓)">▼</button>
+  <button data-go="right" title="Next slide (→)">▶</button>
+  <button data-act="overview" title="Overview (O)">▦</button>
+  <button data-act="notes" title="Speaker notes (N)">✎</button>
+  <button data-act="theme" title="Light or dark (T)">◐</button>
+  <button data-act="full" title="Full screen (F)">⛶</button>
+  <button class="handle" data-act="pad" title="Navigation and tools">⋯</button>
+</nav>
+
+<section class="overview" id="overview" hidden aria-label="Slide overview"></section>
+
+<aside class="notes-panel" id="notes" hidden>
+  <header><b id="notes-where"></b><span id="notes-timer" title="Time since the first slide change. Click to reset.">00:00</span><span id="notes-next"></span></header>
+  <div id="notes-body"></div>
+</aside>
+
+<div class="tip" id="tip" hidden></div>
+
+<script type="application/json" id="vendor-data">"@VENDOR"</script>
+<script type="application/json" id="twin-data">"@TWIN"</script>
+<script type="application/json" id="deck-data">"@DATA"</script>
+<script>
+/*@JS*/
+</script>
+</body>
+</html>

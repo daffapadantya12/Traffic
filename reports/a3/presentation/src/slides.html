@@ -1,0 +1,637 @@
+<!-- ============================================================ 1 · TITLE -->
+<div class="col">
+<section class="slide title" data-title="Green for the Ambulance">
+  <div class="left">
+    <div class="eyebrow">ITI5145 Foundations of Data Science · Assignment 3 · Healthcare</div>
+    <h1><em>Green</em> for the Ambulance</h1>
+    <div class="sub">A digital twin of Perempatan Fatmawati, Jakarta, for learning ambulance signal priority in motorcycle-dominated traffic</div>
+    <div class="who"><b>Daffa Hanif Padantya</b> · <b>Andrea Nadya Sentosa</b> · <b>Bramantyo Anandaru Suyadi</b></div>
+    <div class="keys"><span><kbd>→</kbd> next slide</span><span><kbd>↓</kbd> deep dive</span><span><kbd>N</kbd> notes</span><span><kbd>O</kbd> overview</span><span><kbd>F</kbd> full screen</span></div>
+  </div>
+  <div class="right" aria-hidden="true">
+    <svg viewBox="0 0 440 720" preserveAspectRatio="xMidYMid slice">
+      <rect x="130" y="-20" width="180" height="760" fill="#24352d"/>
+      <g stroke="#e9efe9" stroke-width="3" stroke-dasharray="22 26" opacity=".55"><line x1="220" y1="0" x2="220" y2="250"/><line x1="220" y1="318" x2="220" y2="720"/></g>
+      <rect x="130" y="258" width="180" height="56" fill="#35c27a" opacity=".28"/>
+      <rect x="130" y="252" width="180" height="6" fill="#fff"/><rect x="130" y="314" width="180" height="3" fill="#fff" opacity=".8"/>
+      <g transform="translate(66 74)"><rect width="52" height="52" rx="10" fill="#fff"/><rect x="21" y="9" width="10" height="34" fill="#d63a2f"/><rect x="9" y="21" width="34" height="10" fill="#d63a2f"/></g>
+      <text x="92" y="150" text-anchor="middle" fill="#cfe3d6" font-size="13" font-weight="700" letter-spacing="1">RSUP FATMAWATI</text>
+      <text x="92" y="168" text-anchor="middle" fill="#8fb39d" font-size="13">326 m ahead</text>
+      <g transform="translate(332 150)">
+        <rect x="14" y="96" width="6" height="150" fill="#0b1510"/><rect width="34" height="98" rx="9" fill="#0b1510"/>
+        <circle class="r-lamp" cx="17" cy="19" r="10" fill="#ff453a"/><circle cx="17" cy="49" r="10" fill="#ffb300" opacity=".16"/>
+        <circle class="g-glow" cx="17" cy="79" r="24" fill="#34c759"/><circle class="g-lamp" cx="17" cy="79" r="10" fill="#34c759"/>
+      </g>
+      <g class="amb">
+        <g fill="#f2a08a"><rect x="142" y="264" width="12" height="22" rx="5"/><rect x="164" y="268" width="12" height="22" rx="5"/><rect x="186" y="262" width="12" height="22" rx="5"/><rect x="208" y="270" width="12" height="22" rx="5"/><rect x="232" y="264" width="12" height="22" rx="5"/><rect x="254" y="268" width="12" height="22" rx="5"/><rect x="276" y="262" width="12" height="22" rx="5"/><rect x="292" y="286" width="12" height="22" rx="5"/><rect x="150" y="290" width="12" height="22" rx="5"/><rect x="200" y="292" width="12" height="22" rx="5"/><rect x="244" y="290" width="12" height="22" rx="5"/>
+          <rect x="213" y="336" width="12" height="22" rx="5"/><rect x="213" y="412" width="12" height="22" rx="5"/><rect x="134" y="372" width="12" height="22" rx="5"/><rect x="296" y="398" width="12" height="22" rx="5"/><rect x="213" y="492" width="12" height="22" rx="5"/></g>
+        <g fill="#c9d1cc"><rect x="150" y="326" width="42" height="66" rx="9"/><rect x="240" y="324" width="42" height="66" rx="9"/><rect x="150" y="404" width="42" height="66" rx="9"/><rect x="240" y="402" width="42" height="66" rx="9"/><rect x="150" y="482" width="42" height="66" rx="9"/></g>
+        <g transform="translate(236 482)"><rect width="50" height="88" rx="9" fill="#f2a900"/><rect x="0" y="34" width="50" height="9" fill="#d63a2f"/><rect x="8" y="8" width="34" height="14" rx="3" fill="#24352d"/><rect x="16" y="50" width="18" height="6" fill="#fff"/><rect x="22" y="44" width="6" height="18" fill="#fff"/></g>
+      </g>
+    </svg>
+  </div>
+  <aside class="notes"><span class="who">[Presenter A · about 20 seconds]</span> Good morning. We are Daffa, Andrea and Bramantyo. Our project asks one question: how can traffic lights get ambulances through a crowded Jakarta junction faster, without being unfair to everyone else? I will start with the problem, [Presenter B] will explain our data and method, and [Presenter C] will show what our demonstration found.</aside>
+</section>
+
+<section class="slide deep" data-title="The whole project in one picture">
+  <div class="eyebrow">Deep dive · Overview</div>
+  <h2>The whole project in one picture</h2>
+  <div class="body">
+    <div class="flow">
+      <div><span class="k">1 · Real inputs</span><b>The street as published</b>OpenStreetMap roads, Dishub's four-stage plan, 13 counted turning movements, published queue lengths</div>
+      <div><span class="k">2 · Digital twin</span><b>SUMO 1.27</b>80% motorcycles, motorcycle boxes, drivers who yield only where there is room</div>
+      <div><span class="k">3 · Open dataset</span><b>108 simulated hours</b>9 CSV tables of virtual sensor readings, 77,760 learning rows, 732 ambulance trips</div>
+    </div>
+    <div class="flow">
+      <div><span class="k">4 · Learning</span><b>Five model families</b>copy a priority-aware teacher rule every 5 s; gradient boosting reaches macro-F1 0.96</div>
+      <div><span class="k">5 · Evaluation</span><b>Identical traffic for all</b>144 runs of rule-based methods plus the learned controllers in closed loop, 4 seeds, 3 demand levels</div>
+      <div><span class="k">6 · Decision</span><b>Gates, then Nash</b>safety, cost and fairness gates, a Pareto front, then Nash bargaining picks the controller</div>
+    </div>
+    <div class="row" style="flex:0 0 auto">
+      <div class="callout"><b>Result in light traffic.</b> The chosen controller, learned gradient boosting, cuts ambulance delay by 14% and everyone else's delay by 31% against today's plan. It wins by a hair over a simpler rule.</div>
+      <div class="callout warn"><b>Result in heavy traffic.</b> Ambulances still gain, but every adaptive method leaves its worst direction 3 to 4 times worse than today. No method is fair to every direction.</div>
+    </div>
+    <p class="small muted">Each numbered step has its own deep-dive slide: press <kbd>↓</kbd> under slides 2 to 10, or <kbd>O</kbd> for the overview.</p>
+  </div>
+  <footer><b>1.1</b><span>Assignment 3 report and methodology (reports/a3, reports/methodology_v3)</span></footer>
+  <aside class="notes">Use this slide if someone asks how the pieces fit together. Six steps: real inputs build the twin, the twin produces the dataset, models learn a teacher rule from the dataset, every controller is then evaluated on identical traffic, and a pre-registered decision rule picks one. The two boxes at the bottom are the honest summary: a clear gain in light traffic, and a fairness problem in heavy traffic that no method solves.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 2 · PROBLEM -->
+<div class="col">
+<section class="slide" data-title="Ambulances get boxed in 326 m from the hospital">
+  <div class="eyebrow">The problem</div>
+  <h2>Ambulances get boxed in 326 m from the hospital</h2>
+  <div class="body">
+    <div class="row">
+      <div class="w35 stats" style="grid-template-rows:repeat(3,1fr)">
+        <div class="stat"><div class="v">80<small>%</small></div><div class="l">of vehicles are motorcycles; at red they fill every gap</div></div>
+        <div class="stat"><div class="v">85<small>s</small></div><div class="l">average delay per vehicle, the worst service level</div></div>
+        <div class="stat"><div class="v">−2<small>points</small></div><div class="l">of cardiac-arrest survival per minute of delay</div></div>
+      </div>
+      <div class="card stack" style="justify-content:center">
+        <svg viewBox="0 0 660 330" style="width:100%;height:auto" role="img" aria-label="In moving traffic the car ahead of an ambulance can move aside. In a standing queue at red, motorcycles fill the motorcycle box and every gap, so the ambulance is boxed in.">
+          <style>.rd{fill:var(--grid)}.cr{fill:var(--ctx)}.mt{fill:#f2a08a}.lb{font:600 15px system-ui;fill:var(--ink)}.sm{font:13px system-ui;fill:var(--muted)}</style>
+          <text class="lb" x="0" y="16">Moving traffic: the car directly ahead yields where there is room</text>
+          <rect class="rd" x="0" y="30" width="660" height="76" rx="4"/><line x1="0" y1="68" x2="660" y2="68" stroke="var(--paper)" stroke-width="2" stroke-dasharray="14 12"/>
+          <g class="cr"><rect x="34" y="38" width="46" height="22" rx="5"/><rect x="392" y="38" width="46" height="22" rx="5"/><rect x="520" y="38" width="46" height="22" rx="5"/></g>
+          <g class="mt"><rect x="352" y="64" width="20" height="9" rx="4"/><rect x="490" y="78" width="20" height="9" rx="4"/><rect x="600" y="42" width="20" height="9" rx="4"/></g>
+          <rect x="150" y="75" width="62" height="24" rx="5" fill="var(--amber)"/><text x="181" y="92" text-anchor="middle" style="font:700 10.5px system-ui;fill:#3a2800">AMBULANCE</text>
+          <rect x="262" y="76" width="46" height="22" rx="5" fill="var(--s1)"/>
+          <path d="M312 78 C 328 62, 338 54, 354 50" fill="none" stroke="var(--s1)" stroke-width="3" stroke-linecap="round"/><path d="M356 49 l-11 -2 l5 10 z" fill="var(--s1)"/>
+          <text class="sm" x="262" y="126" style="fill:var(--s1)">A gap in the kerb lane: the car ahead moves over</text>
+          <text class="lb" x="0" y="176">Standing queue at red: motorcycles fill the box and the gaps</text>
+          <rect class="rd" x="0" y="190" width="660" height="76" rx="4"/><line x1="0" y1="228" x2="560" y2="228" stroke="var(--paper)" stroke-width="2" stroke-dasharray="14 12"/>
+          <rect x="560" y="190" width="62" height="76" fill="var(--accent)" opacity=".22"/><rect x="622" y="188" width="5" height="80" fill="var(--ink)"/>
+          <g class="cr"><rect x="262" y="198" width="46" height="22" rx="5"/><rect x="322" y="198" width="46" height="22" rx="5"/><rect x="382" y="198" width="46" height="22" rx="5"/><rect x="442" y="198" width="46" height="22" rx="5"/><rect x="502" y="198" width="46" height="22" rx="5"/>
+            <rect x="254" y="236" width="46" height="22" rx="5"/><rect x="314" y="236" width="46" height="22" rx="5"/><rect x="374" y="236" width="46" height="22" rx="5"/><rect x="434" y="236" width="46" height="22" rx="5"/><rect x="494" y="236" width="46" height="22" rx="5"/></g>
+          <g class="mt"><rect x="306" y="224" width="20" height="9" rx="4"/><rect x="366" y="224" width="20" height="9" rx="4"/><rect x="426" y="224" width="20" height="9" rx="4"/><rect x="486" y="224" width="20" height="9" rx="4"/>
+            <rect x="565" y="198" width="16" height="8" rx="4"/><rect x="584" y="198" width="16" height="8" rx="4"/><rect x="603" y="198" width="16" height="8" rx="4"/><rect x="565" y="211" width="16" height="8" rx="4"/><rect x="584" y="211" width="16" height="8" rx="4"/><rect x="603" y="211" width="16" height="8" rx="4"/>
+            <rect x="565" y="224" width="16" height="8" rx="4"/><rect x="584" y="224" width="16" height="8" rx="4"/><rect x="603" y="224" width="16" height="8" rx="4"/><rect x="565" y="237" width="16" height="8" rx="4"/><rect x="584" y="237" width="16" height="8" rx="4"/><rect x="603" y="237" width="16" height="8" rx="4"/>
+            <rect x="565" y="250" width="16" height="8" rx="4"/><rect x="584" y="250" width="16" height="8" rx="4"/><rect x="603" y="250" width="16" height="8" rx="4"/></g>
+          <rect x="176" y="235" width="62" height="24" rx="5" fill="var(--amber)"/><text x="207" y="252" text-anchor="middle" style="font:700 10.5px system-ui;fill:#3a2800">AMBULANCE</text>
+          <circle cx="644" cy="228" r="7" fill="var(--red)"/>
+          <text class="sm" x="560" y="184" style="fill:var(--accent)">motorcycle box</text>
+          <text class="sm" x="176" y="288" style="fill:var(--red)">Boxed in: no car can move aside, so only a green light clears the path</text>
+        </svg>
+      </div>
+    </div>
+    <div class="callout"><b>Only 9% of patients arrive by ambulance,</b> but for them, minutes decide survival.</div>
+  </div>
+  <footer><b>2</b><span>Yusuf &amp; Isradi (2025); Sumabrata et al. (2026); Larsen et al. (1993); Brice et al. (2022)</span></footer>
+  <aside class="notes"><span class="who">[Presenter A · about 1 minute 40 seconds]</span> Perempatan Fatmawati is a junction under the JORR toll viaduct in South Jakarta, just 326 metres from RSUP Fatmawati, a national referral hospital. About 80% of the vehicles here are motorcycles. Look at the diagram: in moving traffic, at the top, a car can pull aside for an ambulance. But at a red light, at the bottom, motorcycles fill the motorcycle box and every gap between cars, so the ambulance is boxed in. Indonesian law lets ambulances ignore signals, but a packed queue has nowhere to go. The only thing that clears the path is a green light for the ambulance's direction at the right moment. The junction is already at the worst level of service, with 85 seconds of delay per vehicle. And delay matters: survival from cardiac arrest drops about two percentage points for every minute of delay. Only 9% of Jakarta's emergency patients arrive by ambulance, but they are often the most critical, and for them minutes decide survival. Slow, unpredictable trips may even be part of why so few people call one.</aside>
+</section>
+
+<section class="slide deep" data-title="The junction: Perempatan Fatmawati">
+  <div class="eyebrow">Deep dive · The site</div>
+  <h2>Perempatan Fatmawati, as mapped and as simulated</h2>
+  <div class="body">
+    <div class="row">
+      <div class="fig w55"><img src="@IMG_F1@" alt="Left: the 5.4 km study area with the JORR toll road, the junction and RSUP Fatmawati. Right: the junction as simulated, to scale, with four motorcycle boxes and the toll viaduct."></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Four approaches:</b> Jl. RS Fatmawati from the north (3 lanes) and south (2), TB Simatupang from the east (4), RA Kartini from the west (2)</li>
+          <li><b>Two crossings</b> under the JORR toll viaduct, each with motorcycle boxes 8 m deep</li>
+          <li><b>Hospital on the south leg:</b> ambulances from the north and west must pass the signal; those from the east use an unsignalised slip road</li>
+        </ul>
+        <div class="card tight">
+          <h3>Dishub's four-stage plan · 231 s cycle</h3>
+          <div class="plan"><i style="flex:80">S1 · 80 s</i><i class="gap" style="flex:4"></i><i style="flex:12">S2</i><i class="gap" style="flex:4"></i><i style="flex:78">S3 · 78 s</i><i class="gap" style="flex:4"></i><i style="flex:45">S4 · 45 s</i><i class="gap" style="flex:4"></i></div>
+          <div class="planlab"><span style="flex:84">West + east through</span><span style="flex:16"></span><span style="flex:82">North</span><span style="flex:49">South</span></div>
+          <p class="small muted" style="margin:8px 0 0">S2 is 12 s for east through and right. Between stages: 2 s amber and 2 s all-red.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer><b>2.1</b><span>Map data © OpenStreetMap contributors (ODbL); signal plan reported by Sumabrata et al. (2026)</span></footer>
+  <aside class="notes">The left map shows the study area, 5.4 km across, with the toll road in orange, the junction as the red dot and the hospital as the green cross. The right panel is the junction exactly as the simulator holds it: two crossings under the viaduct, with the motorcycle boxes in green. The signal plan is the city's own: four stages in a 231-second cycle. Stage 3 serves the north approach, which is the one most ambulances wait for.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 3 · RELATED WORK -->
+<div class="col">
+<section class="slide" data-title="Current methods were not built for motorcycle traffic">
+  <div class="eyebrow">Why existing approaches fall short</div>
+  <h2>Current methods were not built for motorcycle traffic</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card"><h3>What exists</h3>
+        <ul class="pts plain">
+          <li>Fixed-time and max-pressure plans ignore ambulances entirely</li>
+          <li>Pre-emption studies and digital twins model cars, not motorcycle boxes</li>
+          <li>Deep reinforcement learning works in research but is hard to audit</li>
+          <li>Studies that include two-wheelers treat them only as counts</li>
+        </ul></div>
+      <div class="card" style="border-color:var(--accent)"><h3 style="color:var(--accent)">What our project adds</h3>
+        <ul class="pts">
+          <li>A real hospital junction with motorcycle boxes and the city's own signal plan</li>
+          <li>Drivers yield only where there is physical room</li>
+          <li>An open dataset of ambulance passages with checked labels</li>
+          <li>Interpretable control behind a safety shield, judged on fairness</li>
+        </ul></div>
+    </div>
+    <div class="callout warn"><b>Evidence from our twin:</b> naive pre-emption (green as soon as an ambulance is near) is fastest for ambulances, but leaves one direction 32% worse than today, so it fails our fairness test.</div>
+  </div>
+  <footer><b>3</b><span>Webster (1958); Varaiya (2013); Chen et al. (2024); Roy et al. (2024); Wei et al. (2019); Savithramma et al. (2022)</span></footer>
+  <aside class="notes"><span class="who">[Presenter A · about 1 minute 20 seconds]</span> So why hasn't this been solved? Standard signal plans, fixed-time or max-pressure, don't consider ambulances at all. Research on ambulance pre-emption and traffic digital twins exists, but it models car traffic, not junctions where most vehicles are motorcycles that fill a motorcycle box. Deep reinforcement learning is popular in research, but it is hard to audit, which matters for a safety system. And the few studies that include two-wheelers treat them only as counts. Our project adds a real hospital junction with its motorcycle boxes and the city's actual signal plan, drivers who yield only where there is room, an open dataset of ambulance passages, and interpretable controllers behind a safety shield. One result shows why fairness matters: the simplest fix, turning the light green as soon as an ambulance is near, is the fastest for ambulances, but it leaves one direction 32% worse than today. Now [Presenter B] will explain how we built the data.</aside>
+</section>
+
+<section class="slide deep" data-title="Every controller we compared">
+  <div class="eyebrow">Deep dive · Controllers</div>
+  <h2>Every controller faces the same traffic and the same safety rules</h2>
+  <div class="body">
+    <table class="t dense">
+      <tr><th style="width:23%">Controller</th><th>How it decides, every 5 s</th><th style="width:25%">Role</th></tr>
+      <tr><td>Fixed plan</td><td>Dishub's four stages in order: 80, 12, 78 and 45 s of green</td><td>Today's baseline</td></tr>
+      <tr><td>Longest queue</td><td>The stage serving the most standing vehicles, if it beats the current stage by more than 3</td><td>Adaptive, ignores ambulances</td></tr>
+      <tr><td>Max-pressure</td><td>The stage with the highest pressure: its queues minus the queues downstream (Varaiya, 2013)</td><td>Adaptive, ignores ambulances</td></tr>
+      <tr><td>Naive pre-emption</td><td>Fixed plan, but forces the ambulance's stage once it is 20 s away and holds it until it has crossed</td><td>Common practice</td></tr>
+      <tr><td>Priority teacher</td><td>Requests the ambulance's stage just in time to clear the queue ahead of it; otherwise acts as max-pressure</td><td>The rule the models learn</td></tr>
+      <tr class="hl"><td>Learned controllers</td><td>Five models predict the teacher's stage from the same sensor row: logistic regression, decision tree, random forest, gradient boosting, neural network</td><td>What we propose</td></tr>
+      <tr><td>Still · Random</td><td>Keep the current stage until forced to change · pick a stage at random</td><td>Floors: what "no skill" looks like</td></tr>
+      <tr><td>Hindsight</td><td>Replays each passage from detection and keeps the best switch time</td><td>Ceiling: perfect timing</td></tr>
+    </table>
+    <div class="callout info"><b>The safety shield.</b> Controllers only <em>request</em> a stage. The signal plant enforces minimum and maximum green, amber and all-red, and caps every red at 252 s. Naive pre-emption bypasses it, as real pre-emption does.</div>
+  </div>
+  <footer><b>3.1</b><span>Methodology section 7; Varaiya (2013); Webster (1958)</span></footer>
+  <aside class="notes">Eight kinds of controller. The first five are rules: today's fixed plan, two standard adaptive rules that ignore ambulances, naive pre-emption as it is commonly done, and our priority teacher. The learned controllers imitate the teacher from sensor readings. Still and Random show what no skill looks like, and Hindsight shows the best any timing could achieve. All of them except naive pre-emption only request a stage: the plant keeps the safety timings.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 4 · DATA -->
+<div class="col">
+<section class="slide" data-title="Generated data, calibrated on real counts">
+  <div class="eyebrow">Our data · 1 of 3</div>
+  <h2>Generated data, calibrated on real counts</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w40"><h3>Real inputs</h3>
+        <ul class="pts">
+          <li>Road network from OpenStreetMap</li>
+          <li>Dishub's four-stage signal plan</li>
+          <li>13 turning movements counted at the junction</li>
+          <li>Published queue lengths, used to calibrate</li>
+          <li>Vehicle mix: about 80% motorcycles</li>
+        </ul></div>
+      <div class="stats" style="grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr">
+        <div class="stat"><div class="v">108<small>h</small></div><div class="l">simulated traffic</div></div>
+        <div class="stat"><div class="v">9</div><div class="l">CSV tables of sensor readings</div></div>
+        <div class="stat"><div class="v">77,760</div><div class="l">learning rows, one every 5 s</div></div>
+        <div class="stat"><div class="v">732</div><div class="l">ambulance trips to the hospital</div></div>
+      </div>
+    </div>
+    <div class="callout warn"><b>Honest caveat:</b> to match the real queues, the twin needs only 22–35% of the real vehicle counts. It copies the congestion, not the counts, so we compare controllers rather than predict real delays.</div>
+  </div>
+  <footer><b>4</b><span>OpenStreetMap (ODbL); Sumabrata et al. (2026); Yusuf &amp; Isradi (2025)</span></footer>
+  <aside class="notes"><span class="who">[Presenter B · about 1 minute]</span> Ambulance trips can't be recorded safely on real roads, so we generated our data, but we built it from real inputs and calibrated it on real counts. The roads come from OpenStreetMap, the signal timings are Dishub's actual four-stage plan, the traffic comes from the 13 turning movements counted at this junction, and the vehicle mix is about 80% motorcycles. We then tuned the traffic volume until the simulated queues matched queue lengths published for this junction. The result is 108 hours of simulated traffic, stored as 9 CSV tables of sensor readings: 77,760 learning rows, one every five seconds, and 732 ambulance trips. One honest caveat: to reproduce the real queues, the twin needs only about a quarter of the real vehicle counts, because simulated motorcycles queue less densely than Jakarta's. So the twin copies the congestion, not the exact counts, and we use it to compare controllers, not to predict exact real delays.</aside>
+</section>
+
+<section class="slide deep" data-title="Calibration: matching the queues, not the counts">
+  <div class="eyebrow">Deep dive · Calibration</div>
+  <h2>Calibration matched the queues, not the counts</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w55 chart" data-chart="calib"></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>One dial per approach:</b> the traffic volume was scaled until the longest peak-hour queue matched the queue published for this junction</li>
+          <li><b>North</b> lands within 6%; <b>east</b> and <b>south</b> fall 19% and 24% short</li>
+          <li><b>West</b> is capacity-limited upstream: no volume can lengthen its queue</li>
+          <li>The matching volumes are only <b>22–35% of the counted traffic</b>, because simulated motorcycles queue less densely than Jakarta's</li>
+        </ul>
+        <div class="callout warn small"><b>What this means.</b> Results describe how controllers compare in the twin. They are not predictions of delay on the street.</div>
+      </div>
+    </div>
+  </div>
+  <footer><b>4.1</b><span>data/fatmawati/calibration.json: verification over 4 seeds; targets from Sumabrata et al. (2026)</span></footer>
+  <aside class="notes">Calibration turned one volume dial per approach until the simulated peak-hour queue matched the published queue. North is within 6%, east and south are about 20% short, and west cannot be matched because the road upstream limits how much traffic arrives. The important consequence is on the right: the twin reaches those queues with only about a quarter of the counted vehicles. So we are careful to say the twin reproduces congestion, not counts.</aside>
+</section>
+
+<section class="slide deep" data-title="What is in the dataset">
+  <div class="eyebrow">Deep dive · Dataset and governance</div>
+  <h2>Nine tables of sensor readings, released to be checked</h2>
+  <div class="body">
+    <div class="row">
+      <div class="w55">
+        <table class="t dense">
+          <tr><th>Table</th><th>One row per</th><th class="n">Rows</th></tr>
+          <tr><td>sensors</td><td>virtual sensor: loop, gate or camera</td><td class="n">39</td></tr>
+          <tr><td>episodes</td><td>simulated hour, with its settings</td><td class="n">108</td></tr>
+          <tr><td>loops_1min</td><td>loop or gate, per minute</td><td class="n">200,880</td></tr>
+          <tr><td>cameras_1min</td><td>queue or exit camera, per minute</td><td class="n">51,840</td></tr>
+          <tr class="hl"><td>ticks_5s</td><td>5 s decision: 75 features, 5 labels</td><td class="n">77,760</td></tr>
+          <tr><td>signal_log</td><td>signal phase change</td><td class="n">77,202</td></tr>
+          <tr><td>turning_counts_15min</td><td>movement, per 15 minutes</td><td class="n">15,238</td></tr>
+          <tr><td>ambulance_trips</td><td>ambulance trip to the hospital</td><td class="n">732</td></tr>
+          <tr><td>simulation_qc</td><td>episode: collisions, teleports, distance</td><td class="n">108</td></tr>
+        </table>
+      </div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Sensor readings only.</b> Every value is something a real loop or camera could measure; no hidden simulator state</li>
+          <li><b>Checked labels.</b> The 30 s queue label matched the later camera reading in all 308,448 checks; the teacher label was reproduced on every row but 79 rounding ties</li>
+          <li><b>FAIR release.</b> Data card, a 206-entry data dictionary, SI units, seeds, and SHA-256 checksums for all 12 files</li>
+          <li><b>Licence.</b> Roads derive from OpenStreetMap, so the tables are shared under the ODbL</li>
+          <li><b>No personal data.</b> A real deployment would handle ambulance GPS traces, which are personal data under Indonesian law</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><b>4.2</b><span>data/fatmawati_v3 (DATACARD.md, data_dictionary.csv, SHA256SUMS.txt); Wilkinson et al. (2016); Gebru et al. (2021)</span></footer>
+  <aside class="notes">The release has nine tables at seven grains, from single sensors up to whole episodes. The highlighted table is the learning table: one row every five seconds with 75 sensor features and 5 labels. On the right are the governance points from our report: only sensor readings are released, labels were recomputed and checked before training, the release follows FAIR and the datasheets pattern, it is licensed under the ODbL because the roads come from OpenStreetMap, and it holds no personal data.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 5 · TWIN + DEMO -->
+<div class="col">
+<section class="slide demo" data-title="The digital twin: a working copy of the junction">
+  <div class="head"><div><div class="eyebrow">Our data · 2 of 3</div>
+    <h2>The digital twin: a working copy of the junction</h2></div>
+    <div class="steps"><span><b>1</b> Real inputs</span><span><b>2</b> SUMO twin, 80% motorcycles</span><span><b>3</b> Virtual sensors</span><span><b>4</b> Open dataset</span></div></div>
+  <div class="twin-slot" data-twin="fat" data-mode="a" data-cam="junction"></div>
+  <footer><b>5</b><span>Eclipse SUMO 1.27; map data © OpenStreetMap contributors (ODbL) · Recorded run at low demand; drag to pan, right-drag to rotate, scroll to zoom</span></footer>
+  <aside class="notes"><span class="who">[Presenter B · about 1 minute 20 seconds, including the demo]</span> This is the junction and its surroundings as simulated, to scale. The twin works in four steps: real inputs build the road network and traffic; SUMO, an open traffic simulator, moves every vehicle, including motorcycles filtering between cars; virtual sensors record what real loops and cameras would see; and only those sensor readings go into the dataset. This view is a recording of the twin that plays inside the slide. [Point out: the motorcycle box filling up at red, in red on the road; the toll road passing over the junction, use See-through; the ambulance, yellow with a marker above it, arriving at the queue. Camera menu: Motorcycle box, Follow ambulance.] [If the live server is running, press Live to switch to the running simulation.] [About 40 seconds of demo.] Now, how did we use this data?</aside>
+</section>
+
+<section class="slide demo deep" data-title="Same traffic, same ambulance, two controllers">
+  <div class="head"><div><div class="eyebrow">Deep dive · Side by side</div>
+    <h2>Same traffic, same ambulance: today's plan and the learned controller</h2></div></div>
+  <div class="twin-slot" data-twin="fat" data-mode="split" data-cam="@FAT_CAM@" data-xray="1"></div>
+  <footer><b>5.1</b><span>@FAT_NOTE@</span></footer>
+  <aside class="notes">Both halves replay the same seed, so every vehicle enters at the same moment; only the signal control differs. Left is today's fixed plan, right is the learned gradient-boosting controller. Watch the ambulance timer in each panel: it starts when the ambulance is 300 m from the junction and stops when it is through. Be clear that this is one passage chosen to show the mechanism. The measured result is the average over 96 passages per method: ambulance delay falls by 14%.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 6 · METHOD -->
+<div class="col">
+<section class="slide" data-title="Four kinds of method, one question each">
+  <div class="eyebrow">Our method · 3 of 3</div>
+  <h2>Four kinds of method, one question each</h2>
+  <div class="body" style="justify-content:center;gap:26px;padding-bottom:26px">
+    <div class="method-grid">
+      <div class="card"><span class="k">Is the twin realistic?</span><h4>Descriptive</h4><p>Summaries and calibration checks</p></div>
+      <div class="card"><span class="k">Can sensors learn priority?</span><h4>Predictive</h4><p>Models learn the stage a priority-aware teacher picks every 5 s, tested on unseen seeds</p></div>
+      <div class="card"><span class="k">Is the difference real?</span><h4>Inferential</h4><p>Paired comparisons on identical traffic, with bootstrap intervals over seeds</p></div>
+      <div class="card"><span class="k">Which controller?</span><h4>Decision</h4><p>Safety, cost and fairness gates, then Nash bargaining picks the fairest controller</p></div>
+    </div>
+    <div class="callout"><b>The teacher rule:</b> give the ambulance's stage green just in time to clear the queue ahead of it; otherwise serve the busiest direction. Gradient boosting copies it best, with a macro-F1 of 0.96 against 0.28 for the best simple baseline.</div>
+  </div>
+  <footer><b>6</b><span>Breiman (2001); Grinsztajn et al. (2022); Nash (1950)</span></footer>
+  <aside class="notes"><span class="who">[Presenter B · about 1 minute]</span> We used four kinds of method, each answering one question. Descriptive analysis checks whether the twin is realistic. Predictive models are the core: a priority-aware teacher rule gives the ambulance's direction a green light just in time to clear the queue ahead of it, and otherwise serves the busiest direction. Five model families learn to copy that rule from the sensor data, and we test them on simulations they never saw. Gradient boosting copies it best, with a macro-F1 of 0.96, against 0.28 for the best simple baseline. Inferential statistics compare controllers fairly, because every controller faces exactly the same traffic. Finally, a decision rule chooses: a controller must pass safety, cost and fairness gates, and Nash bargaining picks the one that best balances everyone's gains. [Presenter C] will now show what our demonstration found.</aside>
+</section>
+
+<section class="slide deep" data-title="Learning the teacher: five model families">
+  <div class="eyebrow">Deep dive · Learning</div>
+  <h2>Five model families learned the teacher from sensor rows</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w60 chart" data-chart="models"></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Task:</b> predict which of four stages the teacher requests, from 75 sensor features, every 5 s</li>
+          <li><b>Fair test:</b> trained on seeds 1 and 2 (51,840 rows), tested on seed 3 (25,920 rows, 1,986 with an ambulance)</li>
+          <li><b>Gradient boosting</b> is best overall and when an ambulance is present; the single decision tree is too coarse</li>
+          <li><b>Unseen conditions:</b> macro-F1 0.91 on an evening peak it never saw, 0.89 on a demand level it never saw</li>
+          <li><b>Sanity check:</b> with shuffled labels the score falls to 0.25, the level of guessing</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><b>6.1</b><span>reports/a3/learning/results.json; Breiman (2001); Grinsztajn et al. (2022)</span></footer>
+  <aside class="notes">The task is a four-class classification: which stage would the teacher request right now? We hold out a whole seed for testing, so no simulation appears in both training and test. Gradient boosting and the neural network score above 0.95, far above the simple baselines in grey. The right-hand panel matters most for us: on rows where an ambulance is present, gradient boosting is right 96% of the time. The model also holds up on an evening peak and a demand level it never saw.</aside>
+</section>
+
+<section class="slide deep" data-title="The decision rule: three gates, then Nash bargaining">
+  <div class="eyebrow">Deep dive · Decision rule</div>
+  <h2>Three gates, then Nash bargaining, fixed before any result</h2>
+  <div class="body">
+    <div class="row" style="flex:0 0 auto">
+      <div class="card tight"><span class="tag">Gate 1 · Safety</span><p class="small" style="margin:8px 0 0">Collisions per vehicle-km must not be significantly above today's plan.</p></div>
+      <div class="card tight"><span class="tag">Gate 2 · Cost</span><p class="small" style="margin:8px 0 0">Everyone else's delay must stay within 10% of max-pressure, the best ambulance-blind rule.</p></div>
+      <div class="card tight"><span class="tag">Gate 3 · Fairness</span><p class="small" style="margin:8px 0 0">No approach may be more than 20% worse than under today's plan.</p></div>
+    </div>
+    <div class="row">
+      <div class="card">
+        <h3>Among the methods that pass</h3>
+        <ul class="pts small">
+          <li>Keep the <b>Pareto front</b>: methods no other method beats on both ambulance delay and general delay</li>
+          <li>Pick the largest <b>Nash product</b>: every party's gain over its fallback, multiplied</li>
+        </ul>
+        <p style="margin:14px 0 0;font:600 17px/1.5 ui-monospace,Menlo,monospace;color:var(--ink)">N = (A<sub>today</sub> − A) × (1.10·R<sub>mp</sub> − R) × Π<sub>a</sub> (1.20 − R<sub>a</sub>)</p>
+        <p class="small muted" style="margin:6px 0 0">A: ambulance delay · R: everyone else's delay index (today = 1) · R<sub>a</sub>: the index of approach a</p>
+        <p class="small" style="margin:14px 0 0"><b>At low demand:</b> <span data-v="nash:gradient_boosting"></span> for gradient boosting, <span data-v="nash:longest_queue"></span> for longest queue, <span data-v="nash:priority_mp"></span> for the priority teacher.</p>
+      </div>
+      <div class="stack w40">
+        <div class="callout info small"><b>Why Nash?</b> A product is zero as soon as one party gains nothing, so no direction can be sacrificed for the ambulance. The parties are the ambulance, general traffic and each of the four approaches.</div>
+        <div class="callout small"><b>How sure?</b> The four seeds are resampled 1,000 times and the rule is rerun: the share of resamples a method wins is its stability.</div>
+      </div>
+    </div>
+  </div>
+  <footer><b>6.2</b><span>Methodology section 8; traffic_twin/fatmawati/kpi.py; Nash (1950)</span></footer>
+  <aside class="notes">The decision rule was fixed before we saw any results. First three gates: a method must not be significantly less safe than today, must not cost general traffic more than 10% over the best ambulance-blind rule, and must not leave any approach more than 20% worse than today. Among the methods that pass, we take the Pareto front and choose the largest Nash product. The product goes to zero as soon as one party gains nothing, which is why it protects every direction. We then bootstrap the seeds to see how stable the winner is.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 7 · DEMONSTRATION 1 -->
+<div class="col">
+<section class="slide" data-title="The data behaves like the real junction">
+  <div class="eyebrow">What the demonstration showed · 1 of 2</div>
+  <h2>The data behaves like the real junction</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w40 chart" data-chart="mix"></div>
+      <div class="card chart" data-chart="queues"></div>
+    </div>
+    <div class="callout"><b>Clean and verifiable:</b> no documented column missing, empty cells only where no value can exist (such as no ambulance present), and all 12 files match their published checksums.</div>
+  </div>
+  <footer><b>7</b><span>R Markdown demonstration (Assignment3_Demonstration.Rmd); fixed plan, design demand, 17:00</span></footer>
+  <aside class="notes"><span class="who">[Presenter C · about 1 minute]</span> Our R demonstration checks whether this generated data is usable. First, does it look like the real junction? On the left, the vehicle mix: 80.2% of vehicles entering the junction are motorcycles, inside the 77 to 82% published for this road. On the right, one hour of queues on each approach: they rise and fall with the 231-second signal cycle, exactly as a real signalised junction behaves. [Optional: open the knitted HTML of the Rmd for a few seconds to show it runs.] Second, is the data clean? Every column listed in the data dictionary exists, the only empty values are structural, for example the ambulance fields when no ambulance is present, and all 12 files match their published checksums, so anyone can verify they hold exactly our data.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 8 · DEMONSTRATION 2 -->
+<div class="col">
+<section class="slide" data-title="The data supports fair tests and learning">
+  <div class="eyebrow">What the demonstration showed · 2 of 2</div>
+  <h2>The data supports fair tests and learning</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card"><h3>Paired t-tests: adaptive control vs today's plan</h3>
+        <table class="t big">
+          <tr><th>Demand</th><th class="n">Delay change</th><th class="n">p-value</th></tr>
+          <tr class="hl"><td>Low</td><td class="n">−24 to −27 s</td><td class="n">≤ 0.0001</td></tr>
+          <tr><td>Design</td><td class="n">−7 to +1 s</td><td class="n">≥ 0.54</td></tr>
+          <tr><td>High</td><td class="n">−7 to +11 s</td><td class="n">≥ 0.31</td></tr>
+        </table>
+        <p class="small muted" style="margin:12px 0 0">Per vehicle, three adaptive controllers, 9 paired episodes per level.</p></div>
+      <div class="card"><h3>First model for the stage task, unseen seed</h3>
+        <table class="t dense">
+          <tr><th>Method</th><th class="n">Macro-F1</th><th class="n">With ambulance</th></tr>
+          <tr class="hl"><td>LDA (learned)</td><td class="n">0.67</td><td class="n">0.76</td></tr>
+          <tr><td>Max-pressure rule</td><td class="n">0.82</td><td class="n">0.70</td></tr>
+          <tr><td>Keep current stage</td><td class="n">0.28</td><td class="n">0.34</td></tr>
+          <tr><td>Most common stage</td><td class="n">0.14</td><td class="n">0.44</td></tr>
+          <tr><td>Random stage</td><td class="n">0.24</td><td class="n">0.26</td></tr>
+        </table></div>
+    </div>
+    <div class="callout"><b>So:</b> differences are clear in light traffic but not yet in heavy traffic, and even a simple linear model learns part of the ambulance priority, which is why the full study uses non-linear models.</div>
+  </div>
+  <footer><b>8</b><span>R Markdown demonstration; 9 paired episodes per demand level; LDA trained on seeds 1–2, tested on seed 3</span></footer>
+  <aside class="notes"><span class="who">[Presenter C · about 1 minute]</span> Third, can the data support fair comparisons? Because every controller faces identical traffic, we used paired t-tests against today's fixed plan. In light traffic, every adaptive controller cuts delay by 24 to 27 seconds per vehicle, and that is highly significant. In design and heavy traffic, the differences are not significant with our nine pairs per level, which tells us we need more runs there. Fourth, can a model learn the teacher's decisions? We trained a simple linear model, LDA, and tested it on a simulation it never saw. It beats every naive baseline easily, 0.67 against 0.28, and when an ambulance is present it is more accurate than the max-pressure rule, 76 against 70 percent. So the priority signal is learnable from sensors alone, and a linear model only gets part of the way, which is why the full study uses non-linear models like gradient boosting.</aside>
+</section>
+
+<section class="slide deep" data-title="The full evaluation in light traffic">
+  <div class="eyebrow">Deep dive · Evaluation at low demand</div>
+  <h2>In light traffic, four methods beat today's plan and pass every gate</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w60 chart" data-chart="tradeoff"></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Down and left is better:</b> less ambulance delay and less delay for everyone else</li>
+          <li><b>Gradient boosting, longest queue, the teacher and the neural network</b> pass every gate on point estimates</li>
+          <li><b>Naive pre-emption</b> is fastest for ambulances but costs everyone else 17% more than today</li>
+          <li><b>Still and Random</b> are off the chart: 1,700 to 2,400 s of ambulance delay</li>
+        </ul>
+        <div class="callout warn small"><b>With four seeds, nothing passes at 95% confidence.</b> The gates are met on point estimates only; safety stays a significance test.</div>
+      </div>
+    </div>
+  </div>
+  <footer><b>8.1</b><span>reports/a3/kpi/kpi_methods.csv: 96 ambulance passages per method, seeds 1–4, low demand; whiskers are 95% intervals</span></footer>
+  <aside class="notes">This is the main result of the full study. Each dot is a controller: how long ambulances are delayed, left to right, and how much everyone else is delayed compared with today, bottom to top. Today's plan is the grey reference at 134 seconds and index 1. Four methods are below and to the left of it and pass every gate on point estimates. Naive pre-emption is the fastest for ambulances but sits above the line: it makes everyone else worse than today. The honest limit is in the yellow box: with four seeds, the intervals are wide and nothing passes at 95% confidence.</aside>
+</section>
+
+<section class="slide deep" data-title="A near tie between a learned model and a simple rule">
+  <div class="eyebrow">Deep dive · The winner</div>
+  <h2>The winner is a near tie between a learned model and a simple rule</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w55 chart" data-chart="win"></div>
+      <div class="stack">
+        <table class="t dense">
+          <tr><th>Method</th><th class="n">Ambulance</th><th class="n">Others</th><th class="n">Nash</th></tr>
+          <tr class="hl"><td>Gradient boosting</td><td class="n" data-v="A:gradient_boosting"></td><td class="n" data-v="R:gradient_boosting"></td><td class="n" data-v="nash:gradient_boosting"></td></tr>
+          <tr><td>Longest queue</td><td class="n" data-v="A:longest_queue"></td><td class="n" data-v="R:longest_queue"></td><td class="n" data-v="nash:longest_queue"></td></tr>
+          <tr><td>Priority teacher</td><td class="n" data-v="A:priority_mp"></td><td class="n" data-v="R:priority_mp"></td><td class="n" data-v="nash:priority_mp"></td></tr>
+          <tr><td>Neural network</td><td class="n" data-v="A:neural_network"></td><td class="n" data-v="R:neural_network"></td><td class="n" data-v="nash:neural_network"></td></tr>
+          <tr><td>Fixed plan (today)</td><td class="n" data-v="A:fixed"></td><td class="n" data-v="R:fixed"></td><td class="n">–</td></tr>
+        </table>
+        <div class="callout small"><b>What the choice implies.</b> Picking gradient boosting values one second of ambulance time at about <span data-v="lambda"></span> vehicle-seconds of everyone else's delay.</div>
+      </div>
+    </div>
+  </div>
+  <footer><b>8.2</b><span>reports/a3/kpi/equilibrium.json: point-estimate equilibrium and 1,000 bootstrap resamples of the four seeds</span></footer>
+  <aside class="notes">The Nash rule picks learned gradient boosting, but only by a hair: its product is 0.0592 against 0.0590 for the longest-queue rule. When we resample the four seeds a thousand times, gradient boosting wins about 46% of the time, the teacher 26% and longest queue 21%. So the fair statement is that a learned controller is at least as good as the best simple rule, not that it is clearly better. More seeds would settle it.</aside>
+</section>
+
+<section class="slide deep" data-title="Stress tests: heavy traffic breaks fairness">
+  <div class="eyebrow">Deep dive · Stress tests</div>
+  <h2>In heavy traffic ambulances still gain, but fairness breaks</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w60 chart" data-chart="stress"></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Why delays are so long:</b> these runs hold the calibrated peak for 4.4 hours, so the north approach, already at capacity, never recovers</li>
+          <li><b>The priority teacher</b> cuts ambulance delay by 59% at design demand and 38% at high demand, and leaves the fewest ambulances stranded (1% and 5%)</li>
+          <li><b>The price:</b> every adaptive method leaves its worst approach 3.2 to 4.2 times worse than today</li>
+        </ul>
+        <div class="callout warn small"><b>No method passes the fairness gate in heavy traffic.</b> We report this as a limit of signal control alone, not as a result to tune away.</div>
+      </div>
+    </div>
+  </div>
+  <footer><b>8.3</b><span>reports/a3/kpi/kpi_by_level.csv: rule-based methods, seeds 1–4; unfinished passages counted at their lower-bound delay</span></footer>
+  <aside class="notes">Design and high demand are stress tests: the peak is held for more than four hours, which is harsher than a real peak with shoulders. Under today's plan the north approach queues past the point where ambulances are released, so delays reach tens of minutes and 16 to 19% of ambulances are still stuck at the end. The priority teacher more than halves the delay at design demand. But the price is fairness: the worst approach becomes three to four times slower than today for every adaptive method, so nothing passes our fairness gate.</aside>
+</section>
+
+<section class="slide deep" data-title="Hindsight and the 70% motorcycle mix">
+  <div class="eyebrow">Deep dive · Two what-ifs</div>
+  <h2>Better timing has room to give; fewer motorcycles is not easier</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card chart" data-chart="hind"></div>
+      <div class="card chart" data-chart="moto"></div>
+    </div>
+    <div class="row" style="flex:0 0 auto">
+      <div class="callout small"><b>Hindsight ceiling.</b> Replaying each passage and keeping the best switch time halves max-pressure's ambulance delay. The best switch is usually at detection; the teacher waits for the last safe moment, so it captures only 15% of that gain.</div>
+      <div class="callout warn small"><b>70% motorcycles.</b> With more cars, queues are longer for the same vehicle count: ambulance delay roughly doubles for every method, and no method passes the gates.</div>
+    </div>
+  </div>
+  <footer><b>8.4</b><span>data/fatmawati_eval_hindsight (24 passages, low demand, seed 1); reports/a3/kpi_moto70 (low demand, seeds 1–4)</span></footer>
+  <aside class="notes">Two what-if experiments. Left: the hindsight ceiling. We fork the simulation at the moment an ambulance is detected and try every switch time, keeping the best. With perfect timing, max-pressure's ambulance delay on those passages falls from 159 to 82 seconds. Naive pre-emption captures almost all of that gain because it switches at once; the teacher captures only 15% because it waits. That points to our next step: switch earlier, but bounded. Right: with 70% motorcycles instead of 80%, the same vehicles take more road, queues are longer and ambulance delay about doubles.</aside>
+</section>
+
+<section class="slide deep" data-title="Safety and starvation">
+  <div class="eyebrow">Deep dive · Safety</div>
+  <h2>The shield keeps every red under 252 s; forcing a green does not</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card w55 chart" data-chart="red"></div>
+      <div class="stack">
+        <ul class="pts small">
+          <li><b>Request-only controllers</b> never hold an approach red for more than 252 s: the plant's maximum green and starvation rules apply to them</li>
+          <li><b>Naive pre-emption</b> forces and holds a green, as real pre-emption does, and left an approach red for 362 s in light traffic and 565 s in heavy traffic</li>
+          <li><b>Collisions:</b> the safety gate is relative to today's plan. Only learned logistic regression raised lane collisions significantly, and it was excluded</li>
+          <li><b>Reported, not hidden:</b> vehicles overlap inside the junction about 180 times per 75-minute run, a known limit of the simulator with filtering motorcycles</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <footer><b>8.5</b><span>reports/a3/kpi/kpi_methods.csv (longest red over the four approaches, low demand); DECISIONS section 13.11</span></footer>
+  <aside class="notes">Safety has two parts. Starvation: how long can a direction be held at red? Every controller that only requests stages stays at or below 252 seconds, because the plant enforces maximum green. Naive pre-emption bypasses the plant and held a red for 362 seconds. Collisions: the gate compares each method with today's plan on the same traffic. Only the learned logistic regression was significantly worse, and it was dropped. We also report junction overlaps honestly, about 180 per run: they are a known weakness of the simulator when motorcycles filter.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 9 · STAKEHOLDERS -->
+<div class="col">
+<section class="slide" data-title="Faster ambulances, and less delay for everyone">
+  <div class="eyebrow">Stakeholders and expected outcomes</div>
+  <h2>Faster ambulances, and less delay for everyone</h2>
+  <div class="body">
+    <table class="t big">
+      <tr><th style="width:26%">Stakeholder</th><th style="width:21%">Role</th><th>Expected outcome</th></tr>
+      <tr><td>UP SPLL (Dishub's signal unit)</td><td>Runs and maintains it</td><td>Hands-off priority on existing signals; no direction over 20% worse than today</td></tr>
+      <tr class="hl"><td>Patients and ambulance crews</td><td>End beneficiaries</td><td><b>14% less ambulance delay</b> than today's plan in light traffic</td></tr>
+      <tr class="hl"><td>Motorcyclists and other drivers</td><td>Bear the cost</td><td><b>31% less delay</b> for everyone else; delay reported for each direction</td></tr>
+      <tr><td>RSUP Fatmawati</td><td>Beneficiary; pilot co-funder</td><td>Earlier, more predictable arrivals</td></tr>
+      <tr><td>119 ambulance service</td><td>Supplies live GPS</td><td>Priority triggered in time for each ambulance</td></tr>
+      <tr><td>City government</td><td>Funds the pilot</td><td>Evidence before spending; a new junction needs a one-day survey</td></tr>
+    </table>
+  </div>
+  <footer><b>9</b><span>Outcomes from the twin's evaluation at low demand (gradient boosting vs the fixed plan); adoption and funding are our proposal</span></footer>
+  <aside class="notes"><span class="who">[Presenter C · about 40 seconds]</span> Who would use this, and what would they get? UP SPLL, Dishub's signal-control unit, is the operator: it would run the controller on the existing signals, with no manual intervention, and no direction allowed to get more than 20% worse than today. In our twin's evaluation in light traffic, the chosen controller cut ambulance delay by 14% compared with today's plan, and cut everyone else's delay by 31%. The hospital gets earlier, more predictable arrivals, the 119 ambulance service supplies the live GPS that triggers priority, and for the city, adding another junction costs mainly a one-day traffic survey.</aside>
+</section>
+</div>
+
+<!-- ============================================================ 10 · LIMITATIONS -->
+<div class="col">
+<section class="slide" data-title="Honest about the twin, ready for a pilot">
+  <div class="eyebrow">Limitations and what comes next</div>
+  <h2>Honest about the twin, ready for a pilot</h2>
+  <div class="body">
+    <div class="row">
+      <div class="card"><h3>Limitations</h3>
+        <ul class="pts plain">
+          <li>The twin carries 22–35% of real vehicle counts</li>
+          <li>No ambulances from the south; east ones skip the signal</li>
+          <li>Four seeds: the winning controller is a near tie</li>
+          <li>In heavy traffic, no method is fair to every direction</li>
+        </ul></div>
+      <div class="card" style="border-color:var(--accent)"><h3 style="color:var(--accent)">Next steps</h3>
+        <ul class="pts">
+          <li>More seeds and noisy, realistic sensors</li>
+          <li>Switch earlier: perfect timing cuts delay from 159 to 82 s</li>
+          <li>Test the trained controller at a second junction</li>
+          <li>A pilot with UP SPLL at Fatmawati</li>
+        </ul></div>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:18px"><div style="font-size:34px;font-weight:750;letter-spacing:-.02em">Thank you. Questions?</div><div class="small muted">Deep dives below: reproducibility, the Bundaran HI transfer case, references</div></div>
+  </div>
+  <footer><b>10</b><span>Daffa Hanif Padantya · Andrea Nadya Sentosa · Bramantyo Anandaru Suyadi</span></footer>
+  <aside class="notes"><span class="who">[Presenter C · about 40 seconds]</span> Finally, our limitations and next steps. The twin reproduces the junction's congestion but carries only 22 to 35% of the real vehicle counts. No ambulance in our data comes from the south, and those from the east use a slip road with no signal. With four seeds, our winning controller is a near tie with a simpler one. And in heavy traffic, no method is fair to every direction. Next, we would add more seeds and realistic sensor errors, and test switching earlier: with perfect timing, max-pressure's ambulance delay would drop from 159 to 82 seconds. We would also test the trained controller, unchanged, at a second junction such as Bundaran HI once its traffic is surveyed, and propose a pilot with UP SPLL at Fatmawati. Thank you, we're happy to take questions.</aside>
+</section>
+
+<section class="slide deep" data-title="Reproducible by design">
+  <div class="eyebrow">Deep dive · Reproducibility</div>
+  <h2>Anyone can rebuild the study, or move it to another junction</h2>
+  <div class="body">
+    <div class="row">
+      <div class="w45">
+        <table class="t dense">
+          <tr><th>Level</th><th>What reproduces</th></tr>
+          <tr><td>0 · Same machine</td><td>Byte-identical tables; check with the published SHA-256 sums</td></tr>
+          <tr><td>1 · Fresh install</td><td>Same numbers from the pinned environment; the network matches a recorded hash</td></tr>
+          <tr><td>2 · New map extract</td><td>A new release, documented as such, not a reproduction</td></tr>
+          <tr><td>3 · New site</td><td>The nine-step transfer protocol and a site file</td></tr>
+        </table>
+        <div class="callout info small" style="margin-top:14px"><b>One file per site.</b> Legs, stages, greens, mix, calibration targets and gates live in <code>data/sites/&lt;site&gt;.json</code>; a test keeps the code equal to it.</div>
+      </div>
+      <div class="card">
+        <h3>The pipeline, one command per step</h3>
+        <table class="t dense">
+          <tr><td>Build network, sensors, vehicle types</td><td class="n">seconds</td></tr>
+          <tr><td>Calibrate demand on published queues</td><td class="n">hours</td></tr>
+          <tr><td>Generate and verify the 108-hour release</td><td class="n">82 min – 2 h</td></tr>
+          <tr><td>Validate labels and train five models</td><td class="n">25 min</td></tr>
+          <tr><td>Evaluation grid, 144 runs</td><td class="n">about 21 h</td></tr>
+          <tr><td>Learned controllers in closed loop, hindsight, 70% mix</td><td class="n">about 15 h</td></tr>
+          <tr><td>KPIs, equilibrium, report and this deck</td><td class="n">minutes</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  <footer><b>10.1</b><span>docs/REPRODUCIBILITY.md; data/sites/fatmawati.json; SUMO, libsumo and sumolib pinned at 1.27.1</span></footer>
+  <aside class="notes">Reproducibility has four levels. On the same machine the tables come out byte-identical and can be checked against published checksums. On a fresh install the numbers match and the rebuilt network matches a recorded hash. A new map extract gives a new release. And for a new site there is a nine-step transfer protocol. Everything site-specific sits in one JSON file, which is what makes the transfer case on the next slide possible. The right-hand table shows what each step costs: the evaluation grid is the expensive part.</aside>
+</section>
+
+<section class="slide demo deep" data-title="Transfer case: Bundaran HI">
+  <div class="head"><div><div class="eyebrow">Deep dive · Transfer case</div>
+    <h2>Could it move to Bundaran HI? The method yes, the numbers not yet</h2></div></div>
+  <div class="row" style="gap:16px">
+    <div class="twin-slot" data-twin="bhi" data-mode="a" data-cam="junction" style="flex:1 1 62%"></div>
+    <div class="stack" style="flex:0 0 34%">
+      <div class="callout warn small"><b>Uncalibrated demo.</b> Real road geometry and buildings; assumed demand, mix and signals. Not evidence about the real junction.</div>
+      <ul class="pts small">
+        <li><b>What the map already shows:</b> the ring has three entries (Thamrin, Imam Bonjol, Sudirman) and four exits; the west leg is exit-only</li>
+        <li><b>What is missing:</b> no published counts, signal plan or queue lengths; the busway and the 16:00–21:00 movement ban are not modelled</li>
+        <li><b>What a transfer needs:</b> a one-day survey, a stage model for the ring, then the same nine-step protocol</li>
+      </ul>
+      <p class="side-note">Stable up to 40% of an assumed 6,860 vehicles per hour; above that the Thamrin approach queues back about 900 m.</p>
+    </div>
+  </div>
+  <footer><b>10.2</b><span>Branch claude/bundaran-hi-demo (data/bundaran_hi_demo); map data © OpenStreetMap contributors (ODbL)</span></footer>
+  <aside class="notes">We tested how far the pipeline carries to a very different junction: Bundaran HI, a signalised roundabout in central Jakarta. The road network, the lanes and the buildings come straight from OpenStreetMap through the same tools. But demand, the vehicle mix and the signals are assumptions, so this view is a demonstration, not a result. The exercise told us what a real transfer needs: a one-day traffic survey, because nothing is published for this junction, and a stage model that can describe a ring. The site file for Bundaran HI stays incomplete on purpose until that survey exists.</aside>
+</section>
+
+<section class="slide deep" data-title="References">
+  <div class="eyebrow">Deep dive · References</div>
+  <h2>References cited on the slides</h2>
+  <div class="body">
+    <div class="row" style="font-size:13.5px;line-height:1.36;color:var(--ink2);gap:34px">
+      <div class="stack" style="gap:8px">
+        <p>Breiman, L. (2001). Random forests. <i>Machine Learning, 45</i>(1), 5–32.</p>
+        <p>Brice, S. N., Boutilier, J. J., Gartner, D., et al. (2022). Emergency services utilization in Jakarta (Indonesia).</p>
+        <p>Chen, Y.-Y., Wang, J.-Y., Lo, S.-C., &amp; Sung, W.-T. (2024). An emergency vehicle traffic signal preemption system considering queue spillbacks along routes and negative impacts on non-priority traffic.</p>
+        <p>Gebru, T., Morgenstern, J., Vecchione, B., et al. (2021). Datasheets for datasets. <i>Communications of the ACM, 64</i>(12), 86–92.</p>
+        <p>Grinsztajn, L., Oyallon, E., &amp; Varoquaux, G. (2022). Why do tree-based models still outperform deep learning on typical tabular data?</p>
+        <p>Larsen, M. P., Eisenberg, M. S., Cummins, R. O., &amp; Hallstrom, A. P. (1993). Predicting survival from out-of-hospital cardiac arrest: A graphic model. <i>Annals of Emergency Medicine, 22</i>(11), 1652–1658.</p>
+        <p>Nash, J. F. (1950). The bargaining problem. <i>Econometrica, 18</i>(2), 155–162.</p>
+        <p>Open Data Commons. (2009). <i>Open Database License (ODbL) v1.0</i>.</p>
+      </div>
+      <div class="stack" style="gap:8px">
+        <p>Roy, S., Hunter, M., Saroj, A., &amp; Guin, A. (2024). Development of emergency vehicle preemption strategies on smart corridors in a digital twin environment.</p>
+        <p>Savithramma, R. M., Sumathi, R., &amp; Sudhira, H. S. (2022). SMART emergency vehicle management at signalized intersection using machine learning. <i>Indian Journal of Science and Technology, 15</i>(35).</p>
+        <p>Sumabrata, R. J., Haqueline, R., &amp; Mauramdha, G. (2026). Microscopic simulation analysis of the Fatmawati intersection in Jakarta.</p>
+        <p>Varaiya, P. (2013). Max pressure control of a network of signalized intersections. <i>Transportation Research Part C, 36</i>, 177–195.</p>
+        <p>Webster, F. V. (1958). <i>Traffic signal settings</i> (Road Research Technical Paper No. 39).</p>
+        <p>Wei, H., Zheng, G., Gayah, V., &amp; Li, Z. (2019). <i>A survey on traffic signal control methods</i>. arXiv.</p>
+        <p>Wilkinson, M. D., Dumontier, M., Aalbersberg, I. J., et al. (2016). The FAIR guiding principles for scientific data management and stewardship.</p>
+        <p>Yusuf, M. H., &amp; Isradi, M. (2025). The implementation analysis of the electronic road pricing (ERP) system on Fatmawati Road.</p>
+      </div>
+    </div>
+  </div>
+  <footer><b>10.3</b><span>Full APA reference list: reports/a3/Assignment3_Report.md</span></footer>
+  <aside class="notes">The short list of sources named on the slides. The full reference list, in APA style with DOIs, is in the report.</aside>
+</section>
+</div>
